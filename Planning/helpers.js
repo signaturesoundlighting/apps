@@ -151,6 +151,56 @@ function computeEventCompletion(event) {
     }
 }
 
+function computeGeneralInfoCompletion() {
+    if (typeof generalInfo === 'undefined') return { done: 0, total: 0 };
+    const reqFields = ['venueName', 'venueAddress', 'plannerName', 'plannerEmail'];
+    let total = reqFields.length;
+    let done = 0;
+    
+    reqFields.forEach(field => {
+        const val = generalInfo[field];
+        if (val && typeof val === 'string' && val.trim().length > 0) {
+            done += 1;
+        }
+    });
+    
+    // Add conditional fields if differentCeremonyVenue is true
+    if (generalInfo.differentCeremonyVenue) {
+        total += 2; // ceremonyVenueName and ceremonyVenueAddress
+        if (generalInfo.ceremonyVenueName && typeof generalInfo.ceremonyVenueName === 'string' && generalInfo.ceremonyVenueName.trim().length > 0) {
+            done += 1;
+        }
+        if (generalInfo.ceremonyVenueAddress && typeof generalInfo.ceremonyVenueAddress === 'string' && generalInfo.ceremonyVenueAddress.trim().length > 0) {
+            done += 1;
+        }
+    }
+    
+    return { done, total };
+}
+
+function updateGeneralInfoCard() {
+    const card = document.querySelector('.general-info-card');
+    if (!card) return;
+    
+    const completion = (typeof computeGeneralInfoCompletion === 'function') ? computeGeneralInfoCompletion() : { done: 0, total: 0 };
+    const isDone = completion.total > 0 && completion.done >= completion.total;
+    const iconSVG = isDone
+        ? '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>'
+        : '<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm2-7.5c0 1.54-1 2.14-1.8 2.6-.72.41-1.2.69-1.2 1.4V14h-2v-.7c0-1.5 1-2.1 1.8-2.6.72-.41 1.2-.69 1.2-1.4 0-.83-.67-1.5-1.5-1.5S9 7.47 9 8.3H7c0-2 1.8-3.3 4-3.3s4 1.35 4 3.5z"/></svg>';
+    const reqHtml = `<div class="req-indicator${isDone ? ' completed' : ''}">${iconSVG}${completion.done}/${completion.total}</div>`;
+    
+    const nameDiv = card.querySelector('div[style*="font-size: 18px"]');
+    const clickDiv = card.querySelector('div[style*="font-size: 14px"]');
+    if (nameDiv && clickDiv) {
+        const existingIndicator = card.querySelector('.req-indicator');
+        if (existingIndicator) {
+            existingIndicator.outerHTML = reqHtml;
+        } else {
+            nameDiv.insertAdjacentHTML('afterend', reqHtml);
+        }
+    }
+}
+
 function updateOverallProgress() {
     if (typeof events === 'undefined' || !Array.isArray(events)) return;
     let total = 0;
@@ -165,5 +215,11 @@ function updateOverallProgress() {
     const bar = document.getElementById('overallProgressBar');
     const txt = document.getElementById('overallProgressText');
     if (bar) bar.style.width = pct + '%';
-    if (txt) txt.textContent = `${done}/${total} ❓ — ${pct}%`;
+    if (txt) {
+        const isComplete = total > 0 && done >= total;
+        const iconSVG = isComplete
+            ? '<svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: #2b8a3e; vertical-align: middle;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>'
+            : '<svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: #1a9e8e; vertical-align: middle;"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm2-7.5c0 1.54-1 2.14-1.8 2.6-.72.41-1.2.69-1.2 1.4V14h-2v-.7c0-1.5 1-2.1 1.8-2.6.72-.41 1.2-.69 1.2-1.4 0-.83-.67-1.5-1.5-1.5S9 7.47 9 8.3H7c0-2 1.8-3.3 4-3.3s4 1.35 4 3.5z"/></svg>';
+        txt.innerHTML = `${done}/${total} ${iconSVG} — ${pct}%`;
+    }
 }

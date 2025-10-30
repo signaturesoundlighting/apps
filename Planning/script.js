@@ -396,6 +396,8 @@ function saveGeneralInfo() {
     generalInfo.plannerName = document.getElementById('plannerName')?.value || '';
     generalInfo.plannerEmail = document.getElementById('plannerEmail')?.value || '';
     showSaveIndicator();
+    // Update general info card counter
+    if (typeof updateGeneralInfoCard === 'function') updateGeneralInfoCard();
 }
 
 function toggleCeremonyVenue() {

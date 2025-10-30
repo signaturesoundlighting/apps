@@ -75,6 +75,8 @@ function saveGeneralInfo() {
         const fieldId = b.getAttribute('data-field-id');
         updateStatusBadgeDisplay(fieldId);
     });
+    // Update general info card counter
+    if (typeof updateGeneralInfoCard === 'function') updateGeneralInfoCard();
 }
 
 function toggleCeremonyVenue() {
