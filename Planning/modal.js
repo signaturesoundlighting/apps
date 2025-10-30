@@ -251,6 +251,61 @@ document.getElementById('eventModal').addEventListener('click', (e) => {
     }
 });
 
+// Conditional section toggle functions (exposed globally for inline handlers)
+function toggleWeddingPartySection() {
+    const selected = document.querySelector('input[name="introduceParty"]:checked');
+    const section = document.getElementById('weddingPartySection');
+    if (section) {
+        section.style.display = selected && selected.value === 'yes' ? 'block' : 'none';
+    }
+    saveEventDetails(currentEventId);
+}
+
+function toggleSpecialActivityDetails() {
+    const selected = document.querySelector('input[name="hasSpecialActivity"]:checked');
+    const section = document.getElementById('specialActivityDetails');
+    if (section) {
+        section.style.display = selected && selected.value === 'yes' ? 'block' : 'none';
+    }
+    saveEventDetails(currentEventId);
+}
+
+function toggleSpecialActivitySongEntry() {
+    const selected = document.querySelector('input[name="specialActivitySong"]:checked');
+    const section = document.getElementById('specialActivitySongEntry');
+    if (section) {
+        section.style.display = selected && selected.value === 'yes' ? 'block' : 'none';
+    }
+    saveEventDetails(currentEventId);
+}
+
+function toggleBuffetRelease() {
+    const selected = document.querySelector('input[name="dinnerStyle"]:checked');
+    const section = document.getElementById('buffetReleaseSection');
+    if (section) {
+        section.style.display = selected && selected.value === 'buffet' ? 'block' : 'none';
+    }
+    saveEventDetails(currentEventId);
+}
+
+function togglePhotoDashOther() {
+    const selected = document.querySelector('input[name="photoDashStyle"]:checked');
+    const section = document.getElementById('photoDashOther');
+    if (section) {
+        section.style.display = selected && selected.value === 'other' ? 'block' : 'none';
+    }
+    saveEventDetails(currentEventId);
+}
+
+function toggleLineDanceOther() {
+    const checkbox = document.querySelector('input[name="lineDanceOther"]');
+    const section = document.getElementById('lineDanceOtherText');
+    if (section) {
+        section.style.display = checkbox && checkbox.checked ? 'block' : 'none';
+    }
+    saveEventDetails(currentEventId);
+}
+
 // Extra safety: delegate delete button clicks in case a specific listener wasn't bound
 document.addEventListener('click', (e) => {
     const deleteBtnEl = e.target.closest('.delete-event-btn');
