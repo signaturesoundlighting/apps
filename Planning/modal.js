@@ -199,6 +199,13 @@ function addModalFooter(eventId) {
     }
     
     const current = events.find(e => e.id === eventId);
+    const deleteHtml = current && current.type === 'end-of-wedding' ? '' : `
+        <button class="delete-event-btn" id="deleteBtn_${eventId}">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+            </svg>
+            Delete Event
+        </button>`;
     footer.innerHTML = `
         <button class="nav-btn" onclick="navigateEvent('prev')" ${!hasPrev ? 'disabled' : ''}>
             <svg viewBox="0 0 24 24" fill="currentColor">
@@ -206,13 +213,7 @@ function addModalFooter(eventId) {
             </svg>
             Previous
         </button>
-        ${current && current.type === 'end-of-wedding' ? '' : `<button class="delete-event-btn" id="deleteBtn_${eventId}">`
-        }
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-            </svg>
-            Delete Event
-        ${current && current.type === 'end-of-wedding' ? '' : `</button>`}
+        ${deleteHtml}
         <button class="nav-btn" onclick="navigateEvent('next')" ${!hasNext ? 'disabled' : ''}>
             Next
             <svg viewBox="0 0 24 24" fill="currentColor">
@@ -332,6 +333,45 @@ function toggleLineDanceOther() {
 // Status badge utilities
 function isFieldOptional(fieldId) {
     return fieldId === 'startTime' || fieldId === 'otherDetails';
+}
+
+// Special dance type handlers (global)
+function handleSpecialDanceType(eventId) {
+    const selected = document.querySelector(`input[name="danceType_${eventId}"]:checked`);
+    const container = document.getElementById(`otherDanceTypeContainer_${eventId}`);
+    if (container) {
+        container.style.display = selected && selected.value === 'other' ? 'block' : 'none';
+    }
+    updateSpecialDanceName(eventId);
+    saveEventDetails(eventId);
+}
+
+function updateSpecialDanceName(eventId) {
+    const event = events.find(e => e.id === eventId);
+    if (!event) return;
+    const selected = document.querySelector(`input[name="danceType_${eventId}"]:checked`);
+    if (!selected) return;
+    let newName = event.name;
+    if (selected.value === 'father-daughter') {
+        newName = 'Father Daughter Dance';
+    } else if (selected.value === 'mother-son') {
+        newName = 'Mother Son Dance';
+    } else if (selected.value === 'other') {
+        const otherInput = document.getElementById(`otherDanceType_${eventId}`);
+        if (otherInput && otherInput.value.trim()) {
+            newName = otherInput.value.trim();
+        } else {
+            newName = 'Special Dance';
+        }
+    }
+    if (newName !== event.name) {
+        event.name = newName;
+        const displayEl = document.getElementById('eventNameDisplay');
+        if (displayEl) displayEl.textContent = newName;
+        renderEvents();
+        setupDragAndDrop();
+        showSaveIndicator();
+    }
 }
 
 function getBadgeIcon(type) {

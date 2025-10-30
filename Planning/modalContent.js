@@ -1,11 +1,14 @@
 // Generate modal content based on event type
 function generateModalContent(event) {
-    let html = `
-        <div class="form-group">
-            <label><span class="status-badge required" data-field-id="startTime"> </span>Start Time</label>
-            <input type="time" id="startTime" value="${event.time ? convertTo24Hour(event.time) : ''}">
-        </div>
-    `;
+    let html = '';
+    if (event.type !== 'end-of-wedding') {
+        html += `
+            <div class="form-group">
+                <label><span class="status-badge required" data-field-id="startTime"></span>Start Time</label>
+                <input type="time" id="startTime" value="${event.time ? convertTo24Hour(event.time) : ''}">
+            </div>
+        `;
+    }
     // Add event-specific fields based on type
     switch(event.type) {
         case 'ceremony':
@@ -63,7 +66,11 @@ function generateModalContent(event) {
                                         <div>Search</div>
                                     </button>
                                     <button class="song-icon-btn secondary song-link-btn" data-input-id="specialActivitySongTitle" title="Insert Link">
-                                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.9 12a5 5 0 015-5h3v2h-3a3 3 0 100 6h3v2h-3a5 5 0 01-5-5zm7-1h2v2h-2v-2zm4.1-4h-3v2h3a3 3 0 010 6h-3v2h3a5 5 0 000-10z"/></svg>
+                                        <svg viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M10.59 13.41a1 1 0 010-1.41l2.59-2.59a1 1 0 011.41 1.41l-2.59 2.59a1 1 0 01-1.41 0z"/>
+                                            <path d="M7 17a5 5 0 010-7.07l2.12-2.12a1 1 0 111.41 1.41L8.41 11.34a3 3 0 104.24 4.24l2.12-2.12a1 1 0 111.41 1.41L14.07 17A5 5 0 017 17z"/>
+                                            <path d="M17 7a5 5 0 010 7.07l-1.06 1.06a1 1 0 11-1.41-1.41L15.59 12A3 3 0 0011.34 7.76l-1.06 1.06a1 1 0 11-1.41-1.41L9.93 6A5 5 0 0117 7z"/>
+                                        </svg>
                                         <div>Insert Link</div>
                                     </button>
                                 </div>
@@ -132,7 +139,7 @@ function generateModalContent(event) {
         case 'end-of-wedding':
             html += `
                 <div class="form-group">
-                    <label><span class="status-badge required" data-field-id="endTime"></span>End Time</label>
+                    <label><span class="status-badge required" data-field-id="endTime"></span>Time that wedding ends</label>
                     <input type="time" id="endTime" value="${event.details.endTime || ''}">
                 </div>
             `;
