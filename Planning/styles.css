@@ -48,10 +48,16 @@ body {
     width: 100%;
     max-width: 640px;
 }
-.progress-bar {
+.progress-track {
     height: 10px;
-    background: #1a9e8e;
+    background: #e9ecef;
+    border: 2px solid #cbd3da;
     border-radius: 6px;
+    overflow: hidden;
+}
+.progress-bar {
+    height: 100%;
+    background: #1a9e8e;
     transition: width 0.3s ease;
 }
 .progress-text {

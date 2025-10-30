@@ -1142,6 +1142,9 @@ function saveEventDetails(eventId) {
             updateStatusBadgeDisplay(fieldId, eventForBadges);
         });
     }
+    // Re-render cards so per-card required counters refresh
+    renderEvents();
+    setupDragAndDrop();
     updateOverallProgress();
 }
 

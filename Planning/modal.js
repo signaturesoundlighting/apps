@@ -565,6 +565,9 @@ function saveEventDetails(eventId) {
     }
 
     showSaveIndicator();
+    // Refresh cards and progress so per-card counters update in real-time
+    if (typeof renderEvents === 'function') { renderEvents(); if (typeof setupDragAndDrop==='function') setupDragAndDrop(); }
+    if (typeof updateOverallProgress === 'function') updateOverallProgress();
     if (typeof updateOverallProgress === 'function') updateOverallProgress();
 
     // Update status badges

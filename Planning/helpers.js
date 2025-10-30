@@ -165,5 +165,5 @@ function updateOverallProgress() {
     const bar = document.getElementById('overallProgressBar');
     const txt = document.getElementById('overallProgressText');
     if (bar) bar.style.width = pct + '%';
-    if (txt) txt.textContent = `${remaining} remaining — ${pct}%`;
+    if (txt) txt.textContent = `${done}/${total} ❓ — ${pct}%`;
 }
