@@ -2,10 +2,18 @@
 function generateModalContent(event) {
     let html = `
         <div class="form-group">
-            <label><span class="status-badge optional" data-field-id="startTime">Optional</span>Start Time</label>
+            <label><span class="status-badge required" data-field-id="startTime"> </span>Start Time</label>
             <input type="time" id="startTime" value="${event.time ? convertTo24Hour(event.time) : ''}">
         </div>
     `;
+        case 'end-of-wedding':
+            html += `
+                <div class="form-group">
+                    <label><span class="status-badge required" data-field-id="endTime"></span>End Time</label>
+                    <input type="time" id="endTime" value="${event.details.endTime || ''}">
+                </div>
+            `;
+            break;
 
     // Add event-specific fields based on type
     switch(event.type) {

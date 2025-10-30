@@ -12,16 +12,17 @@ function renderEvents() {
 // Create an event card
 function createEventCard(event) {
     const card = document.createElement('div');
-    card.className = 'event-card';
+    card.className = 'event-card' + (event.type === 'end-of-wedding' ? ' end-final' : '');
     card.setAttribute('data-id', event.id);
     card.setAttribute('data-type', event.type);
     
+    const dragHtml = event.type === 'end-of-wedding' ? '' : '<div class="drag-handle">☰</div>';
     card.innerHTML = `
         <div class="event-content">
             <div class="event-name">${event.name}</div>
             <div class="event-time">${event.time}</div>
         </div>
-        <div class="drag-handle">☰</div>
+        ${dragHtml}
     `;
     
     return card;

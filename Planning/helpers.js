@@ -49,7 +49,7 @@ function generateSongInput(id, label, value, maxItems = 1) {
     `).join('');
     return `
         <div class="form-group">
-            <label>${label}</label>
+            <label><span class="status-badge required" data-field-id="${id}" data-badge-type="songs"></span>${label}</label>
             <div class="song-box" data-input-id="${id}">
                 <input type="hidden" id="${id}" value='${JSON.stringify(items)}' data-max="${maxItems}">
                 <div class="song-box-header"><span class="song-count" id="${id}_count">${countText}</span><span class="song-note">♪</span></div>

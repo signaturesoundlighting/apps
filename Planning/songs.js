@@ -265,6 +265,9 @@ function selectSong(song) {
   input.value = JSON.stringify(items);
   updateSongUI(currentSongInputId, items, max);
   saveEventDetails(currentEventId);
+  if (typeof updateStatusBadgeDisplay === 'function') {
+    try { updateStatusBadgeDisplay(currentSongInputId, events.find(e => e.id === currentEventId)); } catch(_) {}
+  }
   closeSongSearch();
 }
 
@@ -358,6 +361,9 @@ document.addEventListener('click', (e) => {
   const max = parseInt(input.getAttribute('data-max') || '1', 10);
   updateSongUI(inputId, items, max);
   saveEventDetails(currentEventId);
+  if (typeof updateStatusBadgeDisplay === 'function') {
+    try { updateStatusBadgeDisplay(inputId, events.find(e => e.id === currentEventId)); } catch(_) {}
+  }
 });
 
 // Attach handlers once

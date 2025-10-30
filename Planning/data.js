@@ -15,11 +15,12 @@ let events = [
     { id: 13, type: 'open-dancing', name: 'Open Dancing', time: '', details: {} },
     { id: 14, type: 'last-group-dance', name: 'Last Group Dance', time: '', details: {} },
     { id: 15, type: 'private-last-dance', name: 'Private Last Dance', time: '', details: {} },
-    { id: 16, type: 'grand-exit', name: 'Grand Exit', time: '', details: {} }
+    { id: 16, type: 'grand-exit', name: 'Grand Exit', time: '', details: {} },
+    { id: 17, type: 'end-of-wedding', name: 'End of Wedding', time: '', details: {} }
 ];
 
 let currentEventId = null;
-let nextId = 17;
+let nextId = 18;
 let currentSongInputId = null;
 
 // Mobile drag state

@@ -7,11 +7,11 @@ function openGeneralInfo() {
     modalTitle.innerHTML = `<span>General Info</span>`;
     modalBody.innerHTML = `
         <div class="form-group">
-            <label>Venue Name</label>
+            <label><span class=\"status-badge required\" data-field-id=\"venueName\"></span>Venue Name</label>
             <input type="text" id="venueName" value="${generalInfo.venueName || ''}" placeholder="Venue name">
         </div>
         <div class="form-group">
-            <label>Venue Address</label>
+            <label><span class=\"status-badge required\" data-field-id=\"venueAddress\"></span>Venue Address</label>
             <input type="text" id="venueAddress" value="${generalInfo.venueAddress || ''}" placeholder="Full address">
         </div>
         <div class="form-group">
@@ -22,21 +22,21 @@ function openGeneralInfo() {
         </div>
         <div id="ceremonyVenueSection" style="display: ${generalInfo.differentCeremonyVenue ? 'block' : 'none'};">
             <div class="form-group">
-                <label>Ceremony Venue Name</label>
+                <label><span class=\"status-badge required\" data-field-id=\"ceremonyVenueName\"></span>Ceremony Venue Name</label>
                 <input type="text" id="ceremonyVenueName" value="${generalInfo.ceremonyVenueName || ''}" placeholder="Ceremony venue name">
             </div>
             <div class="form-group">
-                <label>Ceremony Venue Address</label>
+                <label><span class=\"status-badge required\" data-field-id=\"ceremonyVenueAddress\"></span>Ceremony Venue Address</label>
                 <input type="text" id="ceremonyVenueAddress" value="${generalInfo.ceremonyVenueAddress || ''}" placeholder="Full address">
             </div>
         </div>
         <div class="info-grid">
             <div class="form-group">
-                <label>Planner Name</label>
+                <label><span class=\"status-badge required\" data-field-id=\"plannerName\"></span>Planner Name</label>
                 <input type="text" id="plannerName" value="${generalInfo.plannerName || ''}" placeholder="Planner's name">
             </div>
             <div class="form-group">
-                <label>Planner Email</label>
+                <label><span class=\"status-badge required\" data-field-id=\"plannerEmail\"></span>Planner Email</label>
                 <input type="email" id="plannerEmail" value="${generalInfo.plannerEmail || ''}" placeholder="email@example.com">
             </div>
         </div>
@@ -198,6 +198,7 @@ function addModalFooter(eventId) {
         modalContent.appendChild(footer);
     }
     
+    const current = events.find(e => e.id === eventId);
     footer.innerHTML = `
         <button class="nav-btn" onclick="navigateEvent('prev')" ${!hasPrev ? 'disabled' : ''}>
             <svg viewBox="0 0 24 24" fill="currentColor">
@@ -205,12 +206,13 @@ function addModalFooter(eventId) {
             </svg>
             Previous
         </button>
-        <button class="delete-event-btn" id="deleteBtn_${eventId}">
+        ${current && current.type === 'end-of-wedding' ? '' : `<button class="delete-event-btn" id="deleteBtn_${eventId}">`
+        }
             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
             </svg>
             Delete Event
-        </button>
+        ${current && current.type === 'end-of-wedding' ? '' : `</button>`}
         <button class="nav-btn" onclick="navigateEvent('next')" ${!hasNext ? 'disabled' : ''}>
             Next
             <svg viewBox="0 0 24 24" fill="currentColor">
@@ -239,6 +241,11 @@ function navigateEvent(direction) {
 }
 
 function deleteEvent(eventId) {
+    const ev = events.find(e => e.id === eventId);
+    if (ev && ev.type === 'end-of-wedding') {
+        alert('The End of Wedding card cannot be deleted.');
+        return;
+    }
     openConfirm('Are you sure you want to delete this event?', () => {
         events = events.filter(e => e.id !== eventId);
         renderEvents();
@@ -332,7 +339,13 @@ function updateStatusBadgeDisplay(fieldId, event) {
     const inputEl = document.getElementById(fieldId);
     let hasValue = false;
     if (inputEl) {
-        if (inputEl.type === 'checkbox' || inputEl.type === 'radio') {
+        if (inputEl.hasAttribute('data-max')) {
+            try {
+                const arr = JSON.parse(inputEl.value || '[]');
+                const max = parseInt(inputEl.getAttribute('data-max') || '1', 10);
+                hasValue = Array.isArray(arr) && arr.length >= max;
+            } catch { hasValue = false; }
+        } else if (inputEl.type === 'checkbox' || inputEl.type === 'radio') {
             hasValue = !!inputEl.checked;
         } else {
             hasValue = !!(inputEl.value && inputEl.value.trim());

@@ -122,6 +122,12 @@ body {
     touch-action: pan-y;
 }
 
+/* Fixed end-of-wedding card styling with divider above */
+.event-card.end-final {
+    margin-top: 24px;
+    border-top: 3px solid #1a9e8e;
+}
+
 .event-card:hover {
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     transform: translateY(-2px);

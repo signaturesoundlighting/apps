@@ -84,7 +84,7 @@ function generateSongInput(id, label, value, maxItems = 1) {
     `).join('');
     return `
         <div class="form-group">
-            <label>${label}</label>
+            <label><span class="status-badge required" data-field-id="${id}" data-badge-type="songs"></span>${label}</label>
             <div class="song-box" data-input-id="${id}">
                 <input type="hidden" id="${id}" value='${JSON.stringify(items)}' data-max="${maxItems}">
                 <div class="song-box-header"><span class="song-count" id="${id}_count">${countText}</span><span class="song-note">♪</span></div>
@@ -562,10 +562,18 @@ function navigateEvent(direction) {
 function generateModalContent(event) {
     let html = `
         <div class="form-group">
-            <label><span class="status-badge optional" data-field-id="startTime">Optional</span>Start Time</label>
+            <label><span class="status-badge required" data-field-id="startTime"></span>Start Time</label>
             <input type="time" id="startTime" value="${event.time ? convertTo24Hour(event.time) : ''}">
         </div>
     `;
+        case 'end-of-wedding':
+            html += `
+                <div class="form-group">
+                    <label><span class="status-badge required" data-field-id="endTime"></span>End Time</label>
+                    <input type="time" id="endTime" value="${event.details.endTime || ''}">
+                </div>
+            `;
+            break;
 
     // Add event-specific fields based on type
     switch(event.type) {
@@ -1169,7 +1177,13 @@ function updateStatusBadgeDisplay(fieldId, event) {
     const inputEl = document.getElementById(fieldId);
     let hasValue = false;
     if (inputEl) {
-        if (inputEl.type === 'checkbox' || inputEl.type === 'radio') {
+        if (inputEl.hasAttribute('data-max')) {
+            try {
+                const arr = JSON.parse(inputEl.value || '[]');
+                const max = parseInt(inputEl.getAttribute('data-max') || '1', 10);
+                hasValue = Array.isArray(arr) && arr.length >= max;
+            } catch { hasValue = false; }
+        } else if (inputEl.type === 'checkbox' || inputEl.type === 'radio') {
             hasValue = !!inputEl.checked;
         } else {
             hasValue = !!(inputEl.value && inputEl.value.trim());

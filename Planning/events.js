@@ -35,7 +35,12 @@ function addStandardEvent(template) {
         time: '',
         details: {}
     };
-    events.push(newEvent);
+    const endIdx = events.findIndex(e => e.type === 'end-of-wedding');
+    if (endIdx >= 0) {
+        events.splice(endIdx, 0, newEvent);
+    } else {
+        events.push(newEvent);
+    }
     renderEvents();
     setupDragAndDrop();
     closeAddEventModal();
@@ -51,7 +56,12 @@ function createCustomEvent() {
         time: '',
         details: {}
     };
-    events.push(newEvent);
+    const endIdx = events.findIndex(e => e.type === 'end-of-wedding');
+    if (endIdx >= 0) {
+        events.splice(endIdx, 0, newEvent);
+    } else {
+        events.push(newEvent);
+    }
     renderEvents();
     setupDragAndDrop();
     closeAddEventModal();
