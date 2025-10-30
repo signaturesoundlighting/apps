@@ -6,15 +6,6 @@ function generateModalContent(event) {
             <input type="time" id="startTime" value="${event.time ? convertTo24Hour(event.time) : ''}">
         </div>
     `;
-        case 'end-of-wedding':
-            html += `
-                <div class="form-group">
-                    <label><span class="status-badge required" data-field-id="endTime"></span>End Time</label>
-                    <input type="time" id="endTime" value="${event.details.endTime || ''}">
-                </div>
-            `;
-            break;
-
     // Add event-specific fields based on type
     switch(event.type) {
         case 'ceremony':
@@ -135,6 +126,14 @@ function generateModalContent(event) {
                 <div class="form-group">
                     <label>Other details/anything else we should know?</label>
                     <textarea id="otherDetails" placeholder="Any additional information">${event.details.otherDetails || ''}</textarea>
+                </div>
+            `;
+            break;
+        case 'end-of-wedding':
+            html += `
+                <div class="form-group">
+                    <label><span class="status-badge required" data-field-id="endTime"></span>End Time</label>
+                    <input type="time" id="endTime" value="${event.details.endTime || ''}">
                 </div>
             `;
             break;

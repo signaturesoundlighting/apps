@@ -52,6 +52,9 @@ function setupDragAndDrop() {
         });
 
         // Make drag handle draggable on desktop
+        if (!dragHandle) {
+            return; // non-draggable card (e.g., End of Wedding)
+        }
         dragHandle.addEventListener('mousedown', (e) => {
             e.stopPropagation();
             card.draggable = true;
