@@ -662,7 +662,7 @@ function generateModalContent(event) {
         case 'cocktail-hour':
             html += `
                 <div class="form-group">
-                    <label>Where will this be taking place?</label>
+                    <label><span class="status-badge required" data-field-id="location"></span>Where will this be taking place?</label>
                     <input type="text" id="location" value="${event.details.location || ''}" placeholder="Venue name or location">
                 </div>
                 <div class="form-group">
@@ -819,7 +819,7 @@ function generateModalContent(event) {
         case 'toasts':
             html += `
                 <div class="form-group">
-                    <label>Who are giving toasts?</label>
+                    <label><span class="status-badge required" data-field-id="toastGivers"></span>Who are giving toasts?</label>
                     <textarea id="toastGivers" placeholder="List names in order and their relationship to the bride/groom i.e. Father of the bride John, Maid of honor Sarah, etc">${event.details.toastGivers || ''}</textarea>
                 </div>
                 <div class="form-group">
@@ -1005,7 +1005,7 @@ function generateModalContent(event) {
         case 'grand-exit':
             html += `
                 <div class="form-group">
-                    <label>Exit Style</label>
+                    <label><span class="status-badge required" data-field-id="exitStyle"></span>Exit Style</label>
                     <select id="exitStyle">
                         <option value="">Select...</option>
                         <option value="sparklers" ${event.details.exitStyle === 'sparklers' ? 'selected' : ''}>Sparklers</option>
@@ -1406,17 +1406,33 @@ function computeEventCompletion(event) {
 function updateOverallProgress() {
     let total = 0;
     let done = 0;
+    
+    // Add general info completion
+    if (typeof computeGeneralInfoCompletion === 'function') {
+        const generalInfoCompletion = computeGeneralInfoCompletion();
+        total += generalInfoCompletion.total;
+        done += generalInfoCompletion.done;
+    }
+    
+    // Add event completion
     events.forEach(ev => {
         const c = computeEventCompletion(ev);
         total += c.total;
         done += c.done;
     });
+    
     const remaining = Math.max(total - done, 0);
     const pct = total > 0 ? Math.round((done / total) * 100) : 0;
     const bar = document.getElementById('overallProgressBar');
     const txt = document.getElementById('overallProgressText');
     if (bar) bar.style.width = pct + '%';
-    if (txt) txt.textContent = `${remaining} remaining — ${pct}%`;
+    if (txt) {
+        const isComplete = total > 0 && done >= total;
+        const iconSVG = isComplete
+            ? '<svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: #2b8a3e; vertical-align: middle;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>'
+            : '<svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: #1a9e8e; vertical-align: middle;"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm2-7.5c0 1.54-1 2.14-1.8 2.6-.72.41-1.2.69-1.2 1.4V14h-2v-.7c0-1.5 1-2.1 1.8-2.6.72-.41 1.2-.69 1.2-1.4 0-.83-.67-1.5-1.5-1.5S9 7.47 9 8.3H7c0-2 1.8-3.3 4-3.3s4 1.35 4 3.5z"/></svg>';
+        txt.innerHTML = `${done}/${total} ${iconSVG} — ${pct}%`;
+    }
 }
 
 function generateLineDanceOptions(value, label, lineDances) {

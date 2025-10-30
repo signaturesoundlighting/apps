@@ -90,7 +90,7 @@ function generateModalContent(event) {
         case 'cocktail-hour':
             html += `
                 <div class="form-group">
-                    <label>Where will this be taking place?</label>
+                    <label><span class="status-badge required" data-field-id="location"></span>Where will this be taking place?</label>
                     <input type="text" id="location" value="${event.details.location || ''}" placeholder="Venue name or location">
                 </div>
                 <div class="form-group">
@@ -255,7 +255,7 @@ function generateModalContent(event) {
         case 'toasts':
             html += `
                 <div class="form-group">
-                    <label>Who are giving toasts?</label>
+                    <label><span class="status-badge required" data-field-id="toastGivers"></span>Who are giving toasts?</label>
                     <textarea id="toastGivers" placeholder="List names in order and their relationship to the bride/groom i.e. Father of the bride John, Maid of honor Sarah, etc">${event.details.toastGivers || ''}</textarea>
                 </div>
                 <div class="form-group">
@@ -452,7 +452,7 @@ function generateModalContent(event) {
         case 'grand-exit':
             html += `
                 <div class="form-group">
-                    <label>Exit Style</label>
+                    <label><span class="status-badge required" data-field-id="exitStyle"></span>Exit Style</label>
                     <select id="exitStyle">
                         <option value="">Select...</option>
                         <option value="sparklers" ${event.details.exitStyle === 'sparklers' ? 'selected' : ''}>Sparklers</option>

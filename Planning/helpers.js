@@ -234,11 +234,21 @@ function updateOverallProgress() {
     if (typeof events === 'undefined' || !Array.isArray(events)) return;
     let total = 0;
     let done = 0;
+    
+    // Add general info completion
+    if (typeof computeGeneralInfoCompletion === 'function') {
+        const generalInfoCompletion = computeGeneralInfoCompletion();
+        total += generalInfoCompletion.total;
+        done += generalInfoCompletion.done;
+    }
+    
+    // Add event completion
     events.forEach(ev => {
         const c = computeEventCompletion(ev);
         total += c.total;
         done += c.done;
     });
+    
     const remaining = Math.max(total - done, 0);
     const pct = total > 0 ? Math.round((done / total) * 100) : 0;
     const bar = document.getElementById('overallProgressBar');
