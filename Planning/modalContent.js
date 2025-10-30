@@ -14,11 +14,11 @@ function generateModalContent(event) {
         case 'ceremony':
             html += `
                 <div class="form-group">
-                    <label><span class="status-badge optional" data-field-id="location">Optional</span>Where will this be taking place?</label>
+                    <label><span class="status-badge required" data-field-id="location"></span>Where will this be taking place?</label>
                     <input type="text" id="location" value="${event.details.location || ''}" placeholder="Location at venue i.e. under the pavilion">
                 </div>
                 <div class="form-group">
-                    <label><span class="status-badge optional" data-field-id="arrivalMusicStyle">Optional</span>Style/genre of music as guests arrive</label>
+                    <label><span class="status-badge required" data-field-id="arrivalMusicStyle"></span>Style/genre of music as guests arrive</label>
                     <textarea id="arrivalMusicStyle" placeholder="i.e. Piano instrumentals">${event.details.arrivalMusicStyle || ''}</textarea>
                 </div>
                 ${generateSongInput('processionalSong', 'Processional Song (Wedding Party/Family Members)', event.details.processionalSong, 1)}
@@ -38,11 +38,11 @@ function generateModalContent(event) {
                 </div>
                 <div id="specialActivityDetails" class="conditional-section" style="display: ${event.details.hasSpecialActivity === 'yes' ? 'block' : 'none'};">
                     <div class="form-group">
-                        <label><span class="status-badge optional" data-field-id="specialActivityType" data-conditional="hasSpecialActivity:yes"></span>What kind of event?</label>
+                        <label><span class="status-badge required" data-field-id="specialActivityType" data-conditional="hasSpecialActivity:yes"></span>What kind of event?</label>
                         <input type="text" id="specialActivityType" value="${event.details.specialActivityType || ''}" placeholder="e.g., Unity sand ritual, Handfasting">
                     </div>
                     <div class="form-group">
-                        <label><span class="status-badge optional" data-field-id="specialActivitySong" data-conditional="hasSpecialActivity:yes"></span>Do you want a song for your special event?</label>
+                        <label><span class="status-badge required" data-field-id="specialActivitySong" data-conditional="hasSpecialActivity:yes"></span>Do you want a song for your special event?</label>
                         <div class="radio-group">
                             <label class="radio-option">
                                 <input type="radio" name="specialActivitySong" value="yes" ${event.details.specialActivitySong === 'yes' ? 'checked' : ''} onchange="toggleSpecialActivitySongEntry()">
@@ -56,7 +56,7 @@ function generateModalContent(event) {
                     </div>
                     <div id="specialActivitySongEntry" style="display: ${event.details.specialActivitySong === 'yes' ? 'block' : 'none'};">
                         <div class="form-group">
-                            <label><span class="status-badge optional" data-field-id="specialActivitySongTitle" data-conditional="specialActivitySong:yes" data-badge-type="songs"></span>Song for Special Activity</label>
+                            <label><span class="status-badge required" data-field-id="specialActivitySongTitle" data-conditional="specialActivitySong:yes" data-badge-type="songs"></span>Song for Special Activity</label>
                             <div class="song-box" data-input-id="specialActivitySongTitle">
                                 <input type="hidden" id="specialActivitySongTitle" value='${JSON.stringify([])}' data-max="1">
                                 <div class="song-box-header"><span class="song-count" id="specialActivitySongTitle_count">0/1</span><span class="song-note">♪</span></div>
