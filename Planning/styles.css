@@ -58,20 +58,19 @@ body {
 
 /* Status badge for field requirement/completion */
 .status-badge {
-    display: inline-block;
-    min-width: 70px;
-    padding: 2px 8px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
     margin-right: 8px;
     vertical-align: middle;
-    cursor: pointer;
     user-select: none;
 }
-.status-badge.optional { background: #e9ecef; color: #495057; }
-.status-badge.required { background: #ffe8cc; color: #d9480f; }
-.status-badge.completed { background: #d3f9d8; color: #2b8a3e; }
+.status-badge svg { width: 18px; height: 18px; display: block; }
+.status-badge.optional { background: transparent; }
+.status-badge.required { background: transparent; }
+.status-badge.completed { background: transparent; }
 
 .general-info-card {
     background: white;

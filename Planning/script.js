@@ -445,20 +445,10 @@ function openModal(eventId) {
 
     // Add delete button event listener
     const deleteBtn = document.getElementById(`deleteBtn_${eventId}`);
-    // Wire up status badge toggles
+    // Initialize status badges (non-interactive)
     document.querySelectorAll('.status-badge').forEach(badge => {
-        badge.addEventListener('click', (e) => {
-            e.preventDefault();
-            const fieldId = badge.getAttribute('data-field-id');
-            const event = events.find(e => e.id === currentEventId);
-            if (!event) return;
-            if (!event.details.statusRequirements) event.details.statusRequirements = {};
-            const current = event.details.statusRequirements[fieldId] || 'optional';
-            const next = current === 'optional' ? 'required' : 'optional';
-            event.details.statusRequirements[fieldId] = next;
-            updateStatusBadgeDisplay(fieldId, event);
-            showSaveIndicator();
-        });
+        const fieldId = badge.getAttribute('data-field-id');
+        updateStatusBadgeDisplay(fieldId, events.find(e => e.id === currentEventId));
     });
     if (deleteBtn) {
         deleteBtn.addEventListener('click', (e) => {
@@ -1158,11 +1148,24 @@ function toggleLineDanceOther() {
 }
 
 // Status badge utilities
+function isFieldOptional(fieldId) {
+    return fieldId === 'startTime' || fieldId === 'otherDetails';
+}
+
+function getBadgeIcon(type) {
+    if (type === 'completed') {
+        return '<svg viewBox="0 0 24 24" fill="#2b8a3e"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
+    }
+    if (type === 'required') {
+        return '<svg viewBox="0 0 24 24" fill="#d9480f"><circle cx="12" cy="12" r="10"/><rect x="11" y="6" width="2" height="8" fill="#fff"/><rect x="11" y="16" width="2" height="2" fill="#fff"/></svg>';
+    }
+    return '<svg viewBox="0 0 24 24" fill="#adb5bd"><circle cx="12" cy="12" r="9" stroke="#adb5bd" stroke-width="2" fill="none"/></svg>';
+}
+
 function updateStatusBadgeDisplay(fieldId, event) {
     const badge = document.querySelector(`.status-badge[data-field-id="${fieldId}"]`);
     if (!badge || !event) return;
-    const reqMap = event.details.statusRequirements || {};
-    const requirement = reqMap[fieldId] || 'optional';
+    const requirement = isFieldOptional(fieldId) ? 'optional' : 'required';
     const inputEl = document.getElementById(fieldId);
     let hasValue = false;
     if (inputEl) {
@@ -1173,19 +1176,19 @@ function updateStatusBadgeDisplay(fieldId, event) {
         }
     }
     let cls = 'optional';
-    let text = 'Optional';
+    let iconType = 'optional';
     if (requirement === 'required') {
         if (hasValue) {
             cls = 'completed';
-            text = 'Completed';
+            iconType = 'completed';
         } else {
             cls = 'required';
-            text = 'Required';
+            iconType = 'required';
         }
     }
     badge.classList.remove('optional', 'required', 'completed');
     badge.classList.add(cls);
-    badge.textContent = text;
+    badge.innerHTML = getBadgeIcon(iconType);
 }
 
 function generateLineDanceOptions(value, label, lineDances) {
