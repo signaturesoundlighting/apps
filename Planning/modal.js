@@ -50,6 +50,11 @@ function openGeneralInfo() {
             input.addEventListener('input', () => saveGeneralInfo());
         }
     });
+    // Initialize badges for general info
+    modalBody.querySelectorAll('.status-badge').forEach(b => {
+        const fieldId = b.getAttribute('data-field-id');
+        updateStatusBadgeDisplay(fieldId);
+    });
     
     const footer = modal.querySelector('.modal-footer');
     if (footer) footer.remove();
@@ -64,6 +69,12 @@ function saveGeneralInfo() {
     generalInfo.plannerName = document.getElementById('plannerName')?.value || '';
     generalInfo.plannerEmail = document.getElementById('plannerEmail')?.value || '';
     showSaveIndicator();
+    // Refresh badges after changes
+    const modalBody = document.getElementById('modalBody');
+    modalBody.querySelectorAll('.status-badge').forEach(b => {
+        const fieldId = b.getAttribute('data-field-id');
+        updateStatusBadgeDisplay(fieldId);
+    });
 }
 
 function toggleCeremonyVenue() {
@@ -331,8 +342,13 @@ function toggleLineDanceOther() {
 }
 
 // Status badge utilities
-function isFieldOptional(fieldId) {
-    return fieldId === 'startTime' || fieldId === 'otherDetails';
+function isFieldOptional(fieldId, event) {
+    if (fieldId === 'otherDetails') return true;
+    if (fieldId === 'startTime') {
+        if (event && event.type === 'ceremony') return false;
+        return true;
+    }
+    return false;
 }
 
 // Special dance type handlers (global)
@@ -386,8 +402,8 @@ function getBadgeIcon(type) {
 
 function updateStatusBadgeDisplay(fieldId, event) {
     const badge = document.querySelector(`.status-badge[data-field-id="${fieldId}"]`);
-    if (!badge || !event) return;
-    let requirement = isFieldOptional(fieldId) ? 'optional' : 'required';
+    if (!badge) return;
+    let requirement = isFieldOptional(fieldId, event) ? 'optional' : 'required';
     const conditional = badge.getAttribute('data-conditional');
     if (conditional) {
         const [condField, condValue] = conditional.split(':');

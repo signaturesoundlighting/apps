@@ -1213,8 +1213,13 @@ function toggleLineDanceOther() {
 }
 
 // Status badge utilities
-function isFieldOptional(fieldId) {
-    return fieldId === 'startTime' || fieldId === 'otherDetails';
+function isFieldOptional(fieldId, event) {
+    if (fieldId === 'otherDetails') return true;
+    if (fieldId === 'startTime') {
+        if (event && event.type === 'ceremony') return false;
+        return true;
+    }
+    return false;
 }
 
 function getBadgeIcon(type) {
@@ -1229,8 +1234,8 @@ function getBadgeIcon(type) {
 
 function updateStatusBadgeDisplay(fieldId, event) {
     const badge = document.querySelector(`.status-badge[data-field-id="${fieldId}"]`);
-    if (!badge || !event) return;
-    let requirement = isFieldOptional(fieldId) ? 'optional' : 'required';
+    if (!badge) return;
+    let requirement = isFieldOptional(fieldId, event) ? 'optional' : 'required';
     const conditional = badge.getAttribute('data-conditional');
     if (conditional) {
         const [condField, condValue] = conditional.split(':');
