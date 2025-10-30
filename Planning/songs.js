@@ -331,10 +331,44 @@ function openSongLink(inputId) {
   }
 }
 
+// Playlist link flow (max >= 2)
+function openPlaylistLink(inputId) {
+  const input = document.getElementById(inputId);
+  const playlistEl = document.getElementById(`${inputId}_playlist`);
+  if (!input || !playlistEl) return;
+  const raw = prompt('Paste your Spotify or Apple Music playlist link here:');
+  if (raw && raw.trim()) {
+    let url = raw.trim();
+    if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
+    let isValid = false;
+    try {
+      const u = new URL(url);
+      isValid = /\.(com|net|org|io|co|us|uk|edu|gov|app|music|fm|tv)(:|\/|$)/i.test(u.hostname);
+    } catch(_) { isValid = false; }
+    if (!isValid) { alert('Please enter a valid playlist URL.'); return; }
+    // Save playlist and clear songs list
+    playlistEl.value = url;
+    input.value = '[]';
+    const countEl = document.getElementById(`${inputId}_count`);
+    if (countEl) countEl.textContent = 'Playlist link';
+    const listEl = document.getElementById(`${inputId}_items`);
+    if (listEl) listEl.innerHTML = '';
+    saveEventDetails(currentEventId);
+    if (typeof updateStatusBadgeDisplay === 'function') {
+      try { updateStatusBadgeDisplay(inputId, events.find(e => e.id === currentEventId)); } catch(_) {}
+    }
+  }
+}
+
 // Update the visual list and counter for a song input
 function updateSongUI(inputId, items, max) {
   const countEl = document.getElementById(`${inputId}_count`);
-  if (countEl) countEl.textContent = `${items.length}/${max || parseInt(document.getElementById(inputId)?.getAttribute('data-max')||'1',10)}`;
+  const playlistEl = document.getElementById(`${inputId}_playlist`);
+  if (playlistEl && playlistEl.value.trim()) {
+    if (countEl) countEl.textContent = 'Playlist link';
+  } else {
+    if (countEl) countEl.textContent = `${items.length}/${max || parseInt(document.getElementById(inputId)?.getAttribute('data-max')||'1',10)}`;
+  }
   const listEl = document.getElementById(`${inputId}_items`);
   if (listEl) {
     listEl.innerHTML = items.map((t, i) => `

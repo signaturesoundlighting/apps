@@ -43,6 +43,24 @@ body {
     margin-top: 4px;
 }
 
+.progress-container {
+    margin: 12px auto 0;
+    width: 100%;
+    max-width: 640px;
+}
+.progress-bar {
+    height: 10px;
+    background: #1a9e8e;
+    border-radius: 6px;
+    transition: width 0.3s ease;
+}
+.progress-text {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #333;
+    text-align: right;
+}
+
 .general-info-section {
     margin-bottom: 32px;
 }
@@ -157,6 +175,14 @@ body {
     margin-bottom: 4px;
     color: #000;
 }
+.req-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #666;
+    font-size: 12px;
+}
+.req-indicator svg { width: 14px; height: 14px; fill: #d9480f; }
 
 .event-time {
     font-size: 14px;
@@ -663,6 +689,11 @@ input[type="checkbox"], input[type="radio"] {
 .song-chip button { background: #ff6b6b; color: #fff; border: none; border-radius: 6px; padding: 4px 8px; cursor: pointer; font-weight: 600; }
 .song-chip button:hover { background: #ee5253; }
 .song-help { color: #666; font-size: 12px; margin-bottom: 6px; }
+
+/* Make line dance labels match body size */
+.radio-group .radio-option span {
+    font-size: 14px;
+}
 
 .song-input-wrapper input {
     flex: 1;
