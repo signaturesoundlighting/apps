@@ -303,9 +303,25 @@ function openSongLink(inputId) {
   let items = [];
   try { items = JSON.parse(input.value || '[]'); if (!Array.isArray(items)) items = []; } catch { items = []; }
   if (items.length >= max) { alert(`You can add up to ${max} song(s) in this section.`); return; }
-  const url = prompt('Paste your Spotify or Apple Music link here:');
-  if (url && url.trim()) {
-    items.push(url.trim());
+  const raw = prompt('Paste your Spotify or Apple Music link here:');
+  if (raw && raw.trim()) {
+    let url = raw.trim();
+    // Prepend protocol if missing
+    if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
+    // Validate URL and require a common TLD
+    let isValid = false;
+    try {
+      const u = new URL(url);
+      // Basic TLD check; extend as needed
+      isValid = /\.(com|net|org|io|co|us|uk|edu|gov|app|music|fm|tv)(:|\/|$)/i.test(u.hostname);
+    } catch (_) {
+      isValid = false;
+    }
+    if (!isValid) {
+      alert('Please enter a valid URL (must include a recognized domain like .com, .net, etc).');
+      return;
+    }
+    items.push(url);
     input.value = JSON.stringify(items);
     updateSongUI(inputId, items, max);
     saveEventDetails(currentEventId);

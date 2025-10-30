@@ -6,15 +6,13 @@ function openGeneralInfo() {
     
     modalTitle.innerHTML = `<span>General Info</span>`;
     modalBody.innerHTML = `
-        <div class="info-grid">
-            <div class="form-group">
-                <label>Venue Name</label>
-                <input type="text" id="venueName" value="${generalInfo.venueName || ''}" placeholder="Venue name">
-            </div>
-            <div class="form-group">
-                <label>Venue Address</label>
-                <input type="text" id="venueAddress" value="${generalInfo.venueAddress || ''}" placeholder="Full address">
-            </div>
+        <div class="form-group">
+            <label>Venue Name</label>
+            <input type="text" id="venueName" value="${generalInfo.venueName || ''}" placeholder="Venue name">
+        </div>
+        <div class="form-group">
+            <label>Venue Address</label>
+            <input type="text" id="venueAddress" value="${generalInfo.venueAddress || ''}" placeholder="Full address">
         </div>
         <div class="form-group">
             <label class="checkbox-option">
@@ -22,7 +20,7 @@ function openGeneralInfo() {
                 <span>My ceremony will be at a different venue</span>
             </label>
         </div>
-        <div id="ceremonyVenueSection" class="info-grid" style="display: ${generalInfo.differentCeremonyVenue ? 'grid' : 'none'};">
+        <div id="ceremonyVenueSection" style="display: ${generalInfo.differentCeremonyVenue ? 'block' : 'none'};">
             <div class="form-group">
                 <label>Ceremony Venue Name</label>
                 <input type="text" id="ceremonyVenueName" value="${generalInfo.ceremonyVenueName || ''}" placeholder="Ceremony venue name">
