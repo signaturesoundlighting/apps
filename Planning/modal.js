@@ -359,6 +359,38 @@ function toggleMusicChoice() {
     }
 }
 
+function toggleDinnerMusicChoice() {
+    const selected = document.querySelector('input[name="dinnerMusicChoice"]:checked');
+    const showGenre = selected && selected.value === 'genre';
+    const showPlaylist = selected && selected.value === 'playlist';
+    const styleGroup = document.getElementById('dinnerMusicStyleGroup');
+    const songsGroup = document.getElementById('dinnerSongsGroup');
+    if (styleGroup) styleGroup.style.display = showGenre ? 'block' : 'none';
+    if (songsGroup) songsGroup.style.display = showPlaylist ? 'block' : 'none';
+    saveEventDetails(currentEventId);
+    if (typeof updateStatusBadgeDisplay === 'function') {
+        updateStatusBadgeDisplay('dinnerMusicChoice', events.find(e => e.id === currentEventId));
+        updateStatusBadgeDisplay('dinnerMusicStyle', events.find(e => e.id === currentEventId));
+        updateStatusBadgeDisplay('dinnerSongs', events.find(e => e.id === currentEventId));
+    }
+}
+
+// Format time input to automatically format as 00:00 with max 4 digits
+function formatTimeInput(input) {
+    let value = input.value.replace(/\D/g, ''); // Remove non-digits
+    if (value.length > 4) value = value.slice(0, 4); // Limit to 4 digits
+    
+    if (value.length >= 3) {
+        // Format as MM:SS
+        value = value.slice(0, 2) + ':' + value.slice(2, 4);
+    } else if (value.length >= 1) {
+        // Format as 0M:SS or MM:SS
+        value = value.padStart(2, '0') + (value.length > 2 ? ':' + value.slice(2) : '');
+    }
+    
+    input.value = value;
+}
+
 // Status badge utilities
 function isFieldOptional(fieldId, event) {
     if (fieldId === 'otherDetails') return true;

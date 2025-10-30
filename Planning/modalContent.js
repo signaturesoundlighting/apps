@@ -15,7 +15,7 @@ function generateModalContent(event) {
             html += `
                 <div class="form-group">
                     <label><span class="status-badge required" data-field-id="location"></span>Where will this be taking place?</label>
-                    <input type="text" id="location" value="${event.details.location || ''}" placeholder="Location at venue i.e. under the pavilion">
+                    <input type="text" id="location" value="${event.details.location || ''}" placeholder="Location at venue i.e. on patio">
                 </div>
                 <div class="form-group">
                     <label><span class="status-badge required" data-field-id="arrivalMusicStyle"></span>Style/genre of music as guests arrive</label>
@@ -219,7 +219,7 @@ function generateModalContent(event) {
                     </div>
                 </div>
                 <div id="weddingPartySection" class="conditional-section" style="display: ${event.details.introduceParty === 'yes' ? 'block' : 'none'};">
-                    ${generateSongInput('introSong', 'Wedding Party Introduction Song', event.details.introSong, 1)}
+                    ${generateSongInput('introSong', 'Wedding Party Introduction Song', event.details.introSong, 1, 'introduceParty:yes')}
                     <div class="form-group">
                         <label><span class="status-badge required" data-field-id="weddingParty" data-conditional="introduceParty:yes"></span>Wedding Party Names (in order)</label>
                         <textarea id="weddingParty" placeholder="List names in order of introduction">${event.details.weddingParty || ''}</textarea>

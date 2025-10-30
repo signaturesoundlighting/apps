@@ -591,7 +591,7 @@ function generateModalContent(event) {
             html += `
                 <div class="form-group">
                     <label><span class="status-badge required" data-field-id="location"></span>Where will this be taking place?</label>
-                    <input type="text" id="location" value="${event.details.location || ''}" placeholder="Location at venue i.e. under the pavilion">
+                    <input type="text" id="location" value="${event.details.location || ''}" placeholder="Location at venue i.e. on patio">
                 </div>
                 <div class="form-group">
                     <label><span class="status-badge required" data-field-id="arrivalMusicStyle"></span>Style/genre of music as guests arrive</label>
