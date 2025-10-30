@@ -436,10 +436,10 @@ input[type="checkbox"], input[type="radio"] {
     background: #ff6b6b;
     color: white;
     border: none;
-    padding: 12px 24px;
+    padding: 10px 20px;
     border-radius: 8px;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
     margin-top: 0;
     transition: all 0.2s;

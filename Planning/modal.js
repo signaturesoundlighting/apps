@@ -308,6 +308,18 @@ function togglePhotoDashOther() {
     saveEventDetails(currentEventId);
 }
 
+function toggleDancePart(eventId) {
+    const selected = document.querySelector(`input[name="danceDuration_${eventId}"]:checked`);
+    const section = document.getElementById(`dancePartSection_${eventId}`);
+    if (section) section.style.display = selected && selected.value === 'part' ? 'grid' : 'none';
+    saveEventDetails(eventId);
+    if (typeof updateStatusBadgeDisplay === 'function') {
+        updateStatusBadgeDisplay(`danceDuration_${eventId}`, events.find(e => e.id === eventId));
+        updateStatusBadgeDisplay('startAt', events.find(e => e.id === eventId));
+        updateStatusBadgeDisplay('endAt', events.find(e => e.id === eventId));
+    }
+}
+
 function toggleLineDanceOther() {
     const checkbox = document.querySelector('input[name="lineDanceOther"]');
     const section = document.getElementById('lineDanceOtherText');
@@ -335,7 +347,15 @@ function getBadgeIcon(type) {
 function updateStatusBadgeDisplay(fieldId, event) {
     const badge = document.querySelector(`.status-badge[data-field-id="${fieldId}"]`);
     if (!badge || !event) return;
-    const requirement = isFieldOptional(fieldId) ? 'optional' : 'required';
+    let requirement = isFieldOptional(fieldId) ? 'optional' : 'required';
+    const conditional = badge.getAttribute('data-conditional');
+    if (conditional) {
+        const [condField, condValue] = conditional.split(':');
+        const condEl = document.querySelector(`input[name="${condField}"]:checked`);
+        if (!(condEl && condEl.value === condValue)) {
+            requirement = 'optional';
+        }
+    }
     const inputEl = document.getElementById(fieldId);
     let hasValue = false;
     if (inputEl) {
@@ -350,6 +370,9 @@ function updateStatusBadgeDisplay(fieldId, event) {
         } else {
             hasValue = !!(inputEl.value && inputEl.value.trim());
         }
+    } else {
+        const radioChecked = document.querySelector(`input[name="${fieldId}"]:checked`);
+        if (radioChecked) hasValue = true;
     }
     let cls = 'optional';
     let iconType = 'optional';

@@ -25,12 +25,12 @@ function generateModalContent(event) {
                 </div>
                 <div class="form-group">
                     <label><span class="status-badge optional" data-field-id="arrivalMusicStyle">Optional</span>Style/genre of music as guests arrive</label>
-                    <textarea id="arrivalMusicStyle" placeholder="i.e. piano instrumentals">${event.details.arrivalMusicStyle || ''}</textarea>
+                    <textarea id="arrivalMusicStyle" placeholder="i.e. Piano instrumentals">${event.details.arrivalMusicStyle || ''}</textarea>
                 </div>
-                ${generateSongInput('processionalSong', 'Processional Song (Wedding Party/Family Members)', event.details.processionalSong, 3)}
+                ${generateSongInput('processionalSong', 'Processional Song (Wedding Party/Family Members)', event.details.processionalSong, 1)}
                 ${generateSongInput('brideEntrance', "Grand Entrance Song", event.details.brideEntrance)}
                 <div class="form-group">
-                    <label>Are you doing any special activities during the ceremony such as a unity sand ritual, tying of the knot, etc.?</label>
+                    <label><span class="status-badge required" data-field-id="hasSpecialActivity"></span>Are you doing any special activities during the ceremony such as a unity sand ritual, tying of the knot, etc.?</label>
                     <div class="radio-group">
                         <label class="radio-option">
                             <input type="radio" name="hasSpecialActivity" value="yes" ${event.details.hasSpecialActivity === 'yes' ? 'checked' : ''} onchange="toggleSpecialActivityDetails()">
@@ -44,11 +44,11 @@ function generateModalContent(event) {
                 </div>
                 <div id="specialActivityDetails" class="conditional-section" style="display: ${event.details.hasSpecialActivity === 'yes' ? 'block' : 'none'};">
                     <div class="form-group">
-                        <label>What kind of event?</label>
+                        <label><span class="status-badge optional" data-field-id="specialActivityType" data-conditional="hasSpecialActivity:yes"></span>What kind of event?</label>
                         <input type="text" id="specialActivityType" value="${event.details.specialActivityType || ''}" placeholder="e.g., Unity sand ritual, Handfasting">
                     </div>
                     <div class="form-group">
-                        <label>Do you want a song for your special event?</label>
+                        <label><span class="status-badge optional" data-field-id="specialActivitySong" data-conditional="hasSpecialActivity:yes"></span>Do you want a song for your special event?</label>
                         <div class="radio-group">
                             <label class="radio-option">
                                 <input type="radio" name="specialActivitySong" value="yes" ${event.details.specialActivitySong === 'yes' ? 'checked' : ''} onchange="toggleSpecialActivitySongEntry()">
@@ -61,7 +61,24 @@ function generateModalContent(event) {
                         </div>
                     </div>
                     <div id="specialActivitySongEntry" style="display: ${event.details.specialActivitySong === 'yes' ? 'block' : 'none'};">
-                        ${generateSongInput('specialActivitySongTitle', 'Song for Special Activity', event.details.specialActivitySongTitle)}
+                        <div class="form-group">
+                            <label><span class="status-badge optional" data-field-id="specialActivitySongTitle" data-conditional="specialActivitySong:yes" data-badge-type="songs"></span>Song for Special Activity</label>
+                            <div class="song-box" data-input-id="specialActivitySongTitle">
+                                <input type="hidden" id="specialActivitySongTitle" value='${JSON.stringify([])}' data-max="1">
+                                <div class="song-box-header"><span class="song-count" id="specialActivitySongTitle_count">0/1</span><span class="song-note">♪</span></div>
+                                <div class="song-actions">
+                                    <button class="song-icon-btn song-search-btn" data-input-id="specialActivitySongTitle" title="Search">
+                                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                                        <div>Search</div>
+                                    </button>
+                                    <button class="song-icon-btn secondary song-link-btn" data-input-id="specialActivitySongTitle" title="Insert Link">
+                                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.9 12a5 5 0 015-5h3v2h-3a3 3 0 100 6h3v2h-3a5 5 0 01-5-5zm7-1h2v2h-2v-2zm4.1-4h-3v2h3a3 3 0 010 6h-3v2h3a5 5 0 000-10z"/></svg>
+                                        <div>Insert Link</div>
+                                    </button>
+                                </div>
+                                <div class="song-items" id="specialActivitySongTitle_items"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 ${generateSongInput('recessionalSong', 'Recessional Song', event.details.recessionalSong)}
@@ -98,13 +115,20 @@ function generateModalContent(event) {
         case 'last-group-dance':
             html += `
                 ${generateSongInput('songChoice', 'Song Selection', event.details.songChoice)}
-                <div class="time-row">
+                <div class="form-group">
+                    <label><span class="status-badge required" data-field-id="danceDuration_${event.id}"></span>How long would you like to dance for?</label>
+                    <div class="radio-group">
+                        <label class="radio-option"><input type="radio" name="danceDuration_${event.id}" value="whole" ${event.details[`danceDuration_${event.id}`] === 'whole' ? 'checked' : ''} onchange="toggleDancePart(${event.id})"><span>Whole song</span></label>
+                        <label class="radio-option"><input type="radio" name="danceDuration_${event.id}" value="part" ${event.details[`danceDuration_${event.id}`] === 'part' ? 'checked' : ''} onchange="toggleDancePart(${event.id})"><span>Part of song</span></label>
+                    </div>
+                </div>
+                <div id="dancePartSection_${event.id}" class="time-row" style="display: ${event.details[`danceDuration_${event.id}`] === 'part' ? 'grid' : 'none'};">
                     <div class="form-group">
-                        <label><span class="status-badge optional" data-field-id="startAt">Optional</span>Start at</label>
+                        <label><span class="status-badge optional" data-field-id="startAt" data-conditional="danceDuration_${event.id}:part"></span>Start at</label>
                         <input type="text" id="startAt" value="${event.details.startAt || ''}" placeholder="00:30">
                     </div>
                     <div class="form-group">
-                        <label><span class="status-badge optional" data-field-id="endAt">Optional</span>End at</label>
+                        <label><span class="status-badge optional" data-field-id="endAt" data-conditional="danceDuration_${event.id}:part"></span>End at</label>
                         <input type="text" id="endAt" value="${event.details.endAt || ''}" placeholder="01:30">
                     </div>
                 </div>
@@ -142,7 +166,14 @@ function generateModalContent(event) {
                     </div>
                 </div>
                 ${generateSongInput('songChoice', 'Song Selection', event.details.songChoice)}
-                <div class="time-row">
+                <div class="form-group">
+                    <label><span class="status-badge required" data-field-id="danceDuration_${event.id}"></span>How long would you like to dance for?</label>
+                    <div class="radio-group">
+                        <label class="radio-option"><input type="radio" name="danceDuration_${event.id}" value="whole" ${event.details[`danceDuration_${event.id}`] === 'whole' ? 'checked' : ''} onchange="toggleDancePart(${event.id})"><span>Whole song</span></label>
+                        <label class="radio-option"><input type="radio" name="danceDuration_${event.id}" value="part" ${event.details[`danceDuration_${event.id}`] === 'part' ? 'checked' : ''} onchange="toggleDancePart(${event.id})"><span>Part of song</span></label>
+                    </div>
+                </div>
+                <div id="dancePartSection_${event.id}" class="time-row" style="display: ${event.details[`danceDuration_${event.id}`] === 'part' ? 'grid' : 'none'};">
                     <div class="form-group">
                         <label>Start at</label>
                         <input type="text" id="startAt" value="${event.details.startAt || ''}" placeholder="00:30">
