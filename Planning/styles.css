@@ -656,6 +656,11 @@ body {
     justify-content: center;
 }
 
+/* Ensure confirm modal is always on top */
+#confirmModal {
+    z-index: 3000;
+}
+
 .song-search-content {
     background: white;
     border-radius: 16px;
