@@ -832,4 +832,21 @@ body {
         bottom: 20px;
         right: 20px;
     }
+    /* Footer actions responsive: equal widths and compact spacing */
+    .modal-footer {
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    .modal-footer .nav-btn,
+    .modal-footer .delete-event-btn {
+        flex: 1 1 30%;
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+    .modal-footer .nav-btn svg,
+    .modal-footer .delete-event-btn svg {
+        width: 14px;
+        height: 14px;
+    }
 }

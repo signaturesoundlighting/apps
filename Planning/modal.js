@@ -133,6 +133,7 @@ function openModal(eventId) {
     const deleteBtn = document.getElementById(`deleteBtn_${eventId}`);
     if (deleteBtn) {
         deleteBtn.addEventListener('click', (e) => {
+            e.preventDefault();
             e.stopPropagation();
             deleteEvent(eventId);
         });
