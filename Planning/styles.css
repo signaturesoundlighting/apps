@@ -189,6 +189,7 @@ body {
     font-size: 12px;
 }
 .req-indicator svg { width: 14px; height: 14px; fill: #d9480f; }
+.req-indicator.completed svg { fill: #2b8a3e; }
 
 .event-time {
     font-size: 14px;
