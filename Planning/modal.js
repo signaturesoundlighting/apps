@@ -251,6 +251,34 @@ document.getElementById('eventModal').addEventListener('click', (e) => {
     }
 });
 
+// Extra safety: delegate delete button clicks in case a specific listener wasn't bound
+document.addEventListener('click', (e) => {
+    const deleteBtnEl = e.target.closest('.delete-event-btn');
+    if (deleteBtnEl && document.getElementById('eventModal').classList.contains('active')) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof currentEventId === 'number') {
+            deleteEvent(currentEventId);
+        }
+    }
+});
+
+// Extra safety: ensure confirm Yes button always triggers the pending action
+(() => {
+    const yesBtn = document.getElementById('confirmYesBtn');
+    if (yesBtn) {
+        yesBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (typeof __onConfirmYes === 'function') {
+                const fn = __onConfirmYes;
+                __onConfirmYes = null;
+                closeConfirm();
+                fn();
+            }
+        });
+    }
+})();
+
 // Simple confirm modal helpers
 let __onConfirmYes = null;
 function openConfirm(message, onYes) {
