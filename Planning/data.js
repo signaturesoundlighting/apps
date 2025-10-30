@@ -62,5 +62,6 @@ const standardEventTemplates = [
     { type: 'bouquet-toss', name: 'Bouquet Toss' },
     { type: 'last-group-dance', name: 'Last Group Dance' },
     { type: 'private-last-dance', name: 'Private Last Dance' },
-    { type: 'grand-exit', name: 'Grand Exit' }
+    { type: 'grand-exit', name: 'Grand Exit' },
+    { type: 'shoe-game', name: 'Shoe Game' }
 ];

@@ -82,12 +82,14 @@ function generateSongInput(id, label, value, maxItems = 1) {
             <button class="song-remove-btn" data-input-id="${id}" data-index="${i}">Remove</button>
         </div>
     `).join('');
+    const helpHtml = maxItems > 1 ? `<div class="song-help">Add up to ${maxItems} songs</div>` : '';
     return `
         <div class="form-group">
             <label><span class="status-badge required" data-field-id="${id}" data-badge-type="songs"></span>${label}</label>
             <div class="song-box" data-input-id="${id}">
                 <input type="hidden" id="${id}" value='${JSON.stringify(items)}' data-max="${maxItems}">
                 <div class="song-box-header"><span class="song-count" id="${id}_count">${countText}</span><span class="song-note">♪</span></div>
+                ${helpHtml}
                 <div class="song-actions">
                     <button class="song-icon-btn song-search-btn" data-input-id="${id}" title="Search">
                         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
@@ -807,7 +809,7 @@ function generateModalContent(event) {
         case 'toasts':
             html += `
                 <div class="form-group">
-                    <label>Who is giving toasts?</label>
+                    <label>Who are giving toasts?</label>
                     <textarea id="toastGivers" placeholder="List names in order and their relationship to the bride/groom i.e. Father of the bride John, Maid of honor Sarah, etc">${event.details.toastGivers || ''}</textarea>
                 </div>
                 <div class="form-group">
@@ -1029,6 +1031,27 @@ function generateModalContent(event) {
             `;
             break;
 
+        case 'shoe-game':
+            const questions = Array.isArray(event.details.questions) ? event.details.questions : (event.details.questions ? [event.details.questions] : []);
+            html += `
+                <div class="form-group">
+                    <label>Question #1</label>
+                    <input type="text" id="shoeQuestion_0" value="${questions[0] || ''}" placeholder="Type your first question">
+                </div>
+                <div id="shoeQuestionsExtra">
+                    ${questions.slice(1).map((q, idx) => `
+                        <div class=\"form-group\"> 
+                            <label>Question #${idx + 2}</label>
+                            <input type=\"text\" id=\"shoeQuestion_${idx + 1}\" value=\"${q}\" placeholder=\"Type your question\"> 
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="form-group">
+                    <button class="song-action-btn" onclick="addShoeQuestion(${event.id}); return false;">+ Add a question</button>
+                </div>
+            `;
+            break;
+
         default:
             html += `
                 ${generateSongInput('songChoice', 'Song Selection', event.details.songChoice)}
@@ -1210,6 +1233,18 @@ function toggleDancePart(eventId) {
     }
 }
 
+function addShoeQuestion(eventId) {
+    const ev = events.find(e => e.id === eventId);
+    if (!ev) return;
+    if (!Array.isArray(ev.details.questions)) {
+        ev.details.questions = ev.details.questions ? [ev.details.questions] : [];
+    }
+    ev.details.questions.push('');
+    // Reopen to render new input
+    closeModal();
+    setTimeout(() => openModal(eventId), 50);
+}
+
 function toggleLineDanceOther() {
     const checkbox = document.querySelector('input[name="lineDanceOther"]');
     const section = document.getElementById('lineDanceOtherText');
@@ -1252,7 +1287,7 @@ function getBadgeIcon(type) {
     if (type === 'required') {
         return '<svg viewBox="0 0 24 24" fill="#d9480f"><circle cx="12" cy="12" r="10"/><rect x="11" y="6" width="2" height="8" fill="#fff"/><rect x="11" y="16" width="2" height="2" fill="#fff"/></svg>';
     }
-    return '<svg viewBox="0 0 24 24" fill="#adb5bd"><circle cx="12" cy="12" r="9" stroke="#adb5bd" stroke-width="2" fill="none"/></svg>';
+    return '';
 }
 
 function updateStatusBadgeDisplay(fieldId, event) {

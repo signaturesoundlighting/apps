@@ -368,6 +368,16 @@ function isFieldOptional(fieldId, event) {
 }
 
 // Special dance type handlers (global)
+function addShoeQuestion(eventId) {
+    const ev = events.find(e => e.id === eventId);
+    if (!ev) return;
+    if (!Array.isArray(ev.details.questions)) {
+        ev.details.questions = ev.details.questions ? [ev.details.questions] : [];
+    }
+    ev.details.questions.push('');
+    closeModal();
+    setTimeout(() => openModal(eventId), 50);
+}
 function handleSpecialDanceType(eventId) {
     const selected = document.querySelector(`input[name="danceType_${eventId}"]:checked`);
     const container = document.getElementById(`otherDanceTypeContainer_${eventId}`);
@@ -413,7 +423,7 @@ function getBadgeIcon(type) {
     if (type === 'required') {
         return '<svg viewBox="0 0 24 24" fill="#d9480f"><circle cx="12" cy="12" r="10"/><rect x="11" y="6" width="2" height="8" fill="#fff"/><rect x="11" y="16" width="2" height="2" fill="#fff"/></svg>';
     }
-    return '<svg viewBox="0 0 24 24" fill="#adb5bd"><circle cx="12" cy="12" r="9" stroke="#adb5bd" stroke-width="2" fill="none"/></svg>';
+    return '';
 }
 
 function updateStatusBadgeDisplay(fieldId, event) {

@@ -68,7 +68,7 @@ body {
     user-select: none;
 }
 .status-badge svg { width: 18px; height: 18px; display: block; }
-.status-badge.optional { background: transparent; }
+.status-badge.optional { background: transparent; width: 0; margin-right: 0; }
 .status-badge.required { background: transparent; }
 .status-badge.completed { background: transparent; }
 
@@ -662,6 +662,7 @@ input[type="checkbox"], input[type="radio"] {
 .song-chip { display: flex; justify-content: space-between; align-items: center; background: #fff; border: 2px solid #e0e0e0; border-radius: 8px; padding: 8px 10px; color: #333; }
 .song-chip button { background: #ff6b6b; color: #fff; border: none; border-radius: 6px; padding: 4px 8px; cursor: pointer; font-weight: 600; }
 .song-chip button:hover { background: #ee5253; }
+.song-help { color: #666; font-size: 12px; margin-bottom: 6px; }
 
 .song-input-wrapper input {
     flex: 1;

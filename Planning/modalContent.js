@@ -255,7 +255,7 @@ function generateModalContent(event) {
         case 'toasts':
             html += `
                 <div class="form-group">
-                    <label>Who is giving toasts?</label>
+                    <label>Who are giving toasts?</label>
                     <textarea id="toastGivers" placeholder="List names in order and their relationship to the bride/groom i.e. Father of the bride John, Maid of honor Sarah, etc">${event.details.toastGivers || ''}</textarea>
                 </div>
                 <div class="form-group">
@@ -473,6 +473,27 @@ function generateModalContent(event) {
                 <div class="form-group">
                     <label>Other details/anything else we should know?</label>
                     <textarea id="otherDetails" placeholder="Add any details about this event">${event.details.otherDetails || ''}</textarea>
+                </div>
+            `;
+            break;
+
+        case 'shoe-game':
+            const questions = Array.isArray(event.details.questions) ? event.details.questions : (event.details.questions ? [event.details.questions] : []);
+            html += `
+                <div class="form-group">
+                    <label>Question #1</label>
+                    <input type="text" id="shoeQuestion_0" value="${questions[0] || ''}" placeholder="Type your first question">
+                </div>
+                <div id="shoeQuestionsExtra">
+                    ${questions.slice(1).map((q, idx) => `
+                        <div class=\"form-group\"> 
+                            <label>Question #${idx + 2}</label>
+                            <input type=\"text\" id=\"shoeQuestion_${idx + 1}\" value=\"${q}\" placeholder=\"Type your question\"> 
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="form-group">
+                    <button class="song-action-btn" onclick="addShoeQuestion(${event.id}); return false;">+ Add a question</button>
                 </div>
             `;
             break;
