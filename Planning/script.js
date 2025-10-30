@@ -423,6 +423,21 @@ function openModal(eventId) {
 
     // Add delete button event listener
     const deleteBtn = document.getElementById(`deleteBtn_${eventId}`);
+    // Wire up status badge toggles
+    document.querySelectorAll('.status-badge').forEach(badge => {
+        badge.addEventListener('click', (e) => {
+            e.preventDefault();
+            const fieldId = badge.getAttribute('data-field-id');
+            const event = events.find(e => e.id === currentEventId);
+            if (!event) return;
+            if (!event.details.statusRequirements) event.details.statusRequirements = {};
+            const current = event.details.statusRequirements[fieldId] || 'optional';
+            const next = current === 'optional' ? 'required' : 'optional';
+            event.details.statusRequirements[fieldId] = next;
+            updateStatusBadgeDisplay(fieldId, event);
+            showSaveIndicator();
+        });
+    });
     if (deleteBtn) {
         deleteBtn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -535,7 +550,7 @@ function navigateEvent(direction) {
 function generateModalContent(event) {
     let html = `
         <div class="form-group">
-            <label>Start Time</label>
+            <label><span class="status-badge optional" data-field-id="startTime">Optional</span>Start Time</label>
             <input type="time" id="startTime" value="${event.time ? convertTo24Hour(event.time) : ''}">
         </div>
     `;
@@ -545,11 +560,15 @@ function generateModalContent(event) {
         case 'ceremony':
             html += `
                 <div class="form-group">
-                    <label>Where will this be taking place?</label>
-                    <input type="text" id="location" value="${event.details.location || ''}" placeholder="Venue name or location">
+                    <label><span class="status-badge optional" data-field-id="location">Optional</span>Where will this be taking place?</label>
+                    <input type="text" id="location" value="${event.details.location || ''}" placeholder="Location at venue i.e. under the pavilion">
+                </div>
+                <div class="form-group">
+                    <label><span class="status-badge optional" data-field-id="arrivalMusicStyle">Optional</span>Style/genre of music as guests arrive</label>
+                    <textarea id="arrivalMusicStyle" placeholder="i.e. piano instrumentals">${event.details.arrivalMusicStyle || ''}</textarea>
                 </div>
                 ${generateSongInput('processionalSong', 'Processional Song (Wedding Party/Family Members)', event.details.processionalSong)}
-                ${generateSongInput('brideEntrance', "Bride's Entrance Song", event.details.brideEntrance)}
+                ${generateSongInput('brideEntrance', "Grand Entrance Song", event.details.brideEntrance)}
                 <div class="form-group">
                     <label>Are you doing any special activities during the ceremony such as a unity sand ritual, tying of the knot, etc.?</label>
                     <div class="radio-group">
@@ -619,9 +638,15 @@ function generateModalContent(event) {
         case 'last-group-dance':
             html += `
                 ${generateSongInput('songChoice', 'Song Selection', event.details.songChoice)}
-                <div class="form-group">
-                    <label>Special Instructions</label>
-                    <textarea id="instructions" placeholder="Any special requests or notes">${event.details.instructions || ''}</textarea>
+                <div class="time-row">
+                    <div class="form-group">
+                        <label><span class="status-badge optional" data-field-id="startAt">Optional</span>Start at</label>
+                        <input type="text" id="startAt" value="${event.details.startAt || ''}" placeholder="00:30">
+                    </div>
+                    <div class="form-group">
+                        <label><span class="status-badge optional" data-field-id="endAt">Optional</span>End at</label>
+                        <input type="text" id="endAt" value="${event.details.endAt || ''}" placeholder="01:30">
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>Other details/anything else we should know?</label>
@@ -657,6 +682,16 @@ function generateModalContent(event) {
                     </div>
                 </div>
                 ${generateSongInput('songChoice', 'Song Selection', event.details.songChoice)}
+                <div class="time-row">
+                    <div class="form-group">
+                        <label><span class="status-badge optional" data-field-id="startAt">Optional</span>Start at</label>
+                        <input type="text" id="startAt" value="${event.details.startAt || ''}" placeholder="00:30">
+                    </div>
+                    <div class="form-group">
+                        <label><span class="status-badge optional" data-field-id="endAt">Optional</span>End at</label>
+                        <input type="text" id="endAt" value="${event.details.endAt || ''}" placeholder="01:30">
+                    </div>
+                </div>
                 <div class="form-group">
                     <label>Other details/anything else we should know?</label>
                     <textarea id="otherDetails" placeholder="Any additional information">${event.details.otherDetails || ''}</textarea>
@@ -1008,6 +1043,15 @@ function saveEventDetails(eventId) {
     }
 
     showSaveIndicator();
+
+    // Update status badges after saving
+    const eventForBadges = events.find(e => e.id === eventId);
+    if (eventForBadges) {
+        document.querySelectorAll('.status-badge').forEach(b => {
+            const fieldId = b.getAttribute('data-field-id');
+            updateStatusBadgeDisplay(fieldId, eventForBadges);
+        });
+    }
 }
 
 function convert24To12Hour(time24) {
@@ -1089,6 +1133,37 @@ function toggleLineDanceOther() {
         section.style.display = checkbox && checkbox.checked ? 'block' : 'none';
     }
     saveEventDetails(currentEventId);
+}
+
+// Status badge utilities
+function updateStatusBadgeDisplay(fieldId, event) {
+    const badge = document.querySelector(`.status-badge[data-field-id="${fieldId}"]`);
+    if (!badge || !event) return;
+    const reqMap = event.details.statusRequirements || {};
+    const requirement = reqMap[fieldId] || 'optional';
+    const inputEl = document.getElementById(fieldId);
+    let hasValue = false;
+    if (inputEl) {
+        if (inputEl.type === 'checkbox' || inputEl.type === 'radio') {
+            hasValue = !!inputEl.checked;
+        } else {
+            hasValue = !!(inputEl.value && inputEl.value.trim());
+        }
+    }
+    let cls = 'optional';
+    let text = 'Optional';
+    if (requirement === 'required') {
+        if (hasValue) {
+            cls = 'completed';
+            text = 'Completed';
+        } else {
+            cls = 'required';
+            text = 'Required';
+        }
+    }
+    badge.classList.remove('optional', 'required', 'completed');
+    badge.classList.add(cls);
+    badge.textContent = text;
 }
 
 function generateLineDanceOptions(value, label, lineDances) {

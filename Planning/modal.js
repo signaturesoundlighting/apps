@@ -138,6 +138,22 @@ function openModal(eventId) {
             deleteEvent(eventId);
         });
     }
+
+    // Wire up status badge toggles
+    document.querySelectorAll('.status-badge').forEach(badge => {
+        badge.addEventListener('click', (e) => {
+            e.preventDefault();
+            const fieldId = badge.getAttribute('data-field-id');
+            const event = events.find(e => e.id === currentEventId);
+            if (!event) return;
+            if (!event.details.statusRequirements) event.details.statusRequirements = {};
+            const current = event.details.statusRequirements[fieldId] || 'optional';
+            const next = current === 'optional' ? 'required' : 'optional';
+            event.details.statusRequirements[fieldId] = next;
+            updateStatusBadgeDisplay(fieldId, event);
+            showSaveIndicator();
+        });
+    });
 }
 
 function toggleEventNameEdit() {
@@ -306,6 +322,37 @@ function toggleLineDanceOther() {
     saveEventDetails(currentEventId);
 }
 
+// Status badge utilities
+function updateStatusBadgeDisplay(fieldId, event) {
+    const badge = document.querySelector(`.status-badge[data-field-id="${fieldId}"]`);
+    if (!badge || !event) return;
+    const reqMap = event.details.statusRequirements || {};
+    const requirement = reqMap[fieldId] || 'optional';
+    const inputEl = document.getElementById(fieldId);
+    let hasValue = false;
+    if (inputEl) {
+        if (inputEl.type === 'checkbox' || inputEl.type === 'radio') {
+            hasValue = !!inputEl.checked;
+        } else {
+            hasValue = !!(inputEl.value && inputEl.value.trim());
+        }
+    }
+    let cls = 'optional';
+    let text = 'Optional';
+    if (requirement === 'required') {
+        if (hasValue) {
+            cls = 'completed';
+            text = 'Completed';
+        } else {
+            cls = 'required';
+            text = 'Required';
+        }
+    }
+    badge.classList.remove('optional', 'required', 'completed');
+    badge.classList.add(cls);
+    badge.textContent = text;
+}
+
 // Extra safety: delegate delete button clicks in case a specific listener wasn't bound
 document.addEventListener('click', (e) => {
     const deleteBtnEl = e.target.closest('.delete-event-btn');
@@ -399,4 +446,13 @@ function saveEventDetails(eventId) {
     }
 
     showSaveIndicator();
+
+    // Update status badges
+    const eventForBadges = events.find(e => e.id === eventId);
+    if (eventForBadges) {
+        document.querySelectorAll('.status-badge').forEach(b => {
+            const fieldId = b.getAttribute('data-field-id');
+            updateStatusBadgeDisplay(fieldId, eventForBadges);
+        });
+    }
 }

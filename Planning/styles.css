@@ -36,6 +36,13 @@ body {
     letter-spacing: 1px;
 }
 
+.wedding-date {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 18px;
+    color: #000;
+    margin-top: 4px;
+}
+
 .general-info-section {
     margin-bottom: 32px;
 }
@@ -48,6 +55,23 @@ body {
     padding-bottom: 8px;
     border-bottom: 2px solid #1a9e8e;
 }
+
+/* Status badge for field requirement/completion */
+.status-badge {
+    display: inline-block;
+    min-width: 70px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-right: 8px;
+    vertical-align: middle;
+    cursor: pointer;
+    user-select: none;
+}
+.status-badge.optional { background: #e9ecef; color: #495057; }
+.status-badge.required { background: #ffe8cc; color: #d9480f; }
+.status-badge.completed { background: #d3f9d8; color: #2b8a3e; }
 
 .general-info-card {
     background: white;
@@ -347,14 +371,14 @@ body {
 .radio-option,
 .checkbox-option {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 8px;
 }
 
 .radio-option span,
 .checkbox-option span {
-    line-height: 1.5;
-    padding-top: 2px;
+    line-height: 1.4;
+    padding-top: 0;
 }
 
 .radio-option input,
@@ -363,7 +387,7 @@ body {
     height: 20px;
     cursor: pointer;
     flex-shrink: 0;
-    margin-top: 2px;
+    margin-top: 0;
 }
 
 .time-row {
