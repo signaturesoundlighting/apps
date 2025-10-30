@@ -21,9 +21,11 @@ function createEventCard(event) {
     // Compute required completion summary
     const completion = (typeof computeEventCompletion === 'function') ? computeEventCompletion(event) : { done: 0, total: 0 };
     const isDone = completion.total > 0 && completion.done >= completion.total;
+    // Get the accent color for this event type
+    const accentColor = (typeof getEventAccentColor === 'function') ? getEventAccentColor(event.type) : '#1a9e8e';
     const iconSVG = isDone
-        ? '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>'
-        : '<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm2-7.5c0 1.54-1 2.14-1.8 2.6-.72.41-1.2.69-1.2 1.4V14h-2v-.7c0-1.5 1-2.1 1.8-2.6.72-.41 1.2-.69 1.2-1.4 0-.83-.67-1.5-1.5-1.5S9 7.47 9 8.3H7c0-2 1.8-3.3 4-3.3s4 1.35 4 3.5z"/></svg>';
+        ? '<svg viewBox="0 0 24 24" style="fill: #2b8a3e;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>'
+        : `<svg viewBox="0 0 24 24" style="fill: ${accentColor};"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm2-7.5c0 1.54-1 2.14-1.8 2.6-.72.41-1.2.69-1.2 1.4V14h-2v-.7c0-1.5 1-2.1 1.8-2.6.72-.41 1.2-.69 1.2-1.4 0-.83-.67-1.5-1.5-1.5S9 7.47 9 8.3H7c0-2 1.8-3.3 4-3.3s4 1.35 4 3.5z"/></svg>`;
     const reqHtml = `<div class="req-indicator${isDone ? ' completed' : ''}">${iconSVG}${completion.done}/${completion.total}</div>`;
     card.innerHTML = `
         <div class="event-content">

@@ -64,7 +64,8 @@ body {
     margin-top: 6px;
     font-size: 12px;
     color: #333;
-    text-align: right;
+    text-align: center;
+    font-weight: bold;
 }
 
 .general-info-section {
@@ -188,7 +189,7 @@ body {
     color: #666;
     font-size: 12px;
 }
-.req-indicator svg { width: 14px; height: 14px; fill: #1a9e8e; }
+.req-indicator svg { width: 14px; height: 14px; }
 .req-indicator.completed svg { fill: #2b8a3e; }
 
 .event-time {
@@ -412,7 +413,7 @@ body {
     display: flex;
     align-items: center; /* vertical centering */
     justify-content: flex-start; /* text to the right, left-aligned */
-    gap: 14px;
+    gap: 20px;
     cursor: pointer;
 }
 

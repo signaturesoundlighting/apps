@@ -129,12 +129,12 @@ function generateModalContent(event) {
                 </div>
                 <div id="dancePartSection_${event.id}" class="time-row" style="display: ${event.details[`danceDuration_${event.id}`] === 'part' ? 'grid' : 'none'};">
                     <div class="form-group">
-                        <label><span class="status-badge optional" data-field-id="startAt" data-conditional="danceDuration_${event.id}:part"></span>Start at</label>
-                        <input type="text" id="startAt" value="${event.details.startAt || ''}" placeholder="00:30">
+                        <label><span class="status-badge required" data-field-id="startAt" data-conditional="danceDuration_${event.id}:part"></span>Start at</label>
+                        <input type="text" id="startAt" value="${event.details.startAt || ''}" placeholder="00:00" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" oninput="formatTimeInput(this)">
                     </div>
                     <div class="form-group">
-                        <label><span class="status-badge optional" data-field-id="endAt" data-conditional="danceDuration_${event.id}:part"></span>End at</label>
-                        <input type="text" id="endAt" value="${event.details.endAt || ''}" placeholder="01:30">
+                        <label><span class="status-badge required" data-field-id="endAt" data-conditional="danceDuration_${event.id}:part"></span>End at</label>
+                        <input type="text" id="endAt" value="${event.details.endAt || ''}" placeholder="00:00" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" oninput="formatTimeInput(this)">
                     </div>
                 </div>
                 <div class="form-group">
@@ -156,7 +156,7 @@ function generateModalContent(event) {
         case 'special-dance-2':
             html += `
                 <div class="form-group">
-                    <label>What type of dance is this?</label>
+                    <label><span class="status-badge required" data-field-id="danceType_${event.id}"></span>What type of dance is this?</label>
                     <div class="radio-group">
                         <label class="radio-option">
                             <input type="radio" name="danceType_${event.id}" value="father-daughter" ${event.details.danceType === 'father-daughter' ? 'checked' : ''} onchange="handleSpecialDanceType(${event.id})">
@@ -206,7 +206,7 @@ function generateModalContent(event) {
         case 'intros':
             html += `
                 <div class="form-group">
-                    <label>Will we be introducing your wedding party?</label>
+                    <label><span class="status-badge required" data-field-id="introduceParty"></span>Will we be introducing your wedding party?</label>
                     <div class="radio-group">
                         <label class="radio-option">
                             <input type="radio" name="introduceParty" value="yes" ${event.details.introduceParty === 'yes' ? 'checked' : ''} onchange="toggleWeddingPartySection()">
@@ -219,15 +219,15 @@ function generateModalContent(event) {
                     </div>
                 </div>
                 <div id="weddingPartySection" class="conditional-section" style="display: ${event.details.introduceParty === 'yes' ? 'block' : 'none'};">
-                    ${generateSongInput('introSong', 'Wedding Party Introduction Song', event.details.introSong, 3)}
+                    ${generateSongInput('introSong', 'Wedding Party Introduction Song', event.details.introSong, 1)}
                     <div class="form-group">
-                        <label>Wedding Party Names (in order)</label>
+                        <label><span class="status-badge required" data-field-id="weddingParty" data-conditional="introduceParty:yes"></span>Wedding Party Names (in order)</label>
                         <textarea id="weddingParty" placeholder="List names in order of introduction">${event.details.weddingParty || ''}</textarea>
                     </div>
                 </div>
                 ${generateSongInput('newlywedsIntroSong', 'Newlyweds Introduction Song', event.details.newlywedsIntroSong)}
                 <div class="form-group">
-                    <label>How to introduce couple</label>
+                    <label><span class="status-badge required" data-field-id="coupleIntro"></span>How to introduce couple</label>
                     <input type="text" id="coupleIntro" value="${event.details.coupleIntro || ''}" placeholder="e.g., Mr. & Mrs. Smith">
                 </div>
                 <div class="form-group">
@@ -242,7 +242,7 @@ function generateModalContent(event) {
             const eventType = event.type === 'blessing' ? 'blessing' : 'welcome';
             html += `
                 <div class="form-group">
-                    <label>Who will be giving the ${eventType}?</label>
+                    <label><span class="status-badge required" data-field-id="givenBy"></span>Who will be giving the ${eventType}?</label>
                     <input type="text" id="givenBy" value="${event.details.givenBy || ''}" placeholder="Name and relationship">
                 </div>
                 <div class="form-group">
@@ -269,7 +269,7 @@ function generateModalContent(event) {
             html += `
                 ${generateSongInput('cakeSong', 'Cake Cutting Song', event.details.cakeSong)}
                 <div class="form-group">
-                    <label>Would you like us to make an announcement?</label>
+                    <label><span class="status-badge required" data-field-id="makeAnnouncement"></span>Would you like us to make an announcement?</label>
                     <div class="radio-group">
                         <label class="radio-option">
                             <input type="radio" name="makeAnnouncement" value="yes" ${event.details.makeAnnouncement === 'yes' ? 'checked' : ''}>
@@ -292,7 +292,7 @@ function generateModalContent(event) {
             html += `
                 ${generateSongInput('photoDashSong', 'Photo Dash Song', event.details.photoDashSong)}
                 <div class="form-group">
-                    <label>How would you like to do the photo dash?</label>
+                    <label><span class="status-badge required" data-field-id="photoDashStyle"></span>How would you like to do the photo dash?</label>
                     <div class="radio-group">
                         <label class="radio-option">
                             <input type="radio" name="photoDashStyle" value="center" ${event.details.photoDashStyle === 'center' ? 'checked' : ''} onchange="togglePhotoDashOther()">
@@ -347,7 +347,7 @@ function generateModalContent(event) {
         case 'dinner':
             html += `
                 <div class="form-group">
-                    <label>Dinner style is...</label>
+                    <label><span class="status-badge required" data-field-id="dinnerStyle"></span>Dinner style is...</label>
                     <div class="radio-group">
                         <label class="radio-option">
                             <input type="radio" name="dinnerStyle" value="plated" ${event.details.dinnerStyle === 'plated' ? 'checked' : ''} onchange="toggleBuffetRelease()">
@@ -383,8 +383,19 @@ function generateModalContent(event) {
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Dinner Music Style</label>
-                    <input type="text" id="dinnerMusic" value="${event.details.dinnerMusic || ''}" placeholder="Genre or playlist">
+                    <label><span class="status-badge required" data-field-id="dinnerMusicChoice"></span>Music style is…</label>
+                    <div class="radio-group">
+                        <label class="radio-option"><input type="radio" name="dinnerMusicChoice" value="dj" ${event.details.dinnerMusicChoice === 'dj' ? 'checked' : ''} onchange="toggleDinnerMusicChoice()"><span>DJ's choice</span></label>
+                        <label class="radio-option"><input type="radio" name="dinnerMusicChoice" value="genre" ${event.details.dinnerMusicChoice === 'genre' ? 'checked' : ''} onchange="toggleDinnerMusicChoice()"><span>Specific style/genre</span></label>
+                        <label class="radio-option"><input type="radio" name="dinnerMusicChoice" value="playlist" ${event.details.dinnerMusicChoice === 'playlist' ? 'checked' : ''} onchange="toggleDinnerMusicChoice()"><span>Specific songs/playlist</span></label>
+                    </div>
+                </div>
+                <div id="dinnerMusicStyleGroup" class="form-group" style="display: ${event.details.dinnerMusicChoice === 'genre' ? 'block' : 'none'};">
+                    <label><span class="status-badge required" data-field-id="dinnerMusicStyle" data-conditional="dinnerMusicChoice:genre"></span>Style/Genre</label>
+                    <input type="text" id="dinnerMusicStyle" value="${event.details.dinnerMusicStyle || ''}" placeholder="e.g., Jazz, Acoustic, Classical">
+                </div>
+                <div id="dinnerSongsGroup" style="display: ${event.details.dinnerMusicChoice === 'playlist' ? 'block' : 'none'};">
+                    ${generateSongInput('dinnerSongs', 'Specific Songs/Playlist', event.details.dinnerSongs, 20)}
                 </div>
                 <div class="form-group">
                     <label>Special Announcements</label>
