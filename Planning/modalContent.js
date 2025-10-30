@@ -94,12 +94,19 @@ function generateModalContent(event) {
                     <input type="text" id="location" value="${event.details.location || ''}" placeholder="Venue name or location">
                 </div>
                 <div class="form-group">
-                    <label>Music Style/Genre</label>
+                    <label><span class="status-badge required" data-field-id="musicChoice"></span>Music style is…</label>
+                    <div class="radio-group">
+                        <label class="radio-option"><input type="radio" name="musicChoice" value="dj" ${event.details.musicChoice === 'dj' ? 'checked' : ''} onchange="toggleMusicChoice()"><span>DJ's choice</span></label>
+                        <label class="radio-option"><input type="radio" name="musicChoice" value="genre" ${event.details.musicChoice === 'genre' ? 'checked' : ''} onchange="toggleMusicChoice()"><span>Specific style/genre</span></label>
+                        <label class="radio-option"><input type="radio" name="musicChoice" value="playlist" ${event.details.musicChoice === 'playlist' ? 'checked' : ''} onchange="toggleMusicChoice()"><span>Specific songs/playlist</span></label>
+                    </div>
+                </div>
+                <div id="musicStyleGroup" class="form-group" style="display: ${event.details.musicChoice === 'genre' ? 'block' : 'none'};">
+                    <label><span class="status-badge required" data-field-id="musicStyle" data-conditional="musicChoice:genre"></span>Style/Genre</label>
                     <input type="text" id="musicStyle" value="${event.details.musicStyle || ''}" placeholder="e.g., Jazz, Acoustic, Classical">
                 </div>
-                <div class="form-group">
-                    <label>Specific Songs/Playlist</label>
-                    <textarea id="playlist" placeholder="List songs or paste Spotify/Apple Music link">${event.details.playlist || ''}</textarea>
+                <div id="cocktailSongsGroup" style="display: ${event.details.musicChoice === 'playlist' ? 'block' : 'none'};">
+                    ${generateSongInput('cocktailSongs', 'Specific Songs/Playlist', event.details.cocktailSongs, 20)}
                 </div>
                 <div class="form-group">
                     <label>Other details/anything else we should know?</label>

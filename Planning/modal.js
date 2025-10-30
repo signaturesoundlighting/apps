@@ -341,6 +341,22 @@ function toggleLineDanceOther() {
     saveEventDetails(currentEventId);
 }
 
+function toggleMusicChoice() {
+    const selected = document.querySelector('input[name="musicChoice"]:checked');
+    const showGenre = selected && selected.value === 'genre';
+    const showPlaylist = selected && selected.value === 'playlist';
+    const styleGroup = document.getElementById('musicStyleGroup');
+    const songsGroup = document.getElementById('cocktailSongsGroup');
+    if (styleGroup) styleGroup.style.display = showGenre ? 'block' : 'none';
+    if (songsGroup) songsGroup.style.display = showPlaylist ? 'block' : 'none';
+    saveEventDetails(currentEventId);
+    if (typeof updateStatusBadgeDisplay === 'function') {
+        updateStatusBadgeDisplay('musicChoice', events.find(e => e.id === currentEventId));
+        updateStatusBadgeDisplay('musicStyle', events.find(e => e.id === currentEventId));
+        updateStatusBadgeDisplay('cocktailSongs', events.find(e => e.id === currentEventId));
+    }
+}
+
 // Status badge utilities
 function isFieldOptional(fieldId, event) {
     if (fieldId === 'otherDetails') return true;
