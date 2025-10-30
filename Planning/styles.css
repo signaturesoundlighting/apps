@@ -405,7 +405,7 @@ body {
     display: flex;
     align-items: center; /* vertical centering */
     justify-content: flex-start; /* text to the right, left-aligned */
-    gap: 10px;
+    gap: 14px;
     cursor: pointer;
 }
 
@@ -422,7 +422,7 @@ body {
     height: 18px;
     cursor: pointer;
     flex-shrink: 0;
-    margin: 0; /* no offset */
+    margin: 0 2px 0 0; /* a touch more space to the label */
     vertical-align: middle;
     accent-color: #1a9e8e; /* modern browsers */
 }

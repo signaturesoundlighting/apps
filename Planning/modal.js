@@ -565,6 +565,7 @@ function saveEventDetails(eventId) {
     }
 
     showSaveIndicator();
+    if (typeof updateOverallProgress === 'function') updateOverallProgress();
 
     // Update status badges
     const eventForBadges = events.find(e => e.id === eventId);

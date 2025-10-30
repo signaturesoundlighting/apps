@@ -7,6 +7,7 @@ function renderEvents() {
         const card = createEventCard(event);
         container.appendChild(card);
     });
+    if (typeof updateOverallProgress === 'function') updateOverallProgress();
 }
 
 // Create an event card

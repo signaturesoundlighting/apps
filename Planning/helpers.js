@@ -103,3 +103,62 @@ function generateLineDanceOptions(value, label, lineDances) {
         </div>
     `;
 }
+
+// Progress helpers
+function computeEventCompletion(event) {
+    try {
+        const html = generateModalContent(event);
+        const regex = /status-badge\s+required[^>]*data-field-id=\"([^\"]+)\"([^>]*data-conditional=\"([^\"]+)\")?/g;
+        let match;
+        let total = 0;
+        let done = 0;
+        while ((match = regex.exec(html)) !== null) {
+            const fieldId = match[1];
+            const conditional = match[3];
+            if (conditional) {
+                const [cField, cVal] = conditional.split(':');
+                if (((event.details || {})[cField] || '') !== cVal) continue;
+            }
+            // Special-case: startTime required only for ceremony is handled by modal/script logic
+            if (fieldId === 'startTime' && event.type !== 'ceremony') continue;
+            total += 1;
+            let value = (event.details || {})[fieldId];
+            let hasValue = false;
+            if (value != null) {
+                if (typeof value === 'string') {
+                    const v = value.trim();
+                    if (v.startsWith('[') && v.endsWith(']')) {
+                        try { const arr = JSON.parse(v); hasValue = Array.isArray(arr) && arr.length > 0; } catch(_) { hasValue = v.length > 0; }
+                    } else {
+                        hasValue = v.length > 0;
+                    }
+                } else if (Array.isArray(value)) {
+                    hasValue = value.length > 0;
+                } else {
+                    hasValue = !!value;
+                }
+            }
+            if (hasValue) done += 1;
+        }
+        return { done, total };
+    } catch (e) {
+        return { done: 0, total: 0 };
+    }
+}
+
+function updateOverallProgress() {
+    if (typeof events === 'undefined' || !Array.isArray(events)) return;
+    let total = 0;
+    let done = 0;
+    events.forEach(ev => {
+        const c = computeEventCompletion(ev);
+        total += c.total;
+        done += c.done;
+    });
+    const remaining = Math.max(total - done, 0);
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    const bar = document.getElementById('overallProgressBar');
+    const txt = document.getElementById('overallProgressText');
+    if (bar) bar.style.width = pct + '%';
+    if (txt) txt.textContent = `${remaining} remaining — ${pct}%`;
+}
