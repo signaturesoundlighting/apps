@@ -137,6 +137,25 @@ function openModal(eventId) {
         });
     });
     
+    // Initialize playlist links for all song inputs
+    modalBody.querySelectorAll('[data-input-id]').forEach(box => {
+        const inputId = box.getAttribute('data-input-id');
+        if (inputId) {
+            const input = document.getElementById(inputId);
+            const playlistEl = document.getElementById(`${inputId}_playlist`);
+            if (input && playlistEl && typeof updateSongUI === 'function') {
+                const max = parseInt(input.getAttribute('data-max') || '1', 10);
+                let items = [];
+                try {
+                    const val = input.value || '[]';
+                    items = JSON.parse(val);
+                    if (!Array.isArray(items)) items = [];
+                } catch { items = []; }
+                updateSongUI(inputId, items, max);
+            }
+        }
+    });
+    
     // Build footer (includes Delete button)
     addModalFooter(eventId);
 

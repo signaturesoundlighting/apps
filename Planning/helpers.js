@@ -34,12 +34,13 @@ function showSaveIndicator() {
 }
 
 // Helper function to generate new song input UI with count and icon actions
-function generateSongInput(id, label, value, maxItems = 1, conditional = null) {
+function generateSongInput(id, label, value, maxItems = 1, conditional = null, playlistValue = '') {
     let items = [];
     if (value) {
         try { const parsed = JSON.parse(value); items = Array.isArray(parsed) ? parsed : [value]; }
         catch { items = [value]; }
     }
+    
     const countText = `${items.length}/${maxItems}`;
     const itemsHtml = items.map((t, i) => `
         <div class="song-chip">
@@ -47,32 +48,35 @@ function generateSongInput(id, label, value, maxItems = 1, conditional = null) {
             <button class="song-remove-btn" data-input-id="${id}" data-index="${i}">Remove</button>
         </div>
     `).join('');
-    const helpHtml = maxItems > 1 ? `<div class="song-help">Add up to ${maxItems} songs or a playlist link</div>` : '';
+    const helpHtml = maxItems > 1 ? `<div class="song-help" id="${id}_help">Add up to ${maxItems} songs or a playlist link</div>` : '';
+    const playlistLinkHtml = `<div class="song-playlist-link" id="${id}_playlistLink" style="display: none; margin-bottom: 6px;"></div>`;
     const conditionalAttr = conditional ? ` data-conditional="${conditional}"` : '';
     return `
         <div class="form-group">
             <label><span class="status-badge required" data-field-id="${id}" data-badge-type="songs"${conditionalAttr}></span>${label}</label>
             <div class="song-box" data-input-id="${id}">
                 <input type="hidden" id="${id}" value='${JSON.stringify(items)}' data-max="${maxItems}">
-                <input type="hidden" id="${id}_playlist" value="">
+                <input type="hidden" id="${id}_playlist" value="${playlistValue}">
                 <div class="song-box-header"><span class="song-count" id="${id}_count">${countText}</span><span class="song-note">♪</span></div>
                 ${helpHtml}
+                ${playlistLinkHtml}
                 <div class="song-actions">
                     <button class="song-icon-btn song-search-btn" data-input-id="${id}" title="Search">
                         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
                         <div>Search</div>
                     </button>
                     <button class="song-icon-btn secondary song-link-btn" data-input-id="${id}" title="Song Link">
-                        <svg viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M10.59 13.41a1 1 0 010-1.41l2.59-2.59a1 1 0 011.41 1.41l-2.59 2.59a1 1 0 01-1.41 0z"/>
-                            <path d="M7 17a5 5 0 010-7.07l2.12-2.12a1 1 0 111.41 1.41L8.41 11.34a3 3 0 104.24 4.24l2.12-2.12a1 1 0 111.41 1.41L14.07 17A5 5 0 017 17z"/>
-                            <path d="M17 7a5 5 0 010 7.07l-1.06 1.06a1 1 0 11-1.41-1.41L15.59 12A3 3 0 0011.34 7.76l-1.06 1.06a1 1 0 11-1.41-1.41L9.93 6A5 5 0 0117 7z"/>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
                         </svg>
                         <div>Song Link</div>
                     </button>
                     ${maxItems > 1 ? `
                     <button class="song-icon-btn secondary song-playlist-btn" data-input-id="${id}" title="Playlist Link" onclick="openPlaylistLink('${id}')">
-                        <svg viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M3 5h14v2H3V5zm0 4h14v2H3V9zm0 4h10v2H3v-2zm13 1v-4h2v4h3v2h-5v-2z\"/></svg>
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h10v2H4v-2z"/>
+                        </svg>
                         <div>Playlist Link</div>
                     </button>` : ''}
                 </div>
@@ -259,6 +263,16 @@ function updateOverallProgress() {
         const iconSVG = isComplete
             ? '<svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: #2b8a3e; vertical-align: middle;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>'
             : '<svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: #1a9e8e; vertical-align: middle;"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm2-7.5c0 1.54-1 2.14-1.8 2.6-.72.41-1.2.69-1.2 1.4V14h-2v-.7c0-1.5 1-2.1 1.8-2.6.72-.41 1.2-.69 1.2-1.4 0-.83-.67-1.5-1.5-1.5S9 7.47 9 8.3H7c0-2 1.8-3.3 4-3.3s4 1.35 4 3.5z"/></svg>';
-        txt.innerHTML = `${done}/${total} ${iconSVG} — ${pct}%`;
+        
+        // Calculate days until 2 weeks before wedding (10/18/26 -> 10/4/26)
+        const weddingDate = new Date('2026-10-18');
+        const twoWeeksBefore = new Date(weddingDate);
+        twoWeeksBefore.setDate(twoWeeksBefore.getDate() - 14);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        twoWeeksBefore.setHours(0, 0, 0, 0);
+        const daysUntil = Math.ceil((twoWeeksBefore - today) / (1000 * 60 * 60 * 24));
+        
+        txt.innerHTML = `${done}/${total} ${iconSVG} — Finalization required in ${daysUntil} ${daysUntil === 1 ? 'day' : 'days'}`;
     }
 }

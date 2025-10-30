@@ -349,10 +349,8 @@ function openPlaylistLink(inputId) {
     // Save playlist and clear songs list
     playlistEl.value = url;
     input.value = '[]';
-    const countEl = document.getElementById(`${inputId}_count`);
-    if (countEl) countEl.textContent = 'Playlist link';
-    const listEl = document.getElementById(`${inputId}_items`);
-    if (listEl) listEl.innerHTML = '';
+    const max = parseInt(input.getAttribute('data-max') || '1', 10);
+    updateSongUI(inputId, [], max);
     saveEventDetails(currentEventId);
     if (typeof updateStatusBadgeDisplay === 'function') {
       try { updateStatusBadgeDisplay(inputId, events.find(e => e.id === currentEventId)); } catch(_) {}
@@ -364,10 +362,25 @@ function openPlaylistLink(inputId) {
 function updateSongUI(inputId, items, max) {
   const countEl = document.getElementById(`${inputId}_count`);
   const playlistEl = document.getElementById(`${inputId}_playlist`);
+  const helpEl = document.getElementById(`${inputId}_help`);
+  const playlistLinkEl = document.getElementById(`${inputId}_playlistLink`);
+  
   if (playlistEl && playlistEl.value.trim()) {
     if (countEl) countEl.textContent = 'Playlist link';
+    // Hide helper text and show playlist link
+    if (helpEl) helpEl.style.display = 'none';
+    if (playlistLinkEl) {
+      playlistLinkEl.style.display = 'block';
+      playlistLinkEl.innerHTML = `<a href="${playlistEl.value.trim()}" target="_blank" rel="noopener noreferrer" style="color: #1a9e8e; text-decoration: underline;">${playlistEl.value.trim()}</a>`;
+    }
   } else {
     if (countEl) countEl.textContent = `${items.length}/${max || parseInt(document.getElementById(inputId)?.getAttribute('data-max')||'1',10)}`;
+    // Show helper text and hide playlist link
+    if (helpEl) helpEl.style.display = 'block';
+    if (playlistLinkEl) {
+      playlistLinkEl.style.display = 'none';
+      playlistLinkEl.innerHTML = '';
+    }
   }
   const listEl = document.getElementById(`${inputId}_items`);
   if (listEl) {

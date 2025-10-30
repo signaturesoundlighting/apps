@@ -106,7 +106,7 @@ function generateModalContent(event) {
                     <input type="text" id="musicStyle" value="${event.details.musicStyle || ''}" placeholder="e.g., Jazz, Acoustic, Classical">
                 </div>
                 <div id="cocktailSongsGroup" style="display: ${event.details.musicChoice === 'playlist' ? 'block' : 'none'};">
-                    ${generateSongInput('cocktailSongs', 'Specific Songs/Playlist', event.details.cocktailSongs, 20)}
+                    ${generateSongInput('cocktailSongs', 'Specific Songs/Playlist', event.details.cocktailSongs, 20, 'musicChoice:playlist', event.details.cocktailSongs_playlist || '')}
                 </div>
                 <div class="form-group">
                     <label>Other details/anything else we should know?</label>
@@ -395,7 +395,7 @@ function generateModalContent(event) {
                     <input type="text" id="dinnerMusicStyle" value="${event.details.dinnerMusicStyle || ''}" placeholder="e.g., Jazz, Acoustic, Classical">
                 </div>
                 <div id="dinnerSongsGroup" style="display: ${event.details.dinnerMusicChoice === 'playlist' ? 'block' : 'none'};">
-                    ${generateSongInput('dinnerSongs', 'Specific Songs/Playlist', event.details.dinnerSongs, 20)}
+                    ${generateSongInput('dinnerSongs', 'Specific Songs/Playlist', event.details.dinnerSongs, 20, null, event.details.dinnerSongs_playlist || '')}
                 </div>
                 <div class="form-group">
                     <label>Special Announcements</label>
@@ -410,8 +410,8 @@ function generateModalContent(event) {
 
         case 'open-dancing':
             html += `
-                ${generateSongInput('mustPlay', 'Must-Play Songs', event.details.mustPlay, 10)}
-                ${generateSongInput('playIfPossible', "Maybe play these if they fit, but all don't need to be played", event.details.playIfPossible, 30)}
+                ${generateSongInput('mustPlay', 'Must-Play Songs', event.details.mustPlay, 10, null, event.details.mustPlay_playlist || '')}
+                ${generateSongInput('playIfPossible', "Maybe play these if they fit, but all don't need to be played", event.details.playIfPossible, 30, null, event.details.playIfPossible_playlist || '')}
                 <div class="form-group">
                     <label>Songs, artists, or genres to avoid</label>
                     <textarea id="doNotPlay" placeholder="Songs, artists, or genres to avoid">${event.details.doNotPlay || ''}</textarea>

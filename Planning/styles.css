@@ -689,7 +689,7 @@ input[type="checkbox"], input[type="radio"] {
 .song-note { font-size: 16px; }
 .song-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .song-icon-btn { background: #fff; border: 2px solid #e0e0e0; border-radius: 8px; padding: 6px 10px; text-align: center; cursor: pointer; display: flex; flex-direction: row; align-items: center; gap: 6px; font-weight: 600; color: #1a9e8e; font-size: 13px; flex: 0 0 auto; }
-.song-icon-btn.secondary { color: #6c757d; }
+.song-icon-btn.secondary { color: #1a9e8e; }
 .song-icon-btn:hover { background: #f0f9f8; border-color: #1a9e8e; }
 .song-icon-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
 .song-items { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
