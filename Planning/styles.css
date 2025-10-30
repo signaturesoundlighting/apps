@@ -379,6 +379,8 @@ body {
 .checkbox-option span {
     line-height: 1.4;
     padding-top: 0;
+    display: flex;
+    align-items: center;
 }
 
 .radio-option input,
@@ -388,6 +390,7 @@ body {
     cursor: pointer;
     flex-shrink: 0;
     margin-top: 0;
+    vertical-align: middle;
 }
 
 .time-row {
@@ -619,6 +622,33 @@ body {
     gap: 8px;
     align-items: stretch;
 }
+
+/* New song selection box */
+.song-box {
+    border: 2px solid #e0e0e0;
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 12px;
+}
+.song-box-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #495057;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+.song-count { background: #e9ecef; padding: 2px 8px; border-radius: 999px; font-size: 12px; }
+.song-note { font-size: 16px; }
+.song-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.song-icon-btn { background: #fff; border: 2px solid #e0e0e0; border-radius: 10px; padding: 10px; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; font-weight: 600; color: #1a9e8e; }
+.song-icon-btn.secondary { color: #6c757d; }
+.song-icon-btn:hover { background: #f0f9f8; border-color: #1a9e8e; }
+.song-icon-btn svg { width: 20px; height: 20px; }
+.song-items { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.song-chip { display: flex; justify-content: space-between; align-items: center; background: #fff; border: 2px solid #e0e0e0; border-radius: 8px; padding: 8px 10px; color: #333; }
+.song-chip button { background: #ff6b6b; color: #fff; border: none; border-radius: 6px; padding: 4px 8px; cursor: pointer; font-weight: 600; }
+.song-chip button:hover { background: #ee5253; }
 
 .song-input-wrapper input {
     flex: 1;

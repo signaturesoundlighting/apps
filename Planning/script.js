@@ -64,19 +64,41 @@ const standardEventTemplates = [
     { type: 'grand-exit', name: 'Grand Exit' }
 ];
 
-// Helper function to generate song input with action buttons
-function generateSongInput(id, label, value, placeholder = "Song Title - Artist") {
-    const displayValue = value || 'No song selected';
+// Helper function to generate new song input UI with count and icon actions
+function generateSongInput(id, label, value, maxItems = 1) {
+    let items = [];
+    if (value) {
+        try {
+            const parsed = JSON.parse(value);
+            items = Array.isArray(parsed) ? parsed : [value];
+        } catch {
+            items = [value];
+        }
+    }
+    const countText = `${items.length}/${maxItems}`;
+    const itemsHtml = items.map((t, i) => `
+        <div class="song-chip">
+            <span>${t}</span>
+            <button class="song-remove-btn" data-input-id="${id}" data-index="${i}">Remove</button>
+        </div>
+    `).join('');
     return `
         <div class="form-group">
             <label>${label}</label>
-            <div class="song-input-container">
-                <input type="hidden" id="${id}" value="${value || ''}">
-                <div class="song-display" id="${id}_display">${displayValue}</div>
-                <div class="song-input-wrapper">
-                    <button class="song-action-btn song-search-btn" data-input-id="${id}">Search</button>
-                    <button class="song-action-btn secondary song-link-btn" data-input-id="${id}">Link</button>
+            <div class="song-box" data-input-id="${id}">
+                <input type="hidden" id="${id}" value='${JSON.stringify(items)}' data-max="${maxItems}">
+                <div class="song-box-header"><span class="song-count" id="${id}_count">${countText}</span><span class="song-note">♪</span></div>
+                <div class="song-actions">
+                    <button class="song-icon-btn song-search-btn" data-input-id="${id}" title="Search">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                        <div>Search</div>
+                    </button>
+                    <button class="song-icon-btn secondary song-link-btn" data-input-id="${id}" title="Insert Link">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.9 12a5 5 0 015-5h3v2h-3a3 3 0 100 6h3v2h-3a5 5 0 01-5-5zm7-1h2v2h-2v-2zm4.1-4h-3v2h3a3 3 0 010 6h-3v2h3a5 5 0 000-10z"/></svg>
+                        <div>Insert Link</div>
+                    </button>
                 </div>
+                <div class="song-items" id="${id}_items">${itemsHtml}</div>
             </div>
         </div>
     `;
@@ -567,7 +589,7 @@ function generateModalContent(event) {
                     <label><span class="status-badge optional" data-field-id="arrivalMusicStyle">Optional</span>Style/genre of music as guests arrive</label>
                     <textarea id="arrivalMusicStyle" placeholder="i.e. piano instrumentals">${event.details.arrivalMusicStyle || ''}</textarea>
                 </div>
-                ${generateSongInput('processionalSong', 'Processional Song (Wedding Party/Family Members)', event.details.processionalSong)}
+                ${generateSongInput('processionalSong', 'Processional Song (Wedding Party/Family Members)', event.details.processionalSong, 3)}
                 ${generateSongInput('brideEntrance', "Grand Entrance Song", event.details.brideEntrance)}
                 <div class="form-group">
                     <label>Are you doing any special activities during the ceremony such as a unity sand ritual, tying of the knot, etc.?</label>
@@ -715,7 +737,7 @@ function generateModalContent(event) {
                     </div>
                 </div>
                 <div id="weddingPartySection" class="conditional-section" style="display: ${event.details.introduceParty === 'yes' ? 'block' : 'none'};">
-                    ${generateSongInput('introSong', 'Wedding Party Introduction Song', event.details.introSong)}
+                    ${generateSongInput('introSong', 'Wedding Party Introduction Song', event.details.introSong, 3)}
                     <div class="form-group">
                         <label>Wedding Party Names (in order)</label>
                         <textarea id="weddingParty" placeholder="List names in order of introduction">${event.details.weddingParty || ''}</textarea>

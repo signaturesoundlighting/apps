@@ -252,18 +252,19 @@ async function searchSongsWithPreview() {
 }
 
 function selectSong(song) {
-  stopPreview(); // Stop any playing preview when song is selected
-  if (currentSongInputId) {
-    const input = document.getElementById(currentSongInputId);
-    const display = document.getElementById(`${currentSongInputId}_display`);
-    if (input) {
-      const songText = `${song.trackName} - ${song.artistName}`;
-      input.value = songText;
-      if (display) display.textContent = songText;
-      // Persist
-      saveEventDetails(currentEventId);
-    }
-  }
+  stopPreview();
+  if (!currentSongInputId) { closeSongSearch(); return; }
+  const input = document.getElementById(currentSongInputId);
+  if (!input) { closeSongSearch(); return; }
+  const max = parseInt(input.getAttribute('data-max') || '1', 10);
+  let items = [];
+  try { items = JSON.parse(input.value || '[]'); if (!Array.isArray(items)) items = []; } catch { items = []; }
+  if (items.length >= max) { alert(`You can add up to ${max} song(s) in this section.`); return; }
+  const songText = `${song.trackName} - ${song.artistName}`;
+  items.push(songText);
+  input.value = JSON.stringify(items);
+  updateSongUI(currentSongInputId, items, max);
+  saveEventDetails(currentEventId);
   closeSongSearch();
 }
 
@@ -297,15 +298,51 @@ function previewSong(url, btn) {
 // “Link” button flow (paste Spotify / Apple link)
 function openSongLink(inputId) {
   const input = document.getElementById(inputId);
-  const display = document.getElementById(`${inputId}_display`);
+  if (!input) return;
+  const max = parseInt(input.getAttribute('data-max') || '1', 10);
+  let items = [];
+  try { items = JSON.parse(input.value || '[]'); if (!Array.isArray(items)) items = []; } catch { items = []; }
+  if (items.length >= max) { alert(`You can add up to ${max} song(s) in this section.`); return; }
   const url = prompt('Paste your Spotify or Apple Music link here:');
   if (url && url.trim()) {
-    const songText = url.trim();
-    input.value = songText;
-    if (display) display.textContent = songText;
+    items.push(url.trim());
+    input.value = JSON.stringify(items);
+    updateSongUI(inputId, items, max);
     saveEventDetails(currentEventId);
   }
 }
+
+// Update the visual list and counter for a song input
+function updateSongUI(inputId, items, max) {
+  const countEl = document.getElementById(`${inputId}_count`);
+  if (countEl) countEl.textContent = `${items.length}/${max || parseInt(document.getElementById(inputId)?.getAttribute('data-max')||'1',10)}`;
+  const listEl = document.getElementById(`${inputId}_items`);
+  if (listEl) {
+    listEl.innerHTML = items.map((t, i) => `
+      <div class="song-chip">
+        <span>${t}</span>
+        <button class="song-remove-btn" data-input-id="${inputId}" data-index="${i}">Remove</button>
+      </div>
+    `).join('');
+  }
+}
+
+// Delegate removal clicks globally
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.song-remove-btn');
+  if (!btn) return;
+  const inputId = btn.getAttribute('data-input-id');
+  const index = parseInt(btn.getAttribute('data-index')||'0',10);
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  let items = [];
+  try { items = JSON.parse(input.value || '[]'); if (!Array.isArray(items)) items = []; } catch { items = []; }
+  items.splice(index, 1);
+  input.value = JSON.stringify(items);
+  const max = parseInt(input.getAttribute('data-max') || '1', 10);
+  updateSongUI(inputId, items, max);
+  saveEventDetails(currentEventId);
+});
 
 // Attach handlers once
 (function attachSongSearchHandlers() {

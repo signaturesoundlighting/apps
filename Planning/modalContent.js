@@ -19,7 +19,7 @@ function generateModalContent(event) {
                     <label><span class="status-badge optional" data-field-id="arrivalMusicStyle">Optional</span>Style/genre of music as guests arrive</label>
                     <textarea id="arrivalMusicStyle" placeholder="i.e. piano instrumentals">${event.details.arrivalMusicStyle || ''}</textarea>
                 </div>
-                ${generateSongInput('processionalSong', 'Processional Song (Wedding Party/Family Members)', event.details.processionalSong)}
+                ${generateSongInput('processionalSong', 'Processional Song (Wedding Party/Family Members)', event.details.processionalSong, 3)}
                 ${generateSongInput('brideEntrance', "Grand Entrance Song", event.details.brideEntrance)}
                 <div class="form-group">
                     <label>Are you doing any special activities during the ceremony such as a unity sand ritual, tying of the knot, etc.?</label>
@@ -167,7 +167,7 @@ function generateModalContent(event) {
                     </div>
                 </div>
                 <div id="weddingPartySection" class="conditional-section" style="display: ${event.details.introduceParty === 'yes' ? 'block' : 'none'};">
-                    ${generateSongInput('introSong', 'Wedding Party Introduction Song', event.details.introSong)}
+                    ${generateSongInput('introSong', 'Wedding Party Introduction Song', event.details.introSong, 3)}
                     <div class="form-group">
                         <label>Wedding Party Names (in order)</label>
                         <textarea id="weddingParty" placeholder="List names in order of introduction">${event.details.weddingParty || ''}</textarea>
