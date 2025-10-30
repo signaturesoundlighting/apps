@@ -108,13 +108,14 @@ function generateLineDanceOptions(value, label, lineDances) {
 function computeEventCompletion(event) {
     try {
         const html = generateModalContent(event);
-        const regex = /status-badge\s+required[^>]*data-field-id=\"([^\"]+)\"([^>]*data-conditional=\"([^\"]+)\")?/g;
+        const regex = /status-badge\s+required[^>]*data-field-id=\"([^\"]+)\"([^>]*data-conditional=\"([^\"]+)\")?([^>]*data-badge-type=\"([^\"]+)\")?/g;
         let match;
         let total = 0;
         let done = 0;
         while ((match = regex.exec(html)) !== null) {
             const fieldId = match[1];
             const conditional = match[3];
+            const badgeType = match[5] || '';
             if (conditional) {
                 const [cField, cVal] = conditional.split(':');
                 if (((event.details || {})[cField] || '') !== cVal) continue;
@@ -137,6 +138,10 @@ function computeEventCompletion(event) {
                 } else {
                     hasValue = !!value;
                 }
+            }
+            if (badgeType === 'songs') {
+                const pl = (event.details || {})[`${fieldId}_playlist`];
+                if (!hasValue && typeof pl === 'string' && pl.trim()) hasValue = true;
             }
             if (hasValue) done += 1;
         }

@@ -1344,13 +1344,14 @@ function updateStatusBadgeDisplay(fieldId, event) {
 function computeEventCompletion(event) {
     try {
         const html = generateModalContent(event);
-        const regex = /status-badge\s+required[^>]*data-field-id=\"([^\"]+)\"([^>]*data-conditional=\"([^\"]+)\")?/g;
+        const regex = /status-badge\s+required[^>]*data-field-id=\"([^\"]+)\"([^>]*data-conditional=\"([^\"]+)\")?([^>]*data-badge-type=\"([^\"]+)\")?/g;
         let match;
         let total = 0;
         let done = 0;
         while ((match = regex.exec(html)) !== null) {
             const fieldId = match[1];
             const conditional = match[3];
+            const badgeType = match[5] || '';
             // evaluate conditional
             if (conditional) {
                 const [cField, cVal] = conditional.split(':');
@@ -1375,6 +1376,13 @@ function computeEventCompletion(event) {
                     hasValue = value.length > 0;
                 } else {
                     hasValue = !!value;
+                }
+            }
+            // If this is a songs group, consider playlist as satisfying
+            if (badgeType === 'songs') {
+                const playlistVal = event.details[`${fieldId}_playlist`];
+                if (!hasValue && typeof playlistVal === 'string' && playlistVal.trim()) {
+                    hasValue = true;
                 }
             }
             if (fieldId === 'startTime' && event.type !== 'ceremony') {
