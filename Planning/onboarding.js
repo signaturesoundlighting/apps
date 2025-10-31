@@ -23,7 +23,7 @@ const onboardingSteps = [
         showConfetti: false
     },
     {
-        title: "Click add",
+        title: "Click plus",
         subtitle: "To add custom events",
         image: "../images/103025-instructions/3-instructions.jpg",
         buttonText: "Next",
@@ -31,7 +31,7 @@ const onboardingSteps = [
     },
     {
         title: "Track your progress",
-        subtitle: "",
+        subtitle: "To make your wedding day amazing!",
         image: "../images/103025-instructions/4-instructions.jpg",
         buttonText: "Let's Go!",
         showConfetti: false
@@ -59,6 +59,9 @@ function showOnboarding() {
     overlay.className = 'onboarding-overlay';
     document.body.appendChild(overlay);
     
+    // Start confetti immediately
+    createConfetti();
+    
     // Show first step
     showOnboardingStep(0);
 }
@@ -72,11 +75,6 @@ function showOnboardingStep(step) {
     
     // Clear existing content
     overlay.innerHTML = '';
-    
-    // Add confetti if needed
-    if (stepData.showConfetti) {
-        createConfetti();
-    }
     
     // Create content container
     const content = document.createElement('div');
@@ -114,6 +112,14 @@ function showOnboardingStep(step) {
 }
 
 function handleOnboardingNext() {
+    // Stop confetti when "Get Started" button is clicked (step 0)
+    if (currentOnboardingStep === 0) {
+        const confettiContainer = document.getElementById('confettiContainer');
+        if (confettiContainer) {
+            confettiContainer.remove();
+        }
+    }
+    
     if (currentOnboardingStep < onboardingSteps.length - 1) {
         showOnboardingStep(currentOnboardingStep + 1);
     } else {
@@ -167,12 +173,7 @@ function createConfetti() {
         confettiContainer.appendChild(particle);
     }
     
-    // Remove confetti after animation
-    setTimeout(() => {
-        if (confettiContainer.parentNode) {
-            confettiContainer.remove();
-        }
-    }, 5000);
+    // Confetti will continue until stopped manually (no auto-remove timeout)
 }
 
 // Helper function to reset onboarding (useful for testing)
