@@ -12,15 +12,16 @@ let events = [
     { id: 10, type: 'toasts', name: 'Toasts', time: '', details: {} },
     { id: 11, type: 'cake-cutting', name: 'Cake Cutting', time: '', details: {} },
     { id: 12, type: 'photo-dash', name: 'Photo Dash', time: '', details: {} },
-    { id: 13, type: 'open-dancing', name: 'Open Dancing', time: '', details: {} },
-    { id: 14, type: 'last-group-dance', name: 'Last Group Dance', time: '', details: {} },
-    { id: 15, type: 'private-last-dance', name: 'Private Last Dance', time: '', details: {} },
-    { id: 16, type: 'grand-exit', name: 'Grand Exit', time: '', details: {} }
+    { id: 13, type: 'shoe-game', name: 'Shoe Game', time: '', details: {} },
+    { id: 14, type: 'open-dancing', name: 'Open Dancing', time: '', details: {} },
+    { id: 15, type: 'last-group-dance', name: 'Last Group Dance', time: '', details: {} },
+    { id: 16, type: 'private-last-dance', name: 'Private Last Dance', time: '', details: {} },
+    { id: 17, type: 'grand-exit', name: 'Grand Exit', time: '', details: {} }
 ];
 
 let currentEventId = null;
 let draggedElement = null;
-let nextId = 17;
+let nextId = 18;
 let currentSongInputId = null;
 
 // Mobile drag state
