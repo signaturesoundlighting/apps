@@ -37,17 +37,31 @@ async function loadPaymentData() {
             return;
         }
         
-        // Calculate deposit (typically 10% or you can store this separately)
-        // Use the total_balance from database, or default to 5000 if not set
+        // Get deposit amount from database (or calculate as fallback)
+        let depositAmount = null;
+        if (clientData.deposit_amount) {
+            depositAmount = parseFloat(clientData.deposit_amount);
+        } else if (clientData.total_balance) {
+            // Fallback: calculate 10% of total if deposit_amount not set
+            const totalBalance = parseFloat(clientData.total_balance);
+            depositAmount = totalBalance * 0.1;
+            console.warn('deposit_amount not set in database, calculated 10% of total_balance');
+        } else {
+            // Default fallback
+            depositAmount = 500;
+        }
+        
+        // Get total amount
         const totalBalance = clientData.total_balance ? parseFloat(clientData.total_balance) : 5000;
-        const depositAmount = totalBalance * 0.1; // 10% deposit
         
         paymentData.depositAmount = `$${depositAmount.toFixed(2)}`;
         paymentData.totalAmount = `$${totalBalance.toFixed(2)}`;
         
-        console.log('Calculated payment amounts:', {
-            totalBalance,
-            depositAmount,
+        console.log('Payment amounts loaded:', {
+            deposit_amount_from_db: clientData.deposit_amount,
+            total_balance_from_db: clientData.total_balance,
+            calculated_deposit: depositAmount,
+            total: totalBalance,
             formattedDeposit: paymentData.depositAmount,
             formattedTotal: paymentData.totalAmount
         });
