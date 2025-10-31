@@ -232,6 +232,7 @@ body {
 .event-card[data-type="last-group-dance"] { border-left: 5px solid #54a0ff; }
 .event-card[data-type="private-last-dance"] { border-left: 5px solid #ee5a6f; }
 .event-card[data-type="grand-exit"] { border-left: 5px solid #00d8d6; }
+.event-card[data-type="shoe-game"] { border-left: 5px solid #1a9e8e; }
 .event-card[data-type="custom"] { border-left: 5px solid #95afc0; }
 
 .add-event-btn {

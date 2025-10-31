@@ -57,6 +57,7 @@ const standardEventTemplates = [
     { type: 'toasts', name: 'Toasts' },
     { type: 'cake-cutting', name: 'Cake Cutting' },
     { type: 'photo-dash', name: 'Photo Dash' },
+    { type: 'shoe-game', name: 'Shoe Game' },
     { type: 'open-dancing', name: 'Open Dancing' },
     { type: 'bouquet-toss', name: 'Bouquet Toss' },
     { type: 'last-group-dance', name: 'Last Group Dance' },
@@ -1048,14 +1049,17 @@ function generateModalContent(event) {
             const questions = Array.isArray(event.details.questions) ? event.details.questions : (event.details.questions ? [event.details.questions] : []);
             html += `
                 <div class="form-group">
-                    <label>Question #1</label>
-                    <input type="text" id="shoeQuestion_0" value="${questions[0] || ''}" placeholder="Type your first question">
+                    <label><span class="status-badge required" data-field-id="shoeQuestion_0"></span>Question #1</label>
+                    <input type="text" id="shoeQuestion_0" value="${questions[0] || ''}" placeholder="Type your first question" required>
                 </div>
                 <div id="shoeQuestionsExtra">
                     ${questions.slice(1).map((q, idx) => `
                         <div class=\"form-group\"> 
-                            <label>Question #${idx + 2}</label>
-                            <input type=\"text\" id=\"shoeQuestion_${idx + 1}\" value=\"${q}\" placeholder=\"Type your question\"> 
+                            <label><span class="status-badge optional" data-field-id="shoeQuestion_${idx + 1}"></span>Question #${idx + 2}</label>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <input type=\"text\" id=\"shoeQuestion_${idx + 1}\" value=\"${q}\" placeholder=\"Type your question\" style=\"flex: 1;\"> 
+                                <button class="song-remove-btn" onclick="removeShoeQuestion(${event.id}, ${idx + 1}); return false;" style="background: #ff6b6b; color: #fff; border: none; border-radius: 6px; padding: 4px 8px; cursor: pointer; font-weight: 600; flex-shrink: 0;">Remove</button>
+                            </div>
                         </div>
                     `).join('')}
                 </div>
@@ -1108,6 +1112,19 @@ function saveEventDetails(eventId) {
     // Handle line dances specially
     const lineDances = {};
     
+    // Handle shoe game questions separately
+    if (event.type === 'shoe-game') {
+        const shoeQuestions = [];
+        const questionInputs = modalBody.querySelectorAll('input[id^="shoeQuestion_"]');
+        questionInputs.forEach(input => {
+            const index = parseInt(input.id.replace('shoeQuestion_', ''), 10);
+            if (!isNaN(index)) {
+                shoeQuestions[index] = input.value || '';
+            }
+        });
+        event.details.questions = shoeQuestions.filter(q => q !== undefined);
+    }
+    
     inputs.forEach(input => {
         if (input.type === 'radio') {
             if (input.checked) {
@@ -1124,8 +1141,8 @@ function saveEventDetails(eventId) {
                 event.details.lineDanceOtherEnabled = input.checked;
             }
         } else if (input.type === 'hidden' || input.id) {
-            // Save both hidden song inputs and regular inputs
-            if (input.id) {
+            // Save both hidden song inputs and regular inputs, but skip shoe questions (handled above)
+            if (input.id && !input.id.startsWith('shoeQuestion_')) {
                 event.details[input.id] = input.value;
             }
         }
@@ -1255,13 +1272,51 @@ function toggleDancePart(eventId) {
 }
 
 function addShoeQuestion(eventId) {
+    // Save current question values before closing modal
+    const modalBody = document.getElementById('modalBody');
+    if (modalBody) {
+        const questionInputs = modalBody.querySelectorAll('input[id^="shoeQuestion_"]');
+        const ev = events.find(e => e.id === eventId);
+        if (ev) {
+            if (!Array.isArray(ev.details.questions)) {
+                ev.details.questions = ev.details.questions ? [ev.details.questions] : [];
+            }
+            // Update existing questions with current input values
+            questionInputs.forEach(input => {
+                const index = parseInt(input.id.replace('shoeQuestion_', ''), 10);
+                if (!isNaN(index)) {
+                    ev.details.questions[index] = input.value || '';
+                }
+            });
+            // Add new empty question
+            ev.details.questions.push('');
+        }
+    }
+    // Reopen to render new input
+    closeModal();
+    setTimeout(() => openModal(eventId), 50);
+}
+
+function removeShoeQuestion(eventId, questionIndex) {
     const ev = events.find(e => e.id === eventId);
     if (!ev) return;
     if (!Array.isArray(ev.details.questions)) {
         ev.details.questions = ev.details.questions ? [ev.details.questions] : [];
     }
-    ev.details.questions.push('');
-    // Reopen to render new input
+    // Save current values first
+    const modalBody = document.getElementById('modalBody');
+    if (modalBody) {
+        const questionInputs = modalBody.querySelectorAll('input[id^="shoeQuestion_"]');
+        questionInputs.forEach(input => {
+            const index = parseInt(input.id.replace('shoeQuestion_', ''), 10);
+            if (!isNaN(index) && index < ev.details.questions.length) {
+                ev.details.questions[index] = input.value || '';
+            }
+        });
+    }
+    // Remove the question
+    ev.details.questions.splice(questionIndex, 1);
+    // Reopen modal to refresh display
     closeModal();
     setTimeout(() => openModal(eventId), 50);
 }

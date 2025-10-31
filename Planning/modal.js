@@ -426,12 +426,50 @@ function isFieldOptional(fieldId, event) {
 
 // Special dance type handlers (global)
 function addShoeQuestion(eventId) {
+    // Save current question values before closing modal
+    const modalBody = document.getElementById('modalBody');
+    if (modalBody) {
+        const questionInputs = modalBody.querySelectorAll('input[id^="shoeQuestion_"]');
+        const ev = events.find(e => e.id === eventId);
+        if (ev) {
+            if (!Array.isArray(ev.details.questions)) {
+                ev.details.questions = ev.details.questions ? [ev.details.questions] : [];
+            }
+            // Update existing questions with current input values
+            questionInputs.forEach(input => {
+                const index = parseInt(input.id.replace('shoeQuestion_', ''), 10);
+                if (!isNaN(index)) {
+                    ev.details.questions[index] = input.value || '';
+                }
+            });
+            // Add new empty question
+            ev.details.questions.push('');
+        }
+    }
+    closeModal();
+    setTimeout(() => openModal(eventId), 50);
+}
+
+function removeShoeQuestion(eventId, questionIndex) {
     const ev = events.find(e => e.id === eventId);
     if (!ev) return;
     if (!Array.isArray(ev.details.questions)) {
         ev.details.questions = ev.details.questions ? [ev.details.questions] : [];
     }
-    ev.details.questions.push('');
+    // Save current values first
+    const modalBody = document.getElementById('modalBody');
+    if (modalBody) {
+        const questionInputs = modalBody.querySelectorAll('input[id^="shoeQuestion_"]');
+        questionInputs.forEach(input => {
+            const index = parseInt(input.id.replace('shoeQuestion_', ''), 10);
+            if (!isNaN(index) && index < ev.details.questions.length) {
+                ev.details.questions[index] = input.value || '';
+            }
+        });
+    }
+    // Remove the question
+    ev.details.questions.splice(questionIndex, 1);
+    // Reopen modal to refresh display
     closeModal();
     setTimeout(() => openModal(eventId), 50);
 }
@@ -590,6 +628,19 @@ function saveEventDetails(eventId) {
     
     const lineDances = {};
     
+    // Handle shoe game questions separately
+    if (event.type === 'shoe-game') {
+        const shoeQuestions = [];
+        const questionInputs = modalBody.querySelectorAll('input[id^="shoeQuestion_"]');
+        questionInputs.forEach(input => {
+            const index = parseInt(input.id.replace('shoeQuestion_', ''), 10);
+            if (!isNaN(index)) {
+                shoeQuestions[index] = input.value || '';
+            }
+        });
+        event.details.questions = shoeQuestions.filter(q => q !== undefined);
+    }
+    
     inputs.forEach(input => {
         if (input.type === 'radio') {
             if (input.checked) {
@@ -605,7 +656,7 @@ function saveEventDetails(eventId) {
                 event.details.lineDanceOtherEnabled = input.checked;
             }
         } else if (input.type === 'hidden' || input.id) {
-            if (input.id) {
+            if (input.id && !input.id.startsWith('shoeQuestion_')) {
                 event.details[input.id] = input.value;
             }
         }

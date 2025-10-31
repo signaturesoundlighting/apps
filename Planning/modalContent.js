@@ -495,14 +495,17 @@ function generateModalContent(event) {
             const questions = Array.isArray(event.details.questions) ? event.details.questions : (event.details.questions ? [event.details.questions] : []);
             html += `
                 <div class="form-group">
-                    <label>Question #1</label>
-                    <input type="text" id="shoeQuestion_0" value="${questions[0] || ''}" placeholder="Type your first question">
+                    <label><span class="status-badge required" data-field-id="shoeQuestion_0"></span>Question #1</label>
+                    <input type="text" id="shoeQuestion_0" value="${questions[0] || ''}" placeholder="Type your first question" required>
                 </div>
                 <div id="shoeQuestionsExtra">
                     ${questions.slice(1).map((q, idx) => `
                         <div class=\"form-group\"> 
-                            <label>Question #${idx + 2}</label>
-                            <input type=\"text\" id=\"shoeQuestion_${idx + 1}\" value=\"${q}\" placeholder=\"Type your question\"> 
+                            <label><span class="status-badge optional" data-field-id="shoeQuestion_${idx + 1}"></span>Question #${idx + 2}</label>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <input type=\"text\" id=\"shoeQuestion_${idx + 1}\" value=\"${q}\" placeholder=\"Type your question\" style=\"flex: 1;\"> 
+                                <button class="song-remove-btn" onclick="removeShoeQuestion(${event.id}, ${idx + 1}); return false;" style="background: #ff6b6b; color: #fff; border: none; border-radius: 6px; padding: 4px 8px; cursor: pointer; font-weight: 600; flex-shrink: 0;">Remove</button>
+                            </div>
                         </div>
                     `).join('')}
                 </div>
