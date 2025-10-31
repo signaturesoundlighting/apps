@@ -143,11 +143,59 @@
 .service-agreement-logo {
     max-width: 300px;
     height: auto;
-    margin: 0 auto 30px auto;
+    margin: 30px auto 30px auto;
     display: block;
 }
 
 /* Service Agreement Styles */
+.event-details-form {
+    margin: 20px 0;
+    padding: 20px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.event-details-form h3 {
+    color: #1a9e8e;
+    margin: 0 0 20px 0;
+    font-size: 20px;
+}
+
+.event-detail-field {
+    margin-bottom: 20px;
+}
+
+.event-detail-field label {
+    display: block;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.event-detail-input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+.event-detail-input:focus {
+    outline: none;
+    border-color: #1a9e8e;
+}
+
+.event-date-display {
+    margin: 0;
+    padding: 12px;
+    color: #333;
+    font-size: 16px;
+}
+
 .agreement-container {
     max-height: 400px;
     overflow-y: auto;

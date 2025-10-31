@@ -3,13 +3,14 @@
 // Placeholder event data - will be replaced with backend data later
 const eventData = {
     eventDate: "10/18/26", // Placeholder - will pull from backend
-    clientName: "John & Sarah", // Placeholder - will pull from backend
-    clientPhone: "(555) 123-4567", // Placeholder - will pull from backend
-    clientAddress: "123 Main Street, City, State 12345", // Placeholder - will pull from backend
-    venueName: "The Grand Ballroom", // Placeholder - will pull from backend
-    venueAddress: "456 Event Lane, City, State 12345", // Placeholder - will pull from backend
-    services: "DJ Services, Sound System, Lighting", // Placeholder - will pull from backend
-    totalBalance: "$5,000.00" // Placeholder - will pull from backend
+    clientName: "", // Placeholder - will pull from backend (editable by client)
+    clientPhone: "", // Placeholder - will pull from backend (editable by client)
+    clientAddress: "", // Placeholder - will pull from backend (editable by client)
+    venueName: "", // Placeholder - will pull from backend (editable by client)
+    venueAddress: "", // Placeholder - will pull from backend (editable by client)
+    services: "", // Placeholder - will pull from backend (editable by client)
+    totalBalance: "", // Placeholder - will pull from backend (editable by client)
+    signature: "" // Placeholder - will pull from backend (auto-filled if exists, read-only)
 };
 
 function showServiceAgreement() {
@@ -30,6 +31,79 @@ function showServiceAgreement() {
     logo.className = 'service-agreement-logo';
     content.appendChild(logo);
     
+    // Event Details Form Section
+    const eventDetailsSection = document.createElement('div');
+    eventDetailsSection.className = 'event-details-form';
+    
+    const eventDetailsTitle = document.createElement('h3');
+    eventDetailsTitle.textContent = 'Event Details';
+    eventDetailsTitle.style.marginTop = '0';
+    eventDetailsSection.appendChild(eventDetailsTitle);
+    
+    // Helper function to create form field
+    const createFormField = (label, id, value, placeholder) => {
+        const fieldContainer = document.createElement('div');
+        fieldContainer.className = 'event-detail-field';
+        
+        const labelEl = document.createElement('label');
+        labelEl.textContent = label;
+        labelEl.setAttribute('for', id);
+        fieldContainer.appendChild(labelEl);
+        
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id = id;
+        input.className = 'event-detail-input';
+        input.value = value || '';
+        input.placeholder = placeholder || '';
+        fieldContainer.appendChild(input);
+        
+        return fieldContainer;
+    };
+    
+    // Helper function to create read-only display field
+    const createReadOnlyField = (label, value) => {
+        const fieldContainer = document.createElement('div');
+        fieldContainer.className = 'event-detail-field';
+        
+        const labelEl = document.createElement('label');
+        labelEl.textContent = label;
+        fieldContainer.appendChild(labelEl);
+        
+        const displayEl = document.createElement('p');
+        displayEl.className = 'event-date-display';
+        displayEl.textContent = value || '';
+        fieldContainer.appendChild(displayEl);
+        
+        return fieldContainer;
+    };
+    
+    // Event Date (read-only display)
+    eventDetailsSection.appendChild(createReadOnlyField('Event Date:', eventData.eventDate));
+    
+    // Client Name (editable)
+    eventDetailsSection.appendChild(createFormField('Client Name:', 'eventClientName', eventData.clientName, 'Enter client name'));
+    
+    // Client Phone (editable)
+    eventDetailsSection.appendChild(createFormField('Client Phone:', 'eventClientPhone', eventData.clientPhone, 'Enter client phone'));
+    
+    // Client Address (editable)
+    eventDetailsSection.appendChild(createFormField('Client Address:', 'eventClientAddress', eventData.clientAddress, 'Enter client address'));
+    
+    // Venue Name (editable)
+    eventDetailsSection.appendChild(createFormField('Venue Name:', 'eventVenueName', eventData.venueName, 'Enter venue name'));
+    
+    // Venue Address (editable)
+    eventDetailsSection.appendChild(createFormField('Venue Address:', 'eventVenueAddress', eventData.venueAddress, 'Enter venue address'));
+    
+    // Services (read-only - set by backend)
+    eventDetailsSection.appendChild(createReadOnlyField('Services:', eventData.services));
+    
+    // Total Balance (read-only - set by backend)
+    eventDetailsSection.appendChild(createReadOnlyField('Total Balance:', eventData.totalBalance));
+    
+    content.appendChild(eventDetailsSection);
+    
     // Agreement content container with scroll
     const agreementContainer = document.createElement('div');
     agreementContainer.className = 'agreement-container';
@@ -38,16 +112,6 @@ function showServiceAgreement() {
     const agreementText = document.createElement('div');
     agreementText.className = 'agreement-text';
     agreementText.innerHTML = `
-        <h3>Event Details</h3>
-        <p><strong>Event Date:</strong> ${eventData.eventDate}</p>
-        <p><strong>Client Name:</strong> ${eventData.clientName}</p>
-        <p><strong>Client Phone:</strong> ${eventData.clientPhone}</p>
-        <p><strong>Client Address:</strong> ${eventData.clientAddress}</p>
-        <p><strong>Venue Name:</strong> ${eventData.venueName}</p>
-        <p><strong>Venue Address:</strong> ${eventData.venueAddress}</p>
-        <p><strong>Services:</strong> ${eventData.services}</p>
-        <p><strong>Total Balance:</strong> ${eventData.totalBalance}</p>
-        
         <h3>Terms & Conditions</h3>
         
         <p><strong>Venue Requirements:</strong> The Client shall ensure that the venue can supply: 1) an area within 50 feet of a 110-volt 3 prong outlet; 2) facility is open within one hour prior to scheduled start time and will remain open at least 30 minutes after the event ends; 3) facility meets all government safety regulations and has appropriate music licenses/permits.</p>
@@ -88,7 +152,17 @@ function showServiceAgreement() {
     signatureInput.type = 'text';
     signatureInput.id = 'signatureInput';
     signatureInput.className = 'signature-input';
-    signatureInput.placeholder = 'Type your full name to sign';
+    
+    // Check if signature exists in database and auto-fill if it does
+    if (eventData.signature && eventData.signature.trim() !== '') {
+        signatureInput.value = eventData.signature;
+        signatureInput.disabled = true;
+        signatureInput.style.backgroundColor = '#f0f0f0';
+        signatureInput.style.cursor = 'not-allowed';
+    } else {
+        signatureInput.placeholder = 'Type your full name to sign';
+    }
+    
     signatureSection.appendChild(signatureInput);
     
     content.appendChild(signatureSection);
