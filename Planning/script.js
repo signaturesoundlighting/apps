@@ -688,8 +688,6 @@ function generateModalContent(event) {
             break;
 
         case 'first-dance':
-        case 'private-last-dance':
-        case 'last-group-dance':
             html += `
                 ${generateSongInput('songChoice', 'Song Selection', event.details.songChoice)}
                 <div class="form-group">
@@ -701,14 +699,25 @@ function generateModalContent(event) {
                 </div>
                 <div id="dancePartSection_${event.id}" class="time-row" style="display: ${event.details[`danceDuration_${event.id}`] === 'part' ? 'grid' : 'none'};">
                     <div class="form-group">
-                        <label><span class="status-badge optional" data-field-id="startAt" data-conditional="danceDuration_${event.id}:part"></span>Start at</label>
-                        <input type="text" id="startAt" value="${event.details.startAt || ''}" placeholder="00:30">
+                        <label><span class="status-badge required" data-field-id="startAt" data-conditional="danceDuration_${event.id}:part"></span>Start at</label>
+                        <input type="text" id="startAt" value="${event.details.startAt || ''}" placeholder="00:30" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" oninput="formatTimeInput(this)" required>
                     </div>
                     <div class="form-group">
-                        <label><span class="status-badge optional" data-field-id="endAt" data-conditional="danceDuration_${event.id}:part"></span>End at</label>
-                        <input type="text" id="endAt" value="${event.details.endAt || ''}" placeholder="01:30">
+                        <label><span class="status-badge required" data-field-id="endAt" data-conditional="danceDuration_${event.id}:part"></span>End at</label>
+                        <input type="text" id="endAt" value="${event.details.endAt || ''}" placeholder="01:30" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" oninput="formatTimeInput(this)" required>
                     </div>
                 </div>
+                <div class="form-group">
+                    <label>Other details/anything else we should know?</label>
+                    <textarea id="otherDetails" placeholder="Any additional information">${event.details.otherDetails || ''}</textarea>
+                </div>
+            `;
+            break;
+
+        case 'private-last-dance':
+        case 'last-group-dance':
+            html += `
+                ${generateSongInput('songChoice', 'Song Selection', event.details.songChoice)}
                 <div class="form-group">
                     <label>Other details/anything else we should know?</label>
                     <textarea id="otherDetails" placeholder="Any additional information">${event.details.otherDetails || ''}</textarea>
@@ -752,12 +761,12 @@ function generateModalContent(event) {
                 </div>
                 <div id="dancePartSection_${event.id}" class="time-row" style="display: ${event.details[`danceDuration_${event.id}`] === 'part' ? 'grid' : 'none'};">
                     <div class="form-group">
-                        <label><span class="status-badge optional" data-field-id="startAt" data-conditional="danceDuration_${event.id}:part"></span>Start at</label>
-                        <input type="text" id="startAt" value="${event.details.startAt || ''}" placeholder="00:30">
+                        <label><span class="status-badge required" data-field-id="startAt" data-conditional="danceDuration_${event.id}:part"></span>Start at</label>
+                        <input type="text" id="startAt" value="${event.details.startAt || ''}" placeholder="00:30" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" oninput="formatTimeInput(this)" required>
                     </div>
                     <div class="form-group">
-                        <label><span class="status-badge optional" data-field-id="endAt" data-conditional="danceDuration_${event.id}:part"></span>End at</label>
-                        <input type="text" id="endAt" value="${event.details.endAt || ''}" placeholder="01:30">
+                        <label><span class="status-badge required" data-field-id="endAt" data-conditional="danceDuration_${event.id}:part"></span>End at</label>
+                        <input type="text" id="endAt" value="${event.details.endAt || ''}" placeholder="01:30" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" oninput="formatTimeInput(this)" required>
                     </div>
                 </div>
                 <div class="form-group">
@@ -819,7 +828,7 @@ function generateModalContent(event) {
         case 'toasts':
             html += `
                 <div class="form-group">
-                    <label><span class="status-badge required" data-field-id="toastGivers"></span>Who are giving toasts?</label>
+                    <label><span class="status-badge required" data-field-id="toastGivers"></span>Names of those giving toasts</label>
                     <textarea id="toastGivers" placeholder="List names in order and their relationship to the bride/groom i.e. Father of the bride John, Maid of honor Sarah, etc">${event.details.toastGivers || ''}</textarea>
                 </div>
                 <div class="form-group">
@@ -874,8 +883,8 @@ function generateModalContent(event) {
                 </div>
                 <div id="photoDashOther" class="conditional-section" style="display: ${event.details.photoDashStyle === 'other' ? 'block' : 'none'};">
                     <div class="form-group">
-                        <label>Please explain your photo dash style</label>
-                        <textarea id="photoDashOtherText" placeholder="Describe how you'd like to do the photo dash">${event.details.photoDashOtherText || ''}</textarea>
+                        <label><span class="status-badge required" data-field-id="photoDashOtherText" data-conditional="photoDashStyle:other"></span>Please explain your photo dash style</label>
+                        <textarea id="photoDashOtherText" placeholder="Describe how you'd like to do the photo dash" required>${event.details.photoDashOtherText || ''}</textarea>
                     </div>
                 </div>
                 <div class="form-group">
@@ -1015,8 +1024,8 @@ function generateModalContent(event) {
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Special Instructions</label>
-                    <textarea id="instructions" placeholder="Any special notes about the exit">${event.details.instructions || ''}</textarea>
+                    <label>Where will it be taking place?</label>
+                    <textarea id="instructions" placeholder="So we can tell people where to go">${event.details.instructions || ''}</textarea>
                 </div>
                 <div class="form-group">
                     <label>Other details/anything else we should know?</label>
@@ -1227,6 +1236,10 @@ function togglePhotoDashOther() {
         section.style.display = selected && selected.value === 'other' ? 'block' : 'none';
     }
     saveEventDetails(currentEventId);
+    if (typeof updateStatusBadgeDisplay === 'function') {
+        updateStatusBadgeDisplay('photoDashStyle', events.find(e => e.id === currentEventId));
+        updateStatusBadgeDisplay('photoDashOtherText', events.find(e => e.id === currentEventId));
+    }
 }
 
 function toggleDancePart(eventId) {
@@ -1441,7 +1454,7 @@ function updateOverallProgress() {
         twoWeeksBefore.setHours(0, 0, 0, 0);
         const daysUntil = Math.ceil((twoWeeksBefore - today) / (1000 * 60 * 60 * 24));
         
-        txt.innerHTML = `${done}/${total} ${iconSVG} — Finalization required in ${daysUntil} ${daysUntil === 1 ? 'day' : 'days'}`;
+        txt.innerHTML = `${done}/${total} ${iconSVG} — ${pct}%<br><span style="font-weight: normal;">Finalization required in ${daysUntil} ${daysUntil === 1 ? 'day' : 'days'}</span>`;
     }
 }
 

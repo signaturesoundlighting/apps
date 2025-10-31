@@ -339,6 +339,10 @@ function togglePhotoDashOther() {
         section.style.display = selected && selected.value === 'other' ? 'block' : 'none';
     }
     saveEventDetails(currentEventId);
+    if (typeof updateStatusBadgeDisplay === 'function') {
+        updateStatusBadgeDisplay('photoDashStyle', events.find(e => e.id === currentEventId));
+        updateStatusBadgeDisplay('photoDashOtherText', events.find(e => e.id === currentEventId));
+    }
 }
 
 function toggleDancePart(eventId) {
