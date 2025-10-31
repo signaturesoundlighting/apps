@@ -87,7 +87,7 @@ function setupDragAndDrop() {
         // Mobile touch events on entire card (not just drag handle)
         card.addEventListener('touchstart', (e) => {
             e.stopPropagation();
-            e.preventDefault();
+            // Don't preventDefault here - allow scrolling until drag actually starts
             
             const rect = card.getBoundingClientRect();
             touchStartY = e.touches[0].clientY;
@@ -102,6 +102,7 @@ function setupDragAndDrop() {
             
             // Start long press timer (more responsive on mobile)
             longPressTimer = setTimeout(() => {
+                // Only prevent default and start dragging after long press completes
                 isDragging = true;
                 draggedCard = card;
                 card.classList.add('drag-ready');
@@ -123,7 +124,7 @@ function setupDragAndDrop() {
                     navigator.vibrate(50);
                 }
             }, 120);
-        }, { passive: false });
+        }, { passive: true });
 
         let moveQueued = false;
         card.addEventListener('touchmove', (e) => {
@@ -137,12 +138,14 @@ function setupDragAndDrop() {
                 hasMoved = true;
             }
             
-            // If moved before long press completes, cancel it
+            // If moved before long press completes, cancel drag timer and allow scrolling
             if (!isDragging) {
                 clearTimeout(longPressTimer);
-                return;
+                // Allow normal scrolling if user moved significantly before drag started
+                return; // Don't preventDefault - allow scrolling
             }
 
+            // Only prevent default scrolling once dragging has actually started
             e.preventDefault();
             currentTouchY = currentY;
             if (moveQueued) return; // throttle with rAF for smoother updates
