@@ -3,20 +3,52 @@
 // Stripe Configuration
 const STRIPE_PUBLISHABLE_KEY = 'pk_test_51SOL0J42hg0JtIZtdOS6EDBt3kYaAfWv7DcD9d3l6UhqndI7VHnL2hKy3K61mQ8SzThpT8q1ljaVpK6aYLkJcQIz00cJwxm4wa';
 
-// Placeholder payment data - will be replaced with backend/Stripe integration
-const paymentData = {
-    depositAmount: "$500.00", // Placeholder - will pull from backend
-    totalAmount: "$5,000.00", // Placeholder - will pull from backend
-    dueDate: "10/18/26", // Placeholder - will pull from backend
-    // Add more payment details as needed from backend/Stripe
+// Payment data - will be loaded from Supabase
+let paymentData = {
+    depositAmount: "$500.00", // Default placeholder
+    totalAmount: "$5,000.00", // Default placeholder
+    dueDate: "", // Will pull from backend
+    clientId: null
 };
+
+// Load payment data from Supabase
+async function loadPaymentData() {
+    // Get client ID from URL or localStorage
+    const urlParams = new URLSearchParams(window.location.search);
+    const clientId = urlParams.get('client_id') || localStorage.getItem('currentClientId');
+    
+    if (!clientId) {
+        console.log('No client ID found for payment');
+        return;
+    }
+    
+    paymentData.clientId = clientId;
+    
+    // Load from Supabase
+    if (window.supabaseHelpers && window.supabaseHelpers.getClientData) {
+        const clientData = await window.supabaseHelpers.getClientData(clientId);
+        
+        if (clientData) {
+            // Calculate deposit (typically 10% or you can store this separately)
+            const totalBalance = parseFloat(clientData.total_balance) || 5000;
+            const depositAmount = totalBalance * 0.1; // 10% deposit
+            
+            paymentData.depositAmount = `$${depositAmount.toFixed(2)}`;
+            paymentData.totalAmount = clientData.total_balance ? `$${parseFloat(clientData.total_balance).toFixed(2)}` : "$5,000.00";
+            paymentData.dueDate = clientData.event_date ? new Date(clientData.event_date).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' }) : "";
+        }
+    }
+}
 
 let stripe = null;
 let elements = null;
 let cardElement = null;
 let paymentIntentClientSecret = null;
 
-function showDepositPayment() {
+async function showDepositPayment() {
+    // Load payment data from Supabase before showing form
+    await loadPaymentData();
+    
     // Create deposit payment overlay
     const overlay = document.createElement('div');
     overlay.id = 'depositPaymentOverlay';
@@ -234,6 +266,14 @@ async function handleDepositPayment() {
         if (paymentIntentClientSecret === 'test_mode_mock_client_secret') {
             console.warn('TEST MODE: Skipping Stripe payment confirmation. No charge will be made.');
             
+            // Update Supabase for test mode
+            if (paymentData.clientId && window.supabaseHelpers && window.supabaseHelpers.updateClient) {
+                await window.supabaseHelpers.updateClient(paymentData.clientId, {
+                    deposit_paid: true,
+                    payment_intent_id: 'test_mode_' + Date.now()
+                });
+            }
+            
             // Simulate successful payment for testing
             localStorage.setItem('depositPaid', 'true');
             localStorage.setItem('paymentIntentId', 'test_mode_' + Date.now());
@@ -287,7 +327,14 @@ async function handleDepositPayment() {
         }
         
         if (paymentIntent && paymentIntent.status === 'succeeded') {
-            // Payment succeeded
+            // Payment succeeded - update Supabase
+            if (paymentData.clientId && window.supabaseHelpers && window.supabaseHelpers.updateClient) {
+                await window.supabaseHelpers.updateClient(paymentData.clientId, {
+                    deposit_paid: true,
+                    payment_intent_id: paymentIntent.id
+                });
+            }
+            
             localStorage.setItem('depositPaid', 'true');
             localStorage.setItem('paymentIntentId', paymentIntent.id);
             
@@ -344,11 +391,22 @@ async function createPaymentIntent(amountInCents, cardholderName) {
     };
 }
 
-function checkDepositPaymentStatus() {
+async function checkDepositPaymentStatus() {
     // Check if deposit has been paid
-    // Placeholder - will check with backend/Stripe later
-    const isPaid = localStorage.getItem('depositPaid') === 'true';
-    return isPaid;
+    // First check localStorage (fallback)
+    const localStoragePaid = localStorage.getItem('depositPaid') === 'true';
+    
+    // Then check Supabase (primary source)
+    const clientId = new URLSearchParams(window.location.search).get('client_id') || localStorage.getItem('currentClientId');
+    
+    if (clientId && window.supabaseHelpers && window.supabaseHelpers.getClientData) {
+        const clientData = await window.supabaseHelpers.getClientData(clientId);
+        if (clientData && clientData.deposit_paid) {
+            return true;
+        }
+    }
+    
+    return localStoragePaid;
 }
 
 // Helper function to reset deposit payment (useful for testing)

@@ -7,21 +7,27 @@ function init() {
 }
 
 // Check pre-onboarding requirements (service agreement & deposit) before onboarding
-function checkPreOnboardingRequirements() {
+async function checkPreOnboardingRequirements() {
     // Check if service agreement has been signed
-    if (typeof checkServiceAgreementStatus === 'function' && !checkServiceAgreementStatus()) {
-        if (typeof showServiceAgreement === 'function') {
-            showServiceAgreement();
+    if (typeof checkServiceAgreementStatus === 'function') {
+        const agreementStatus = await checkServiceAgreementStatus();
+        if (!agreementStatus) {
+            if (typeof showServiceAgreement === 'function') {
+                await showServiceAgreement();
+            }
+            return;
         }
-        return;
     }
     
     // Check if deposit has been paid
-    if (typeof checkDepositPaymentStatus === 'function' && !checkDepositPaymentStatus()) {
-        if (typeof showDepositPayment === 'function') {
-            showDepositPayment();
+    if (typeof checkDepositPaymentStatus === 'function') {
+        const depositStatus = await checkDepositPaymentStatus();
+        if (!depositStatus) {
+            if (typeof showDepositPayment === 'function') {
+                await showDepositPayment();
+            }
+            return;
         }
-        return;
     }
     
     // If both requirements are met, proceed to onboarding

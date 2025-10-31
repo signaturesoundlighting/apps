@@ -1,19 +1,54 @@
 // Service Agreement page system
 
-// Placeholder event data - will be replaced with backend data later
-const eventData = {
-    eventDate: "10/18/26", // Placeholder - will pull from backend
-    clientName: "", // Placeholder - will pull from backend (editable by client)
-    clientPhone: "", // Placeholder - will pull from backend (editable by client)
-    clientAddress: "", // Placeholder - will pull from backend (editable by client)
-    venueName: "", // Placeholder - will pull from backend (editable by client)
-    venueAddress: "", // Placeholder - will pull from backend (editable by client)
-    services: "", // Placeholder - will pull from backend (editable by client)
-    totalBalance: "", // Placeholder - will pull from backend (editable by client)
-    signature: "" // Placeholder - will pull from backend (auto-filled if exists, read-only)
+let currentClientId = null;
+let eventData = {
+    eventDate: "",
+    clientName: "",
+    clientPhone: "",
+    clientAddress: "",
+    venueName: "",
+    venueAddress: "",
+    services: "",
+    totalBalance: "",
+    signature: ""
 };
 
-function showServiceAgreement() {
+// Load client data from Supabase
+async function loadClientData() {
+    // Get client ID from URL or localStorage
+    const urlParams = new URLSearchParams(window.location.search);
+    currentClientId = urlParams.get('client_id') || localStorage.getItem('currentClientId');
+    
+    if (!currentClientId) {
+        console.log('No client ID found - will create new client when form is submitted');
+        // Use default placeholder data
+        eventData.eventDate = new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' });
+        return;
+    }
+    
+    // Load from Supabase
+    if (window.supabaseHelpers && window.supabaseHelpers.getClientData) {
+        const clientData = await window.supabaseHelpers.getClientData(currentClientId);
+        
+        if (clientData) {
+            // Map database fields to eventData
+            eventData.eventDate = clientData.event_date ? new Date(clientData.event_date).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' }) : "";
+            eventData.clientName = clientData.client_name || "";
+            eventData.clientPhone = clientData.client_phone || "";
+            eventData.clientAddress = clientData.client_address || "";
+            eventData.venueName = clientData.venue_name || "";
+            eventData.venueAddress = clientData.venue_address || "";
+            eventData.services = clientData.services || "";
+            eventData.totalBalance = clientData.total_balance ? `$${parseFloat(clientData.total_balance).toFixed(2)}` : "";
+            eventData.signature = clientData.signature || "";
+        }
+    }
+}
+
+async function showServiceAgreement() {
+    // Load client data from Supabase before showing form
+    await loadClientData();
+    
     // Create service agreement overlay
     const overlay = document.createElement('div');
     overlay.id = 'serviceAgreementOverlay';
@@ -112,7 +147,12 @@ function showServiceAgreement() {
     eventDetailsSection.appendChild(createReadOnlyField('Services:', eventData.services));
     
     // Total Balance (read-only - set by backend)
-    eventDetailsSection.appendChild(createReadOnlyField('Total Balance:', eventData.totalBalance));
+    const totalBalanceDisplay = createReadOnlyField('Total Balance:', eventData.totalBalance);
+    eventDetailsSection.appendChild(totalBalanceDisplay);
+    
+    // Store reference to services and total balance display for later use
+    const servicesElement = eventDetailsSection.querySelectorAll('.event-date-display')[eventDetailsSection.querySelectorAll('.event-date-display').length - 2];
+    const totalBalanceElement = eventDetailsSection.querySelectorAll('.event-date-display')[eventDetailsSection.querySelectorAll('.event-date-display').length - 1];
     
     content.appendChild(eventDetailsSection);
     
@@ -202,7 +242,7 @@ function showServiceAgreement() {
     overlay.appendChild(content);
 }
 
-function handleServiceAgreementSign() {
+async function handleServiceAgreementSign() {
     // Get all required input fields
     const clientNameInput = document.getElementById('eventClientName');
     const clientPhoneInput = document.getElementById('eventClientPhone');
@@ -210,6 +250,7 @@ function handleServiceAgreementSign() {
     const venueNameInput = document.getElementById('eventVenueName');
     const venueAddressInput = document.getElementById('eventVenueAddress');
     const signatureInput = document.getElementById('signatureInput');
+    const eventDateInput = document.querySelector('.event-date-display');
     
     // Get values and trim whitespace
     const clientName = clientNameInput ? clientNameInput.value.trim() : '';
@@ -218,6 +259,7 @@ function handleServiceAgreementSign() {
     const venueName = venueNameInput ? venueNameInput.value.trim() : '';
     const venueAddress = venueAddressInput ? venueAddressInput.value.trim() : '';
     const signature = signatureInput && !signatureInput.disabled ? signatureInput.value.trim() : '';
+    const eventDate = eventDateInput ? eventDateInput.textContent.trim() : '';
     
     // Check if signature is already filled (disabled means it came from database)
     const signatureRequired = !signatureInput || !signatureInput.disabled;
@@ -297,29 +339,111 @@ function handleServiceAgreementSign() {
         return;
     }
     
-    // Store signature status (placeholder - will check with backend/Stripe later)
-    localStorage.setItem('serviceAgreementSigned', 'true');
-    if (signature) {
-        localStorage.setItem('serviceAgreementSignature', signature);
-    }
-    
-    // Hide service agreement overlay
-    const overlay = document.getElementById('serviceAgreementOverlay');
-    if (overlay) {
-        overlay.style.display = 'none';
-    }
-    
-    // Proceed to deposit payment
-    if (typeof showDepositPayment === 'function') {
-        showDepositPayment();
+    // Save to Supabase
+    try {
+        // Get services and total balance from read-only displays
+        const servicesDisplay = document.querySelector('.event-date-display')?.parentElement?.parentElement?.querySelectorAll('.event-date-display')[6];
+        const totalBalanceDisplay = document.querySelector('.event-date-display')?.parentElement?.parentElement?.querySelectorAll('.event-date-display')[7];
+        const servicesValue = servicesDisplay ? servicesDisplay.textContent.trim() : '';
+        const totalBalanceText = totalBalanceDisplay ? totalBalanceDisplay.textContent.trim() : '';
+        
+        // Parse total balance (remove $ and convert to number)
+        const totalBalanceValue = totalBalanceText ? 
+            parseFloat(totalBalanceText.replace('$', '').replace(',', '')) : null;
+        
+        // Parse event date to proper format
+        let eventDateValue = null;
+        if (eventDate) {
+            // Try to parse the date (assuming MM/DD/YY format)
+            const parts = eventDate.split('/');
+            if (parts.length === 3) {
+                const month = parseInt(parts[0]) - 1; // JavaScript months are 0-indexed
+                const day = parseInt(parts[1]);
+                const year = parseInt(parts[2]);
+                // Convert 2-digit year to 4-digit (assume 20xx for years < 50)
+                const fullYear = year < 50 ? 2000 + year : 1900 + year;
+                eventDateValue = new Date(fullYear, month, day).toISOString().split('T')[0];
+            }
+        }
+        
+        const clientData = {
+            event_date: eventDateValue || new Date().toISOString().split('T')[0],
+            client_name: clientName,
+            client_phone: clientPhone,
+            client_address: clientAddress,
+            venue_name: venueName,
+            venue_address: venueAddress,
+            services: servicesValue,
+            total_balance: totalBalanceValue,
+            signature: signature || null,
+            signature_date: signature ? new Date().toISOString() : null
+        };
+        
+        let savedClientId = currentClientId;
+        
+        if (currentClientId && window.supabaseHelpers && window.supabaseHelpers.updateClient) {
+            // Update existing client
+            const success = await window.supabaseHelpers.updateClient(currentClientId, clientData);
+            if (!success) {
+                throw new Error('Failed to save client data');
+            }
+        } else if (window.supabaseHelpers && window.supabaseHelpers.createClient) {
+            // Create new client
+            const newClient = await window.supabaseHelpers.createClient(clientData);
+            if (newClient && newClient.id) {
+                savedClientId = newClient.id;
+                currentClientId = savedClientId;
+                localStorage.setItem('currentClientId', savedClientId);
+            } else {
+                throw new Error('Failed to create client');
+            }
+        } else {
+            console.warn('Supabase helpers not available - using localStorage fallback');
+            localStorage.setItem('serviceAgreementSigned', 'true');
+            if (signature) {
+                localStorage.setItem('serviceAgreementSignature', signature);
+            }
+        }
+        
+        // Store signature status for flow control
+        localStorage.setItem('serviceAgreementSigned', 'true');
+        if (signature) {
+            localStorage.setItem('serviceAgreementSignature', signature);
+        }
+        
+        // Hide service agreement overlay
+        const overlay = document.getElementById('serviceAgreementOverlay');
+        if (overlay) {
+            overlay.style.display = 'none';
+        }
+        
+        // Proceed to deposit payment
+        if (typeof showDepositPayment === 'function') {
+            showDepositPayment();
+        }
+        
+    } catch (error) {
+        console.error('Error saving client data:', error);
+        alert('Failed to save data. Please try again. Error: ' + error.message);
     }
 }
 
-function checkServiceAgreementStatus() {
+async function checkServiceAgreementStatus() {
     // Check if service agreement has been signed
-    // Placeholder - will check with backend/Stripe later
-    const isSigned = localStorage.getItem('serviceAgreementSigned') === 'true';
-    return isSigned;
+    // First check localStorage (fallback)
+    const localStorageSigned = localStorage.getItem('serviceAgreementSigned') === 'true';
+    
+    // Then check Supabase (primary source)
+    const clientId = new URLSearchParams(window.location.search).get('client_id') || localStorage.getItem('currentClientId');
+    
+    if (clientId && window.supabaseHelpers && window.supabaseHelpers.getClientData) {
+        const clientData = await window.supabaseHelpers.getClientData(clientId);
+        if (clientData && clientData.signature) {
+            return true;
+        }
+    }
+    
+    return localStorageSigned;
 }
 
 // Helper function to reset service agreement (useful for testing)
