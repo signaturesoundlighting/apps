@@ -66,12 +66,32 @@ async function init() {
     if (window.supabaseHelpers && window.supabaseHelpers.getEvents) {
         const supabaseEvents = await window.supabaseHelpers.getEvents(clientId);
         
+        // Capture default events BEFORE we modify the events array
+        // This preserves the original default events from data.js
+        const defaultEvents = [
+            { id: 1, type: 'ceremony', name: 'Ceremony', time: '', details: {} },
+            { id: 2, type: 'cocktail-hour', name: 'Cocktail Hour', time: '', details: {} },
+            { id: 3, type: 'intros', name: 'Wedding Party Introductions', time: '', details: {} },
+            { id: 4, type: 'first-dance', name: 'First Dance', time: '', details: {} },
+            { id: 5, type: 'special-dance-1', name: 'Special Dance #1', time: '', details: {} },
+            { id: 6, type: 'special-dance-2', name: 'Special Dance #2', time: '', details: {} },
+            { id: 7, type: 'blessing', name: 'Blessing', time: '', details: {} },
+            { id: 8, type: 'welcome', name: 'Welcome', time: '', details: {} },
+            { id: 9, type: 'dinner', name: 'Dinner', time: '', details: {} },
+            { id: 10, type: 'toasts', name: 'Toasts', time: '', details: {} },
+            { id: 11, type: 'cake-cutting', name: 'Cake Cutting', time: '', details: {} },
+            { id: 12, type: 'photo-dash', name: 'Photo Dash', time: '', details: {} },
+            { id: 13, type: 'shoe-game', name: 'Shoe Game', time: '', details: {} },
+            { id: 14, type: 'open-dancing', name: 'Open Dancing', time: '', details: {} },
+            { id: 15, type: 'last-group-dance', name: 'Last Group Dance', time: '', details: {} },
+            { id: 16, type: 'private-last-dance', name: 'Private Last Dance', time: '', details: {} },
+            { id: 17, type: 'grand-exit', name: 'Grand Exit', time: '', details: {} },
+            { id: 18, type: 'end-of-wedding', name: 'End of Wedding', time: '', details: {} }
+        ];
+        
         if (supabaseEvents && supabaseEvents.length > 0) {
             // Convert Supabase events to local format
-            // Use the convertSupabaseEventToLocal helper
             events = supabaseEvents.map((supabaseEvent, index) => {
-                // Use a simple numeric ID starting from 1
-                // If we need to preserve original IDs, we could store them in a mapping
                 return window.supabaseHelpers.convertSupabaseEventToLocal(supabaseEvent, index + 1);
             });
             
@@ -80,10 +100,98 @@ async function init() {
                 nextId = Math.max(nextId, events.length + 1);
             }
             
-            console.log('Loaded events from Supabase:', events);
+            console.log('Loaded events from Supabase:', events.length);
+            
+            // Check if we have fewer events than expected defaults
+            // If we have significantly fewer (less than half), initialize missing ones
+            if (defaultEvents.length > 0 && events.length < defaultEvents.length * 0.5) {
+                console.log(`Only ${events.length} events found, expected ~${defaultEvents.length}. Initializing missing default events...`);
+                
+                // Create a map of existing event types
+                const existingTypes = new Set(events.map(e => e.type));
+                
+                // Find missing default events
+                const missingEvents = defaultEvents.filter(defaultEvent => !existingTypes.has(defaultEvent.type));
+                
+                if (missingEvents.length > 0 && window.supabaseHelpers && window.supabaseHelpers.saveEvent) {
+                    // Add missing events and save them
+                    const savePromises = missingEvents.map((event, index) => {
+                        // Insert in correct position based on default order
+                        const insertIndex = defaultEvents.findIndex(e => e.type === event.type);
+                        const actualIndex = insertIndex >= 0 ? insertIndex : events.length;
+                        
+                        // Add to events array at the correct position
+                        if (insertIndex >= 0 && insertIndex <= events.length) {
+                            events.splice(insertIndex, 0, { ...event });
+                        } else {
+                            events.push({ ...event });
+                        }
+                        
+                        return window.supabaseHelpers.saveEvent(clientId, event, actualIndex);
+                    });
+                    
+                    try {
+                        const savedEvents = await Promise.all(savePromises);
+                        
+                        // Update events with their Supabase IDs
+                        savedEvents.forEach((savedEvent, index) => {
+                            const eventType = missingEvents[index].type;
+                            const eventIndex = events.findIndex(e => e.type === eventType && !e.supabase_id);
+                            if (savedEvent && eventIndex >= 0) {
+                                events[eventIndex].supabase_id = savedEvent.id;
+                            }
+                        });
+                        
+                        // Re-sort events by their position in defaultEvents to maintain order
+                        events.sort((a, b) => {
+                            const aIndex = defaultEvents.findIndex(e => e.type === a.type);
+                            const bIndex = defaultEvents.findIndex(e => e.type === b.type);
+                            return (aIndex >= 0 ? aIndex : 999) - (bIndex >= 0 ? bIndex : 999);
+                        });
+                        
+                        // Update event_order in Supabase to reflect correct order
+                        if (window.supabaseHelpers && window.supabaseHelpers.updateEventOrder) {
+                            await window.supabaseHelpers.updateEventOrder(clientId, events);
+                        }
+                        
+                        console.log(`Initialized and saved ${savedEvents.length} missing default events to Supabase`);
+                    } catch (error) {
+                        console.error('Error saving missing default events to Supabase:', error);
+                    }
+                }
+            }
         } else {
-            console.log('No events found in Supabase, using default events');
-            // Keep default events from data.js
+            // No events found in Supabase - initialize with default events and save them
+            console.log('No events found in Supabase, initializing default events');
+            
+            // Events array should already have default events from data.js
+            // Now we need to save them all to Supabase
+            if (defaultEvents && defaultEvents.length > 0 && window.supabaseHelpers && window.supabaseHelpers.saveEvent) {
+                console.log('Saving default events to Supabase...');
+                
+                // Use defaultEvents to ensure we have the right array
+                events = defaultEvents.map((e, i) => ({ ...e, id: i + 1 }));
+                
+                // Save all default events to Supabase
+                const savePromises = events.map((event, index) => {
+                    return window.supabaseHelpers.saveEvent(clientId, event, index);
+                });
+                
+                try {
+                    const savedEvents = await Promise.all(savePromises);
+                    
+                    // Update events with their Supabase IDs
+                    savedEvents.forEach((savedEvent, index) => {
+                        if (savedEvent && events[index]) {
+                            events[index].supabase_id = savedEvent.id;
+                        }
+                    });
+                    
+                    console.log(`Initialized and saved ${savedEvents.length} default events to Supabase`);
+                } catch (error) {
+                    console.error('Error saving default events to Supabase:', error);
+                }
+            }
         }
     }
     
