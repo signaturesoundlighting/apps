@@ -218,19 +218,10 @@ async function handleDepositPayment() {
     }
     
     try {
-        // TODO: Replace with backend endpoint to create PaymentIntent
-        // For now, we'll need to create a PaymentIntent on the backend first
-        // The backend should return a client_secret which we use here
-        
-        // Placeholder: You'll need to call your backend to create a PaymentIntent
-        // Example: const { clientSecret } = await fetch('/api/create-payment-intent', {...})
-        
-        // For now, using a test approach - in production you MUST create PaymentIntent on backend
         // Convert deposit amount to cents (remove $ and convert to number)
         const amountInCents = parseFloat(paymentData.depositAmount.replace('$', '').replace(',', '')) * 100;
         
-        // Note: In production, the PaymentIntent MUST be created on your backend
-        // This is a placeholder structure - replace with actual backend call
+        // Create PaymentIntent (will return mock in test mode until backend is ready)
         const paymentIntentResponse = await createPaymentIntent(amountInCents, cardholderNameValue);
         
         if (!paymentIntentResponse || !paymentIntentResponse.clientSecret) {
@@ -239,7 +230,29 @@ async function handleDepositPayment() {
         
         paymentIntentClientSecret = paymentIntentResponse.clientSecret;
         
-        // Confirm payment with Stripe
+        // TEST MODE: Skip actual Stripe payment confirmation if using mock
+        if (paymentIntentClientSecret === 'test_mode_mock_client_secret') {
+            console.warn('TEST MODE: Skipping Stripe payment confirmation. No charge will be made.');
+            
+            // Simulate successful payment for testing
+            localStorage.setItem('depositPaid', 'true');
+            localStorage.setItem('paymentIntentId', 'test_mode_' + Date.now());
+            localStorage.setItem('paymentTestMode', 'true');
+            
+            // Hide deposit payment overlay
+            const overlay = document.getElementById('depositPaymentOverlay');
+            if (overlay) {
+                overlay.style.display = 'none';
+            }
+            
+            // Proceed to onboarding
+            if (typeof checkIfOnboardingNeeded === 'function') {
+                checkIfOnboardingNeeded();
+            }
+            return;
+        }
+        
+        // PRODUCTION MODE: Confirm payment with Stripe (only when backend is integrated)
         const { error, paymentIntent } = await stripe.confirmCardPayment(
             paymentIntentClientSecret,
             {
@@ -323,8 +336,12 @@ async function createPaymentIntent(amountInCents, cardholderName) {
     // });
     // return await response.json();
     
-    // For now, return error to indicate backend integration needed
-    throw new Error('Backend integration required: Please implement the createPaymentIntent function to call your backend API endpoint that creates a Stripe PaymentIntent.');
+    // TEST MODE: Allow page to proceed without backend integration
+    // Remove this mock response when backend is ready
+    console.warn('TEST MODE: Using mock PaymentIntent. Replace with actual backend call.');
+    return {
+        clientSecret: 'test_mode_mock_client_secret'
+    };
 }
 
 function checkDepositPaymentStatus() {
