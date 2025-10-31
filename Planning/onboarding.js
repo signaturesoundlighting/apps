@@ -9,28 +9,28 @@ const onboardingSteps = [
         showConfetti: true
     },
     {
-        title: "",
+        title: "Step 1",
         subtitle: "",
         image: "../images/103025-instructions/1-instructions.jpg",
         buttonText: "Next",
         showConfetti: false
     },
     {
-        title: "",
+        title: "Step 2",
         subtitle: "",
         image: "../images/103025-instructions/2-instructions.jpg",
         buttonText: "Next",
         showConfetti: false
     },
     {
-        title: "",
+        title: "Step 3",
         subtitle: "",
         image: "../images/103025-instructions/3-instructions.jpg",
         buttonText: "Next",
         showConfetti: false
     },
     {
-        title: "",
+        title: "Step 4",
         subtitle: "",
         image: "../images/103025-instructions/4-instructions.jpg",
         buttonText: "Next",
