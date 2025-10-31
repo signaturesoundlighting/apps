@@ -142,14 +142,35 @@ async function saveEvent(clientId, eventData, eventOrder = null) {
         updated_at: new Date().toISOString()
     };
     
-    // Set event_order if provided (for new events or reordering)
-    if (eventOrder !== null) {
-        supabaseEvent.event_order = eventOrder;
-    }
-    
-    // If this event already exists in Supabase, include the Supabase ID
+    // If this event already exists in Supabase, fetch its current data to preserve event_order
     if (eventData.supabase_id) {
         supabaseEvent.id = eventData.supabase_id;
+        
+        // Fetch current event to preserve event_order if not provided
+        if (eventOrder === null) {
+            const { data: existingEvent, error: fetchError } = await window.supabaseClient
+                .from('events')
+                .select('event_order')
+                .eq('id', eventData.supabase_id)
+                .single();
+            
+            if (!fetchError && existingEvent) {
+                supabaseEvent.event_order = existingEvent.event_order;
+            } else {
+                // If we can't find it, use the provided eventOrder or default to 0
+                supabaseEvent.event_order = eventOrder !== null ? eventOrder : 0;
+            }
+        } else {
+            supabaseEvent.event_order = eventOrder;
+        }
+    } else {
+        // New event - must provide event_order
+        if (eventOrder === null) {
+            // Default to end of list (we'll set a proper order later)
+            supabaseEvent.event_order = 999;
+        } else {
+            supabaseEvent.event_order = eventOrder;
+        }
     }
     
     // Use upsert - if supabase_id exists, it will update; otherwise, it will insert

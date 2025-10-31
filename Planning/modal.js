@@ -750,7 +750,11 @@ async function saveEventDetails(eventId) {
     const clientId = window.supabaseHelpers?.getCurrentClientId();
     if (clientId && window.supabaseHelpers && window.supabaseHelpers.saveEvent) {
         try {
-            const savedEvent = await window.supabaseHelpers.saveEvent(clientId, event);
+            // Find the current position of this event in the events array for event_order
+            const eventIndex = events.findIndex(e => e.id === eventId);
+            const eventOrder = eventIndex >= 0 ? eventIndex : events.length;
+            
+            const savedEvent = await window.supabaseHelpers.saveEvent(clientId, event, eventOrder);
             if (savedEvent) {
                 // Update the event with the Supabase ID if it's a new event
                 event.supabase_id = savedEvent.id;
