@@ -1,9 +1,6 @@
 // Supabase Configuration
-// IMPORTANT: Replace these values with your actual Supabase project credentials
-// Get them from: Supabase Dashboard → Settings → API
-
-const SUPABASE_URL = 'YOUR_PROJECT_URL_HERE'; // e.g., 'https://xxxxx.supabase.co'
-const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY_HERE'; // Your anon public key
+const SUPABASE_URL = 'https://grduintobeybnvrwmyty.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdyZHVpbnRvYmV5Ym52cndteXR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE4MjgxOTYsImV4cCI6MjA3NzQwNDE5Nn0._crbCRqRaQfAJwZplc-7RWD4AbaA63lliCsGjTCESV0';
 
 // Initialize Supabase client
 let supabase = null;

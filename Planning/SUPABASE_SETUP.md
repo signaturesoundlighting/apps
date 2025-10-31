@@ -27,20 +27,9 @@ Once your project is created:
 Run this SQL in Supabase SQL Editor (Tools → SQL Editor):
 
 ```sql
--- Events table (wedding timeline events)
-CREATE TABLE events (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    client_id UUID NOT NULL REFERENCES clients(id),
-    event_order INTEGER NOT NULL,
-    type TEXT NOT NULL,
-    name TEXT NOT NULL,
-    time TEXT,
-    details JSONB DEFAULT '{}',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- IMPORTANT: Run tables in this order (clients must be created first)
 
--- Clients table (main client/event information)
+-- Clients table (main client/event information) - CREATE THIS FIRST
 CREATE TABLE clients (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     event_date DATE NOT NULL,
@@ -60,7 +49,20 @@ CREATE TABLE clients (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- General info table (venue and planner details)
+-- Events table (wedding timeline events) - CREATE THIS SECOND (references clients)
+CREATE TABLE events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    client_id UUID NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+    event_order INTEGER NOT NULL,
+    type TEXT NOT NULL,
+    name TEXT NOT NULL,
+    time TEXT,
+    details JSONB DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- General info table (venue and planner details) - CREATE THIS THIRD (references clients)
 CREATE TABLE general_info (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     client_id UUID NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
