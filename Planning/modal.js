@@ -60,7 +60,7 @@ function openGeneralInfo() {
     if (footer) footer.remove();
 }
 
-async function saveGeneralInfo() {
+function saveGeneralInfo(skipSupabaseSave = false) {
     generalInfo.venueName = document.getElementById('venueName')?.value || '';
     generalInfo.venueAddress = document.getElementById('venueAddress')?.value || '';
     generalInfo.differentCeremonyVenue = document.getElementById('differentCeremonyVenue')?.checked || false;
@@ -69,26 +69,18 @@ async function saveGeneralInfo() {
     generalInfo.plannerName = document.getElementById('plannerName')?.value || '';
     generalInfo.plannerEmail = document.getElementById('plannerEmail')?.value || '';
     
-    // Save to Supabase
-    const clientId = window.supabaseHelpers?.getCurrentClientId();
-    if (clientId && window.supabaseHelpers && window.supabaseHelpers.saveGeneralInfo) {
-        try {
-            // Map local field names to Supabase field names
-            const generalInfoData = {
-                venue_name: generalInfo.venueName,
-                venue_address: generalInfo.venueAddress,
-                different_ceremony_venue: generalInfo.differentCeremonyVenue,
-                ceremony_venue_name: generalInfo.ceremonyVenueName,
-                ceremony_venue_address: generalInfo.ceremonyVenueAddress,
-                planner_name: generalInfo.plannerName,
-                planner_email: generalInfo.plannerEmail
-            };
-            
-            await window.supabaseHelpers.saveGeneralInfo(clientId, generalInfoData);
-            console.log('General info saved to Supabase');
-        } catch (error) {
-            console.error('Error saving general info to Supabase:', error);
+    // Save to Supabase with debouncing (wait 1.5 seconds after last change)
+    if (!skipSupabaseSave) {
+        // Clear any existing timer
+        if (generalInfoSaveTimer.timer) {
+            clearTimeout(generalInfoSaveTimer.timer);
         }
+        
+        // Set a new timer to save after user stops typing
+        generalInfoSaveTimer.timer = setTimeout(() => {
+            saveGeneralInfoToSupabase();
+            generalInfoSaveTimer.timer = null;
+        }, 1500); // Wait 1.5 seconds after last keystroke
     }
     
     showSaveIndicator();
@@ -112,6 +104,18 @@ function toggleCeremonyVenue() {
 }
 
 function closeModal() {
+    // Force immediate save before closing (flush any pending debounced saves)
+    if (currentEventId !== null) {
+        // Clear any pending debounced save and save immediately
+        if (eventSaveTimers[currentEventId]) {
+            clearTimeout(eventSaveTimers[currentEventId]);
+            delete eventSaveTimers[currentEventId];
+        }
+        // Save immediately (bypass debounce)
+        saveEventDetails(currentEventId, true); // skipSupabaseSave = true to prevent double save
+        saveEventToSupabase(currentEventId);
+    }
+    
     document.getElementById('eventModal').classList.remove('active');
     currentEventId = null;
 }
@@ -693,7 +697,63 @@ function closeConfirm() {
     __onConfirmYes = null;
 }
 
-async function saveEventDetails(eventId) {
+// Debounce timers for saving to Supabase (reduces database writes)
+const eventSaveTimers = {};
+const generalInfoSaveTimer = { timer: null };
+
+// Debounced function to save event to Supabase
+async function saveEventToSupabase(eventId) {
+    const event = events.find(e => e.id === eventId);
+    if (!event) return;
+    
+    const clientId = window.supabaseHelpers?.getCurrentClientId();
+    if (!clientId || !window.supabaseHelpers || !window.supabaseHelpers.saveEvent) {
+        return;
+    }
+    
+    try {
+        // Find the current position of this event in the events array for event_order
+        const eventIndex = events.findIndex(e => e.id === eventId);
+        const eventOrder = eventIndex >= 0 ? eventIndex : events.length;
+        
+        const savedEvent = await window.supabaseHelpers.saveEvent(clientId, event, eventOrder);
+        if (savedEvent) {
+            // Update the event with the Supabase ID if it's a new event or preserve existing
+            event.supabase_id = savedEvent.id;
+            console.log('Event saved to Supabase (debounced):', savedEvent.id);
+        }
+    } catch (error) {
+        console.error('Error saving event to Supabase:', error);
+    }
+}
+
+// Debounced function to save general info to Supabase
+async function saveGeneralInfoToSupabase() {
+    const clientId = window.supabaseHelpers?.getCurrentClientId();
+    if (!clientId || !window.supabaseHelpers || !window.supabaseHelpers.saveGeneralInfo) {
+        return;
+    }
+    
+    try {
+        // Map local field names to Supabase field names
+        const generalInfoData = {
+            venue_name: generalInfo.venueName,
+            venue_address: generalInfo.venueAddress,
+            different_ceremony_venue: generalInfo.differentCeremonyVenue,
+            ceremony_venue_name: generalInfo.ceremonyVenueName,
+            ceremony_venue_address: generalInfo.ceremonyVenueAddress,
+            planner_name: generalInfo.plannerName,
+            planner_email: generalInfo.plannerEmail
+        };
+        
+        await window.supabaseHelpers.saveGeneralInfo(clientId, generalInfoData);
+        console.log('General info saved to Supabase (debounced)');
+    } catch (error) {
+        console.error('Error saving general info to Supabase:', error);
+    }
+}
+
+function saveEventDetails(eventId, skipSupabaseSave = false) {
     const event = events.find(e => e.id === eventId);
     if (!event) return;
 
@@ -746,23 +806,18 @@ async function saveEventDetails(eventId) {
         setupDragAndDrop();
     }
 
-    // Save to Supabase
-    const clientId = window.supabaseHelpers?.getCurrentClientId();
-    if (clientId && window.supabaseHelpers && window.supabaseHelpers.saveEvent) {
-        try {
-            // Find the current position of this event in the events array for event_order
-            const eventIndex = events.findIndex(e => e.id === eventId);
-            const eventOrder = eventIndex >= 0 ? eventIndex : events.length;
-            
-            const savedEvent = await window.supabaseHelpers.saveEvent(clientId, event, eventOrder);
-            if (savedEvent) {
-                // Update the event with the Supabase ID if it's a new event
-                event.supabase_id = savedEvent.id;
-                console.log('Event saved to Supabase:', savedEvent);
-            }
-        } catch (error) {
-            console.error('Error saving event to Supabase:', error);
+    // Save to Supabase with debouncing (wait 1.5 seconds after last change)
+    if (!skipSupabaseSave) {
+        // Clear any existing timer for this event
+        if (eventSaveTimers[eventId]) {
+            clearTimeout(eventSaveTimers[eventId]);
         }
+        
+        // Set a new timer to save after user stops typing
+        eventSaveTimers[eventId] = setTimeout(() => {
+            saveEventToSupabase(eventId);
+            delete eventSaveTimers[eventId];
+        }, 1500); // Wait 1.5 seconds after last keystroke
     }
     
     showSaveIndicator();
