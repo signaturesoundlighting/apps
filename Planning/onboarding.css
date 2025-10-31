@@ -106,6 +106,238 @@
     }
 }
 
+/* Pre-onboarding pages (Service Agreement & Deposit Payment) */
+.pre-onboarding-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: white;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease-in;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.pre-onboarding-content {
+    width: 100%;
+    max-width: 800px;
+    padding: 40px;
+    position: relative;
+    z-index: 10001;
+}
+
+.pre-onboarding-title {
+    font-size: 32px;
+    font-weight: bold;
+    color: #1a9e8e;
+    margin: 0 0 30px 0;
+    text-align: center;
+    line-height: 1.3;
+}
+
+/* Service Agreement Styles */
+.agreement-container {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    background: #f9f9f9;
+}
+
+.agreement-text {
+    color: #333;
+    line-height: 1.6;
+}
+
+.agreement-text h3 {
+    color: #1a9e8e;
+    margin: 20px 0 10px 0;
+    font-size: 20px;
+}
+
+.agreement-text h3:first-child {
+    margin-top: 0;
+}
+
+.agreement-text p {
+    margin: 10px 0;
+}
+
+.signature-section {
+    margin: 30px 0;
+    padding: 20px;
+    background: #f9f9f9;
+    border-radius: 8px;
+}
+
+.signature-label {
+    display: block;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.signature-input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.2s;
+}
+
+.signature-input:focus {
+    outline: none;
+    border-color: #1a9e8e;
+}
+
+/* Deposit Payment Styles */
+.payment-summary {
+    background: #f9f9f9;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.payment-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.payment-row:last-child {
+    border-bottom: none;
+}
+
+.payment-label {
+    font-weight: 600;
+    color: #333;
+    font-size: 16px;
+}
+
+.payment-value {
+    font-size: 18px;
+    color: #1a9e8e;
+    font-weight: 600;
+}
+
+.payment-form-container {
+    margin: 30px 0;
+}
+
+.payment-placeholder {
+    background: #f0f0f0;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.payment-placeholder h3 {
+    color: #1a9e8e;
+    margin: 0 0 15px 0;
+}
+
+.payment-placeholder ul {
+    margin: 15px 0;
+    padding-left: 25px;
+}
+
+.payment-placeholder li {
+    margin: 8px 0;
+    color: #666;
+}
+
+.payment-fields-placeholder {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    background: #fafafa;
+}
+
+.form-field {
+    margin-bottom: 20px;
+}
+
+.form-field label {
+    display: block;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.form-field input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+.form-field input:disabled {
+    background: #f0f0f0;
+    cursor: not-allowed;
+    color: #999;
+}
+
+.form-row {
+    display: flex;
+    gap: 15px;
+}
+
+.form-row .form-field {
+    flex: 1;
+}
+
+.pre-onboarding-button-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 30px;
+    gap: 15px;
+}
+
+.pre-onboarding-button {
+    background: #1a9e8e;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 14px 32px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pre-onboarding-button:hover {
+    background: #148b7c;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(26, 158, 142, 0.3);
+}
+
+.pre-onboarding-button:active {
+    transform: translateY(0);
+}
+
+.pre-onboarding-button.primary {
+    background: #1a9e8e;
+}
+
+.pre-onboarding-button.secondary {
+    background: #666;
+}
+
 /* Mobile responsiveness */
 @media (max-width: 768px) {
     .onboarding-title {
@@ -122,6 +354,29 @@
     
     .onboarding-image {
         margin: 15px 0;
+    }
+    
+    .pre-onboarding-content {
+        padding: 20px;
+    }
+    
+    .pre-onboarding-title {
+        font-size: 24px;
+    }
+    
+    .agreement-container {
+        max-height: 300px;
+    }
+    
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+    
+    .payment-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
     }
 }
 
