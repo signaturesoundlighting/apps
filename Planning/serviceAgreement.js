@@ -59,6 +59,15 @@ function showServiceAgreement() {
         input.className = 'event-detail-input';
         input.value = value || '';
         input.placeholder = placeholder || '';
+        
+        // Clear error styling when user starts typing
+        input.addEventListener('input', function() {
+            if (this.value.trim() !== '') {
+                this.style.borderColor = '';
+                this.classList.remove('field-error');
+            }
+        });
+        
         fieldContainer.appendChild(input);
         
         return fieldContainer;
@@ -164,6 +173,14 @@ function showServiceAgreement() {
         signatureInput.style.cursor = 'not-allowed';
     } else {
         signatureInput.placeholder = 'Type your full name to sign';
+        
+        // Clear error styling when user starts typing
+        signatureInput.addEventListener('input', function() {
+            if (this.value.trim() !== '') {
+                this.style.borderColor = '';
+                this.classList.remove('field-error');
+            }
+        });
     }
     
     signatureSection.appendChild(signatureInput);
@@ -186,17 +203,105 @@ function showServiceAgreement() {
 }
 
 function handleServiceAgreementSign() {
+    // Get all required input fields
+    const clientNameInput = document.getElementById('eventClientName');
+    const clientPhoneInput = document.getElementById('eventClientPhone');
+    const clientAddressInput = document.getElementById('eventClientAddress');
+    const venueNameInput = document.getElementById('eventVenueName');
+    const venueAddressInput = document.getElementById('eventVenueAddress');
     const signatureInput = document.getElementById('signatureInput');
-    const signature = signatureInput ? signatureInput.value.trim() : '';
     
-    if (!signature) {
-        alert('Please enter your full name to sign the agreement.');
+    // Get values and trim whitespace
+    const clientName = clientNameInput ? clientNameInput.value.trim() : '';
+    const clientPhone = clientPhoneInput ? clientPhoneInput.value.trim() : '';
+    const clientAddress = clientAddressInput ? clientAddressInput.value.trim() : '';
+    const venueName = venueNameInput ? venueNameInput.value.trim() : '';
+    const venueAddress = venueAddressInput ? venueAddressInput.value.trim() : '';
+    const signature = signatureInput && !signatureInput.disabled ? signatureInput.value.trim() : '';
+    
+    // Check if signature is already filled (disabled means it came from database)
+    const signatureRequired = !signatureInput || !signatureInput.disabled;
+    
+    // Remove previous error styling
+    const allInputs = [clientNameInput, clientPhoneInput, clientAddressInput, venueNameInput, venueAddressInput];
+    if (signatureRequired) {
+        allInputs.push(signatureInput);
+    }
+    
+    allInputs.forEach(input => {
+        if (input) {
+            input.style.borderColor = '';
+            input.classList.remove('field-error');
+        }
+    });
+    
+    // Validate all fields
+    let hasErrors = false;
+    
+    if (!clientName) {
+        if (clientNameInput) {
+            clientNameInput.style.borderColor = '#dc3545';
+            clientNameInput.classList.add('field-error');
+        }
+        hasErrors = true;
+    }
+    
+    if (!clientPhone) {
+        if (clientPhoneInput) {
+            clientPhoneInput.style.borderColor = '#dc3545';
+            clientPhoneInput.classList.add('field-error');
+        }
+        hasErrors = true;
+    }
+    
+    if (!clientAddress) {
+        if (clientAddressInput) {
+            clientAddressInput.style.borderColor = '#dc3545';
+            clientAddressInput.classList.add('field-error');
+        }
+        hasErrors = true;
+    }
+    
+    if (!venueName) {
+        if (venueNameInput) {
+            venueNameInput.style.borderColor = '#dc3545';
+            venueNameInput.classList.add('field-error');
+        }
+        hasErrors = true;
+    }
+    
+    if (!venueAddress) {
+        if (venueAddressInput) {
+            venueAddressInput.style.borderColor = '#dc3545';
+            venueAddressInput.classList.add('field-error');
+        }
+        hasErrors = true;
+    }
+    
+    if (signatureRequired && !signature) {
+        if (signatureInput) {
+            signatureInput.style.borderColor = '#dc3545';
+            signatureInput.classList.add('field-error');
+        }
+        hasErrors = true;
+    }
+    
+    // If there are errors, don't proceed
+    if (hasErrors) {
+        // Scroll to first error field
+        const firstError = allInputs.find(input => input && input.value.trim() === '');
+        if (firstError) {
+            firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            firstError.focus();
+        }
         return;
     }
     
     // Store signature status (placeholder - will check with backend/Stripe later)
     localStorage.setItem('serviceAgreementSigned', 'true');
-    localStorage.setItem('serviceAgreementSignature', signature);
+    if (signature) {
+        localStorage.setItem('serviceAgreementSignature', signature);
+    }
     
     // Hide service agreement overlay
     const overlay = document.getElementById('serviceAgreementOverlay');

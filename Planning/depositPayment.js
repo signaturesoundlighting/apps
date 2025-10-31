@@ -19,6 +19,16 @@ function showDepositPayment() {
     const content = document.createElement('div');
     content.className = 'pre-onboarding-content';
     
+    // Logo
+    const logo = document.createElement('img');
+    logo.src = 'https://images.squarespace-cdn.com/content/v1/64909a307fc0025a2064d878/9b8fde02-b8f9-402b-be4c-366cb48134eb/Transparent+PNG+File.png';
+    logo.alt = 'Signature Sound & Lighting';
+    logo.className = 'service-agreement-logo';
+    logo.onerror = function() {
+        console.error('Logo failed to load');
+    };
+    content.appendChild(logo);
+    
     // Title
     const title = document.createElement('h1');
     title.className = 'pre-onboarding-title';

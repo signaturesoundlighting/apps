@@ -191,6 +191,16 @@
     border-color: #1a9e8e;
 }
 
+.event-detail-input.field-error {
+    border-color: #dc3545 !important;
+    border-width: 2px;
+}
+
+.signature-input.field-error {
+    border-color: #dc3545 !important;
+    border-width: 2px;
+}
+
 .event-date-display {
     margin: 0;
     padding: 12px;
