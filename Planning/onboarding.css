@@ -116,7 +116,7 @@
     background: white;
     z-index: 10000;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     animation: fadeIn 0.3s ease-in;
     overflow-y: auto;
