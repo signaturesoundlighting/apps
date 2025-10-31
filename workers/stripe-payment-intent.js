@@ -50,22 +50,35 @@ export default {
             }
 
             // Create PaymentIntent via Stripe API
+            // Stripe expects metadata as individual key-value pairs, not JSON
+            const formData = new URLSearchParams({
+                amount: amount.toString(),
+                currency: currency,
+                // For test mode, we can use automatic payment methods
+                'automatic_payment_methods[enabled]': 'true',
+            });
+            
+            // Add metadata as individual key-value pairs
+            if (clientId) {
+                formData.append('metadata[client_id]', clientId);
+            }
+            
+            // Add any additional metadata as individual key-value pairs
+            if (metadata && typeof metadata === 'object') {
+                for (const [key, value] of Object.entries(metadata)) {
+                    if (value !== null && value !== undefined) {
+                        formData.append(`metadata[${key}]`, String(value));
+                    }
+                }
+            }
+            
             const response = await fetch('https://api.stripe.com/v1/payment_intents', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: new URLSearchParams({
-                    amount: amount.toString(),
-                    currency: currency,
-                    metadata: JSON.stringify({
-                        client_id: clientId || '',
-                        ...metadata,
-                    }),
-                    // For test mode, we can use automatic payment methods
-                    automatic_payment_methods: JSON.stringify({ enabled: true }),
-                }),
+                body: formData,
             });
 
             const data = await response.json();
