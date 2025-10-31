@@ -72,61 +72,11 @@ function showDepositPayment() {
     paymentFormTitle.style.marginTop = '0';
     paymentForm.appendChild(paymentFormTitle);
     
-    // Initialize Stripe
-    if (typeof Stripe !== 'undefined') {
-        stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
-        elements = stripe.elements();
-        
-        // Card element container
-        const cardContainer = document.createElement('div');
-        cardContainer.id = 'card-element';
-        cardContainer.className = 'stripe-card-element';
-        paymentForm.appendChild(cardContainer);
-        
-        // Create card element
-        cardElement = elements.create('card', {
-            style: {
-                base: {
-                    fontSize: '16px',
-                    color: '#32325d',
-                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-                    '::placeholder': {
-                        color: '#aab7c4',
-                    },
-                },
-                invalid: {
-                    color: '#dc3545',
-                },
-            },
-        });
-        
-        // Mount card element
-        cardElement.mount('#card-element');
-        
-        // Handle real-time validation errors
-        cardElement.on('change', function(event) {
-            const errorElement = document.getElementById('card-errors');
-            if (event.error) {
-                if (!errorElement) {
-                    const errorDiv = document.createElement('div');
-                    errorDiv.id = 'card-errors';
-                    errorDiv.className = 'stripe-error';
-                    paymentForm.appendChild(errorDiv);
-                }
-                document.getElementById('card-errors').textContent = event.error.message;
-            } else {
-                if (errorElement) {
-                    errorElement.textContent = '';
-                }
-            }
-        });
-    } else {
-        // Fallback if Stripe.js hasn't loaded
-        const errorMsg = document.createElement('div');
-        errorMsg.className = 'stripe-error';
-        errorMsg.textContent = 'Payment system is loading. Please refresh the page if this message persists.';
-        paymentForm.appendChild(errorMsg);
-    }
+    // Card element container (create it first so it exists in DOM)
+    const cardContainer = document.createElement('div');
+    cardContainer.id = 'card-element';
+    cardContainer.className = 'stripe-card-element';
+    paymentForm.appendChild(cardContainer);
     
     // Cardholder name field
     const nameField = document.createElement('div');
@@ -144,6 +94,77 @@ function showDepositPayment() {
     paymentForm.appendChild(nameField);
     
     content.appendChild(paymentForm);
+    overlay.appendChild(content);
+    
+    // Initialize Stripe AFTER elements are in the DOM
+    // Use setTimeout to ensure DOM is fully ready
+    setTimeout(() => {
+        if (typeof Stripe !== 'undefined') {
+            try {
+                stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+                elements = stripe.elements();
+                
+                // Create card element
+                cardElement = elements.create('card', {
+                    style: {
+                        base: {
+                            fontSize: '16px',
+                            color: '#32325d',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                            '::placeholder': {
+                                color: '#aab7c4',
+                            },
+                        },
+                        invalid: {
+                            color: '#dc3545',
+                        },
+                    },
+                });
+                
+                // Mount card element - element should now exist in DOM
+                const cardElementDom = document.getElementById('card-element');
+                if (cardElementDom) {
+                    cardElement.mount('#card-element');
+                    
+                    // Handle real-time validation errors
+                    cardElement.on('change', function(event) {
+                        const errorElement = document.getElementById('card-errors');
+                        if (event.error) {
+                            if (!errorElement) {
+                                const errorDiv = document.createElement('div');
+                                errorDiv.id = 'card-errors';
+                                errorDiv.className = 'stripe-error';
+                                paymentForm.appendChild(errorDiv);
+                            }
+                            document.getElementById('card-errors').textContent = event.error.message;
+                        } else {
+                            if (errorElement) {
+                                errorElement.textContent = '';
+                            }
+                        }
+                    });
+                } else {
+                    console.error('Card element container not found in DOM');
+                    const errorMsg = document.createElement('div');
+                    errorMsg.className = 'stripe-error';
+                    errorMsg.textContent = 'Payment form error. Please refresh the page.';
+                    paymentForm.appendChild(errorMsg);
+                }
+            } catch (error) {
+                console.error('Stripe initialization error:', error);
+                const errorMsg = document.createElement('div');
+                errorMsg.className = 'stripe-error';
+                errorMsg.textContent = 'Payment system initialization failed. Please refresh the page.';
+                paymentForm.appendChild(errorMsg);
+            }
+        } else {
+            // Fallback if Stripe.js hasn't loaded
+            const errorMsg = document.createElement('div');
+            errorMsg.className = 'stripe-error';
+            errorMsg.textContent = 'Payment system is loading. Please refresh the page if this message persists.';
+            paymentForm.appendChild(errorMsg);
+        }
+    }, 100);
     
     // Button container
     const buttonContainer = document.createElement('div');
