@@ -86,12 +86,18 @@ function saveGeneralInfo(skipSupabaseSave = false) {
     showSaveIndicator();
     // Refresh badges after changes
     const modalBody = document.getElementById('modalBody');
-    modalBody.querySelectorAll('.status-badge').forEach(b => {
-        const fieldId = b.getAttribute('data-field-id');
-        updateStatusBadgeDisplay(fieldId);
-    });
+    if (modalBody) {
+        modalBody.querySelectorAll('.status-badge').forEach(b => {
+            const fieldId = b.getAttribute('data-field-id');
+            updateStatusBadgeDisplay(fieldId);
+        });
+    }
     // Update general info card counter
     if (typeof updateGeneralInfoCard === 'function') updateGeneralInfoCard();
+    // Update overall progress bar
+    if (typeof updateOverallProgress === 'function') {
+        updateOverallProgress();
+    }
 }
 
 function toggleCeremonyVenue() {
@@ -104,9 +110,27 @@ function toggleCeremonyVenue() {
 }
 
 function closeModal() {
-    // Force immediate save before closing (flush any pending debounced saves)
-    if (currentEventId !== null) {
-        // Clear any pending debounced save and save immediately
+    const modal = document.getElementById('eventModal');
+    const modalTitle = document.getElementById('modalTitle');
+    
+    // Check if this is the general info modal or an event modal
+    const isGeneralInfo = modalTitle && modalTitle.textContent && modalTitle.textContent.trim() === 'General Info';
+    
+    if (isGeneralInfo) {
+        // Force immediate save of general info before closing (flush any pending debounced saves)
+        if (generalInfoSaveTimer.timer) {
+            clearTimeout(generalInfoSaveTimer.timer);
+            generalInfoSaveTimer.timer = null;
+        }
+        // Save general info immediately (bypass debounce)
+        saveGeneralInfo(true); // skipSupabaseSave = true to prevent double save
+        saveGeneralInfoToSupabase();
+        // Update progress bar
+        if (typeof updateOverallProgress === 'function') {
+            updateOverallProgress();
+        }
+    } else if (currentEventId !== null) {
+        // Force immediate save before closing (flush any pending debounced saves)
         if (eventSaveTimers[currentEventId]) {
             clearTimeout(eventSaveTimers[currentEventId]);
             delete eventSaveTimers[currentEventId];
@@ -116,7 +140,7 @@ function closeModal() {
         saveEventToSupabase(currentEventId);
     }
     
-    document.getElementById('eventModal').classList.remove('active');
+    modal.classList.remove('active');
     currentEventId = null;
 }
 
