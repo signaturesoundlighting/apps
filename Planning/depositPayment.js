@@ -1,7 +1,7 @@
 // Deposit Payment page system
 
 // Stripe Configuration
-const STRIPE_PUBLISHABLE_KEY = 'pk_test_51SOL0J42hg0JtIZtdOS6EDBt3kYaAfWv7DcD9d3l6UhqndI7VHnL2hKy3K61mQ8SzThpT8q1ljaVpK6aYLkJcQIz00cJwxm4wa';
+const STRIPE_PUBLISHABLE_KEY = 'pk_live_51RDrc9KrHOWv98vrmFa3XVBCavY2PPrJyegfZPmBy3RtN356MFT7vRzU7sdUiYysDHlzpsvvSxmNLhO4NWyPYVRt00XKlNCJfK';
 
 // Backend API endpoint for creating PaymentIntents
 // TODO: Replace with your actual Cloudflare Worker URL after deployment
