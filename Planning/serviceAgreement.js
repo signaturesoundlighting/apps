@@ -4,6 +4,7 @@ let currentClientId = null;
 let eventData = {
     eventDate: "",
     clientName: "",
+    fianceName: "",
     clientPhone: "",
     clientAddress: "",
     venueName: "",
@@ -50,6 +51,7 @@ async function loadClientData() {
             eventData.eventDate = "";
         }
         eventData.clientName = clientData.client_name || "";
+        eventData.fianceName = clientData.fiance_name || "";
         eventData.clientPhone = clientData.client_phone || "";
         eventData.clientAddress = clientData.client_address || "";
         eventData.venueName = clientData.venue_name || "";
@@ -147,6 +149,9 @@ async function showServiceAgreement() {
     
     // Client Name (editable)
     eventDetailsSection.appendChild(createFormField('Client Name:', 'eventClientName', eventData.clientName, 'Enter client name'));
+    
+    // Fiance Name (editable)
+    eventDetailsSection.appendChild(createFormField('Fiance Name:', 'eventFianceName', eventData.fianceName, 'Enter fiance name'));
     
     // Client Phone (editable)
     eventDetailsSection.appendChild(createFormField('Client Phone:', 'eventClientPhone', eventData.clientPhone, 'Enter client phone'));
@@ -262,6 +267,7 @@ async function showServiceAgreement() {
 async function handleServiceAgreementSign() {
     // Get all required input fields
     const clientNameInput = document.getElementById('eventClientName');
+    const fianceNameInput = document.getElementById('eventFianceName');
     const clientPhoneInput = document.getElementById('eventClientPhone');
     const clientAddressInput = document.getElementById('eventClientAddress');
     const venueNameInput = document.getElementById('eventVenueName');
@@ -271,6 +277,7 @@ async function handleServiceAgreementSign() {
     
     // Get values and trim whitespace
     const clientName = clientNameInput ? clientNameInput.value.trim() : '';
+    const fianceName = fianceNameInput ? fianceNameInput.value.trim() : '';
     const clientPhone = clientPhoneInput ? clientPhoneInput.value.trim() : '';
     const clientAddress = clientAddressInput ? clientAddressInput.value.trim() : '';
     const venueName = venueNameInput ? venueNameInput.value.trim() : '';
@@ -282,7 +289,7 @@ async function handleServiceAgreementSign() {
     const signatureRequired = !signatureInput || !signatureInput.disabled;
     
     // Remove previous error styling
-    const allInputs = [clientNameInput, clientPhoneInput, clientAddressInput, venueNameInput, venueAddressInput];
+    const allInputs = [clientNameInput, fianceNameInput, clientPhoneInput, clientAddressInput, venueNameInput, venueAddressInput];
     if (signatureRequired) {
         allInputs.push(signatureInput);
     }
@@ -301,6 +308,14 @@ async function handleServiceAgreementSign() {
         if (clientNameInput) {
             clientNameInput.style.borderColor = '#dc3545';
             clientNameInput.classList.add('field-error');
+        }
+        hasErrors = true;
+    }
+    
+    if (!fianceName) {
+        if (fianceNameInput) {
+            fianceNameInput.style.borderColor = '#dc3545';
+            fianceNameInput.classList.add('field-error');
         }
         hasErrors = true;
     }
@@ -386,6 +401,7 @@ async function handleServiceAgreementSign() {
         const clientData = {
             event_date: eventDateValue || new Date().toISOString().split('T')[0],
             client_name: clientName,
+            fiance_name: fianceName,
             client_phone: clientPhone,
             client_address: clientAddress,
             venue_name: venueName,
@@ -419,6 +435,11 @@ async function handleServiceAgreementSign() {
         const overlay = document.getElementById('serviceAgreementOverlay');
         if (overlay) {
             overlay.style.display = 'none';
+        }
+        
+        // Update header with new client data (in case they're on the main app)
+        if (typeof updateHeader === 'function') {
+            await updateHeader();
         }
         
         // Proceed to deposit payment

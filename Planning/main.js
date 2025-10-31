@@ -1,3 +1,44 @@
+// Update header with client data from Supabase
+async function updateHeader() {
+    const clientId = getClientIdFromUrl();
+    
+    if (!clientId) {
+        return;
+    }
+    
+    // Load client data
+    if (window.supabaseHelpers && window.supabaseHelpers.getClientData) {
+        const clientData = await window.supabaseHelpers.getClientData(clientId);
+        
+        if (clientData) {
+            // Update couple name (client_name & fiance_name)
+            const coupleNameEl = document.querySelector('.couple-name');
+            if (coupleNameEl) {
+                const clientName = clientData.client_name || '';
+                const fianceName = clientData.fiance_name || '';
+                
+                if (clientName && fianceName) {
+                    coupleNameEl.textContent = `${clientName} & ${fianceName}`;
+                } else if (clientName) {
+                    coupleNameEl.textContent = clientName;
+                } else if (fianceName) {
+                    coupleNameEl.textContent = fianceName;
+                }
+                // If both empty, keep default "John & Sarah"
+            }
+            
+            // Update wedding date
+            const weddingDateEl = document.querySelector('.wedding-date');
+            if (weddingDateEl && clientData.event_date) {
+                const dateStr = clientData.event_date; // Format: YYYY-MM-DD
+                const [year, month, day] = dateStr.split('-');
+                const yy = year.substring(2); // Last 2 digits of year
+                weddingDateEl.textContent = `${month}/${day}/${yy}`;
+            }
+        }
+    }
+}
+
 // Initialize the app
 async function init() {
     const clientId = getClientIdFromUrl();
@@ -7,6 +48,9 @@ async function init() {
         console.log('Waiting for client ID...');
         return;
     }
+    
+    // Update header with client data
+    await updateHeader();
     
     // Load events and data from Supabase (will be implemented when integrating events)
     // For now, use existing data loading
@@ -128,9 +172,15 @@ async function checkPreOnboardingRequirements() {
     // All steps completed - show the main planning app
     console.log('All requirements met - showing planning app');
     
+    // Update header with client data first
+    await updateHeader();
+    
     // Initialize the main planning app
     await init();
 }
+
+// Export functions for global access
+window.updateHeader = updateHeader;
 
 // Check pre-onboarding requirements on page load
 // This will determine what to show based on completion status
