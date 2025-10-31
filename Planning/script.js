@@ -1059,7 +1059,11 @@ function generateModalContent(event) {
                             <label><span class="status-badge optional" data-field-id="shoeQuestion_${idx + 1}"></span>Question #${idx + 2}</label>
                             <div style="display: flex; gap: 8px; align-items: center;">
                                 <input type=\"text\" id=\"shoeQuestion_${idx + 1}\" value=\"${q}\" placeholder=\"Type your question\" style=\"flex: 1;\"> 
-                                <button class="song-remove-btn" onclick="removeShoeQuestion(${event.id}, ${idx + 1}); return false;" style="background: #ff6b6b; color: #fff; border: none; border-radius: 6px; padding: 4px 8px; cursor: pointer; font-weight: 600; flex-shrink: 0;">Remove</button>
+                                <button class="shoe-question-remove-btn" onclick="removeShoeQuestion(${event.id}, ${idx + 1}); return false;" style="width: 32px; height: 32px; background: #ff6b6b; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0;">
+                                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width: 18px; height: 18px; fill: #fff;">
+                                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                    </svg>
+                                </button>
                             </div>
                         </div>
                     `).join('')}
@@ -1273,29 +1277,70 @@ function toggleDancePart(eventId) {
 }
 
 function addShoeQuestion(eventId) {
-    // Save current question values before closing modal
+    // Save current question values
     const modalBody = document.getElementById('modalBody');
-    if (modalBody) {
-        const questionInputs = modalBody.querySelectorAll('input[id^="shoeQuestion_"]');
-        const ev = events.find(e => e.id === eventId);
-        if (ev) {
-            if (!Array.isArray(ev.details.questions)) {
-                ev.details.questions = ev.details.questions ? [ev.details.questions] : [];
-            }
-            // Update existing questions with current input values
-            questionInputs.forEach(input => {
-                const index = parseInt(input.id.replace('shoeQuestion_', ''), 10);
-                if (!isNaN(index)) {
-                    ev.details.questions[index] = input.value || '';
-                }
-            });
-            // Add new empty question
-            ev.details.questions.push('');
-        }
+    const extraContainer = document.getElementById('shoeQuestionsExtra');
+    if (!modalBody || !extraContainer) return;
+    
+    const questionInputs = modalBody.querySelectorAll('input[id^="shoeQuestion_"]');
+    const ev = events.find(e => e.id === eventId);
+    if (!ev) return;
+    
+    if (!Array.isArray(ev.details.questions)) {
+        ev.details.questions = ev.details.questions ? [ev.details.questions] : [];
     }
-    // Reopen to render new input
-    closeModal();
-    setTimeout(() => openModal(eventId), 50);
+    
+    // Update existing questions with current input values
+    questionInputs.forEach(input => {
+        const index = parseInt(input.id.replace('shoeQuestion_', ''), 10);
+        if (!isNaN(index)) {
+            ev.details.questions[index] = input.value || '';
+        }
+    });
+    
+    // Add new empty question to array
+    const newIndex = ev.details.questions.length;
+    ev.details.questions.push('');
+    
+    // Dynamically add new question to DOM without closing modal
+    const questionNum = newIndex + 1;
+    const newQuestionDiv = document.createElement('div');
+    newQuestionDiv.className = 'form-group';
+    newQuestionDiv.innerHTML = `
+        <label><span class="status-badge optional" data-field-id="shoeQuestion_${newIndex}"></span>Question #${questionNum}</label>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <input type="text" id="shoeQuestion_${newIndex}" value="" placeholder="Type your question" style="flex: 1;">
+            <button class="shoe-question-remove-btn" onclick="removeShoeQuestion(${eventId}, ${newIndex}); return false;" style="width: 32px; height: 32px; background: #ff6b6b; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0;">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width: 18px; height: 18px; fill: #fff;">
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                </svg>
+            </button>
+        </div>
+    `;
+    extraContainer.appendChild(newQuestionDiv);
+    
+    // Attach event listeners to new input
+    const newInput = newQuestionDiv.querySelector('input');
+    if (newInput) {
+        newInput.addEventListener('change', () => saveEventDetails(eventId));
+        newInput.addEventListener('input', () => {
+            saveEventDetails(eventId);
+            // Update badge display
+            if (typeof updateStatusBadgeDisplay === 'function') {
+                updateStatusBadgeDisplay(`shoeQuestion_${newIndex}`, ev);
+            }
+        });
+    }
+    
+    // Update badge display
+    if (typeof updateStatusBadgeDisplay === 'function') {
+        updateStatusBadgeDisplay(`shoeQuestion_${newIndex}`, ev);
+    }
+    
+    // Focus on new input
+    newInput.focus();
+    
+    saveEventDetails(eventId);
 }
 
 function removeShoeQuestion(eventId, questionIndex) {
