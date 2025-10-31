@@ -13,6 +13,8 @@ let eventData = {
     totalBalance: "",
     signature: ""
 };
+// Store the original total_balance from database to preserve it (it's read-only)
+let originalTotalBalance = null;
 
 // Load client data from Supabase
 async function loadClientData() {
@@ -57,7 +59,9 @@ async function loadClientData() {
         eventData.venueName = clientData.venue_name || "";
         eventData.venueAddress = clientData.venue_address || "";
         eventData.services = clientData.services || "";
-        eventData.totalBalance = clientData.total_balance ? `$${parseFloat(clientData.total_balance).toFixed(2)}` : "";
+        // Store original total_balance value (preserve it from database - it's read-only)
+        originalTotalBalance = clientData.total_balance ? parseFloat(clientData.total_balance) : null;
+        eventData.totalBalance = originalTotalBalance ? `$${originalTotalBalance.toFixed(2)}` : "";
         eventData.signature = clientData.signature || "";
     } else {
         console.warn('Supabase helpers not available');
@@ -373,15 +377,13 @@ async function handleServiceAgreementSign() {
     
     // Save to Supabase
     try {
-        // Get services and total balance from read-only displays
+        // Get services from read-only display
         const servicesDisplay = document.querySelector('.event-date-display')?.parentElement?.parentElement?.querySelectorAll('.event-date-display')[6];
-        const totalBalanceDisplay = document.querySelector('.event-date-display')?.parentElement?.parentElement?.querySelectorAll('.event-date-display')[7];
         const servicesValue = servicesDisplay ? servicesDisplay.textContent.trim() : '';
-        const totalBalanceText = totalBalanceDisplay ? totalBalanceDisplay.textContent.trim() : '';
         
-        // Parse total balance (remove $ and convert to number)
-        const totalBalanceValue = totalBalanceText ? 
-            parseFloat(totalBalanceText.replace('$', '').replace(',', '')) : null;
+        // Preserve total_balance from database (it's read-only and should never be changed)
+        // Use the original value we loaded, not what we extract from DOM
+        const totalBalanceValue = originalTotalBalance;
         
         // Parse event date to proper format
         let eventDateValue = null;
