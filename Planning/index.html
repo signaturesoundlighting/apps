@@ -9,6 +9,12 @@
     <script>
         // Route iTunes API calls through Cloudflare Worker (mobile-safe)
         window.ITUNES_PROXY_URL = 'https://raspy-bush-7067.peakleadsgroup.workers.dev';
+        
+        // Configure Payment Intent API endpoint
+        // TODO: Replace with your actual Cloudflare Worker URL after deployment
+        // Example: 'https://stripe-payment-intent.your-account.workers.dev'
+        // See STRIPE_SETUP.md for deployment instructions
+        window.PAYMENT_INTENT_API_URL = null; // Set this after deploying the Cloudflare Worker
     </script>
 </head>
 <body>

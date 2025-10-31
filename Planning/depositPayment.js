@@ -3,6 +3,11 @@
 // Stripe Configuration
 const STRIPE_PUBLISHABLE_KEY = 'pk_test_51SOL0J42hg0JtIZtdOS6EDBt3kYaAfWv7DcD9d3l6UhqndI7VHnL2hKy3K61mQ8SzThpT8q1ljaVpK6aYLkJcQIz00cJwxm4wa';
 
+// Backend API endpoint for creating PaymentIntents
+// TODO: Replace with your actual Cloudflare Worker URL after deployment
+// Example: 'https://stripe-payment-intent.your-account.workers.dev'
+const PAYMENT_INTENT_API_URL = window.PAYMENT_INTENT_API_URL || null;
+
 // Payment data - will be loaded from Supabase
 let paymentData = {
     depositAmount: "$500.00", // Default placeholder
@@ -305,37 +310,7 @@ async function handleDepositPayment() {
         
         paymentIntentClientSecret = paymentIntentResponse.clientSecret;
         
-        // TEST MODE: Skip actual Stripe payment confirmation if using mock
-        if (paymentIntentClientSecret === 'test_mode_mock_client_secret') {
-            console.warn('TEST MODE: Skipping Stripe payment confirmation. No charge will be made.');
-            
-            // Update Supabase for test mode
-            if (paymentData.clientId && window.supabaseHelpers && window.supabaseHelpers.updateClient) {
-                await window.supabaseHelpers.updateClient(paymentData.clientId, {
-                    deposit_paid: true,
-                    payment_intent_id: 'test_mode_' + Date.now()
-                });
-            }
-            
-            // Simulate successful payment for testing
-            localStorage.setItem('depositPaid', 'true');
-            localStorage.setItem('paymentIntentId', 'test_mode_' + Date.now());
-            localStorage.setItem('paymentTestMode', 'true');
-            
-            // Hide deposit payment overlay
-            const overlay = document.getElementById('depositPaymentOverlay');
-            if (overlay) {
-                overlay.style.display = 'none';
-            }
-            
-            // Proceed to onboarding
-            if (typeof checkIfOnboardingNeeded === 'function') {
-                checkIfOnboardingNeeded();
-            }
-            return;
-        }
-        
-        // PRODUCTION MODE: Confirm payment with Stripe (only when backend is integrated)
+        // Confirm payment with Stripe
         const { error, paymentIntent } = await stripe.confirmCardPayment(
             paymentIntentClientSecret,
             {
@@ -372,12 +347,19 @@ async function handleDepositPayment() {
         if (paymentIntent && paymentIntent.status === 'succeeded') {
             // Payment succeeded - update Supabase
             if (paymentData.clientId && window.supabaseHelpers && window.supabaseHelpers.updateClient) {
-                await window.supabaseHelpers.updateClient(paymentData.clientId, {
+                const updateSuccess = await window.supabaseHelpers.updateClient(paymentData.clientId, {
                     deposit_paid: true,
                     payment_intent_id: paymentIntent.id
                 });
+                
+                if (!updateSuccess) {
+                    console.warn('Payment succeeded but failed to update Supabase. Payment Intent ID:', paymentIntent.id);
+                } else {
+                    console.log('Payment and database update successful:', paymentIntent.id);
+                }
             }
             
+            // Store in localStorage as backup
             localStorage.setItem('depositPaid', 'true');
             localStorage.setItem('paymentIntentId', paymentIntent.id);
             
@@ -387,12 +369,15 @@ async function handleDepositPayment() {
                 overlay.style.display = 'none';
             }
             
+            // Show success message
+            alert('Payment successful! Your deposit has been processed.');
+            
             // Proceed to onboarding
             if (typeof checkIfOnboardingNeeded === 'function') {
                 checkIfOnboardingNeeded();
             }
         } else {
-            throw new Error('Payment was not successful. Please try again.');
+            throw new Error(`Payment was not successful. Status: ${paymentIntent?.status || 'unknown'}. Please try again.`);
         }
         
     } catch (error) {
@@ -407,31 +392,47 @@ async function handleDepositPayment() {
     }
 }
 
-// Function to create PaymentIntent - REPLACE WITH ACTUAL BACKEND CALL
+// Function to create PaymentIntent via backend API
 async function createPaymentIntent(amountInCents, cardholderName) {
-    // TODO: Replace this with actual backend API call
-    // Example:
-    // const response = await fetch('/api/create-payment-intent', {
-    //     method: 'POST',
-    //     headers: {
-    //         'Content-Type': 'application/json',
-    //     },
-    //     body: JSON.stringify({
-    //         amount: amountInCents,
-    //         currency: 'usd',
-    //         metadata: {
-    //             cardholder_name: cardholderName,
-    //         },
-    //     }),
-    // });
-    // return await response.json();
-    
-    // TEST MODE: Allow page to proceed without backend integration
-    // Remove this mock response when backend is ready
-    console.warn('TEST MODE: Using mock PaymentIntent. Replace with actual backend call.');
-    return {
-        clientSecret: 'test_mode_mock_client_secret'
-    };
+    if (!PAYMENT_INTENT_API_URL) {
+        throw new Error('Payment API endpoint not configured. Please set PAYMENT_INTENT_API_URL.');
+    }
+
+    try {
+        const response = await fetch(PAYMENT_INTENT_API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                amount: amountInCents,
+                currency: 'usd',
+                clientId: paymentData.clientId,
+                metadata: {
+                    cardholder_name: cardholderName,
+                },
+            }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+            throw new Error(errorData.error || `HTTP ${response.status}: Failed to create payment intent`);
+        }
+
+        const data = await response.json();
+        
+        if (!data.clientSecret) {
+            throw new Error('Invalid response from payment server: missing clientSecret');
+        }
+
+        return {
+            clientSecret: data.clientSecret,
+            paymentIntentId: data.paymentIntentId || null
+        };
+    } catch (error) {
+        console.error('Error creating PaymentIntent:', error);
+        throw error;
+    }
 }
 
 async function checkDepositPaymentStatus() {
