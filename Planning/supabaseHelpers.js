@@ -285,22 +285,47 @@ async function saveGeneralInfo(clientId, generalInfoData) {
     }
     
     try {
-        // Upsert with explicit conflict resolution on client_id
-        // Since general_info should have one record per client_id
-        const { data, error } = await window.supabaseClient
+        // Check if a record already exists for this client
+        const { data: existingRecord, error: checkError } = await window.supabaseClient
             .from('general_info')
-            .upsert({
-                client_id: clientId,
-                ...generalInfoData,
-                updated_at: new Date().toISOString()
-            }, {
-                onConflict: 'client_id' // Specify conflict resolution on client_id
-            })
-            .select();
+            .select('id')
+            .eq('client_id', clientId)
+            .maybeSingle();
         
-        if (error) {
-            console.error('Error saving general info:', error);
-            return false;
+        if (checkError && checkError.code !== 'PGRST116') {
+            console.error('Error checking for existing general info:', checkError);
+            // Continue anyway - try to insert
+        }
+        
+        const updateData = {
+            ...generalInfoData,
+            updated_at: new Date().toISOString()
+        };
+        
+        if (existingRecord) {
+            // Update existing record
+            const { error: updateError } = await window.supabaseClient
+                .from('general_info')
+                .update(updateData)
+                .eq('client_id', clientId);
+            
+            if (updateError) {
+                console.error('Error updating general info:', updateError);
+                return false;
+            }
+        } else {
+            // Insert new record
+            const { error: insertError } = await window.supabaseClient
+                .from('general_info')
+                .insert({
+                    client_id: clientId,
+                    ...updateData
+                });
+            
+            if (insertError) {
+                console.error('Error inserting general info:', insertError);
+                return false;
+            }
         }
         
         return true;
