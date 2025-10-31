@@ -1,3 +1,13 @@
+// Helper function to extract first name from full name
+function getFirstName(fullName) {
+    if (!fullName || typeof fullName !== 'string') {
+        return '';
+    }
+    // Split by space and take the first part
+    const parts = fullName.trim().split(/\s+/);
+    return parts[0] || '';
+}
+
 // Update header with client data from Supabase
 async function updateHeader() {
     const clientId = getClientIdFromUrl();
@@ -11,18 +21,18 @@ async function updateHeader() {
         const clientData = await window.supabaseHelpers.getClientData(clientId);
         
         if (clientData) {
-            // Update couple name (client_name & fiance_name)
+            // Update couple name (first names only)
             const coupleNameEl = document.querySelector('.couple-name');
             if (coupleNameEl) {
-                const clientName = clientData.client_name || '';
-                const fianceName = clientData.fiance_name || '';
+                const clientFirstName = getFirstName(clientData.client_name);
+                const fianceFirstName = getFirstName(clientData.fiance_name);
                 
-                if (clientName && fianceName) {
-                    coupleNameEl.textContent = `${clientName} & ${fianceName}`;
-                } else if (clientName) {
-                    coupleNameEl.textContent = clientName;
-                } else if (fianceName) {
-                    coupleNameEl.textContent = fianceName;
+                if (clientFirstName && fianceFirstName) {
+                    coupleNameEl.textContent = `${clientFirstName} & ${fianceFirstName}`;
+                } else if (clientFirstName) {
+                    coupleNameEl.textContent = clientFirstName;
+                } else if (fianceFirstName) {
+                    coupleNameEl.textContent = fianceFirstName;
                 }
                 // If both empty, keep default "John & Sarah"
             }
