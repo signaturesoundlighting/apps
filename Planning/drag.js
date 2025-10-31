@@ -43,18 +43,36 @@ function setupDragAndDrop() {
     cards.forEach(card => {
         const dragHandle = card.querySelector('.drag-handle');
         
-        // Click to open modal (for both mobile and desktop)
+        // Skip if no drag handle (non-draggable card like End of Wedding)
+        if (!dragHandle) {
+            // Still allow click to open modal
+            card.addEventListener('click', (e) => {
+                if (!isDragging) {
+                    const id = parseInt(card.getAttribute('data-id'));
+                    openModal(id);
+                }
+            });
+            return;
+        }
+
+        // Click to open modal (for desktop and quick taps on mobile)
+        let tapStartTime = 0;
+        let tapStartY = 0;
+        let tapStartX = 0;
+        let hasMoved = false;
+        
         card.addEventListener('click', (e) => {
-            if (!isDragging && !e.target.classList.contains('drag-handle')) {
+            // Only open modal if:
+            // 1. Not currently dragging
+            // 2. User tapped quickly (didn't drag)
+            // 3. Didn't click on the drag handle specifically
+            if (!isDragging && !hasMoved && !e.target.classList.contains('drag-handle')) {
                 const id = parseInt(card.getAttribute('data-id'));
                 openModal(id);
             }
         });
 
         // Make drag handle draggable on desktop
-        if (!dragHandle) {
-            return; // non-draggable card (e.g., End of Wedding)
-        }
         dragHandle.addEventListener('mousedown', (e) => {
             e.stopPropagation();
             card.draggable = true;
@@ -66,13 +84,17 @@ function setupDragAndDrop() {
             }, 100);
         });
 
-        // Mobile touch events on drag handle
-        dragHandle.addEventListener('touchstart', (e) => {
+        // Mobile touch events on entire card (not just drag handle)
+        card.addEventListener('touchstart', (e) => {
             e.stopPropagation();
             e.preventDefault();
             
             const rect = card.getBoundingClientRect();
             touchStartY = e.touches[0].clientY;
+            tapStartY = touchStartY;
+            tapStartX = e.touches[0].clientX;
+            tapStartTime = Date.now();
+            hasMoved = false;
             initialCardTop = rect.top;
             // Calculate offset inside the card so the finger stays anchored
             const offsetWithinCard = touchStartY - rect.top;
@@ -104,7 +126,17 @@ function setupDragAndDrop() {
         }, { passive: false });
 
         let moveQueued = false;
-        dragHandle.addEventListener('touchmove', (e) => {
+        card.addEventListener('touchmove', (e) => {
+            const currentY = e.touches[0].clientY;
+            const currentX = e.touches[0].clientX;
+            
+            // Check if user has moved significantly (more than a tap)
+            const moveY = Math.abs(currentY - tapStartY);
+            const moveX = Math.abs(currentX - tapStartX);
+            if (moveY > 10 || moveX > 10) {
+                hasMoved = true;
+            }
+            
             // If moved before long press completes, cancel it
             if (!isDragging) {
                 clearTimeout(longPressTimer);
@@ -112,7 +144,7 @@ function setupDragAndDrop() {
             }
 
             e.preventDefault();
-            currentTouchY = e.touches[0].clientY;
+            currentTouchY = currentY;
             if (moveQueued) return; // throttle with rAF for smoother updates
             moveQueued = true;
             requestAnimationFrame(() => {
@@ -143,7 +175,7 @@ function setupDragAndDrop() {
             });
         }, { passive: false });
 
-        dragHandle.addEventListener('touchend', (e) => {
+        card.addEventListener('touchend', (e) => {
             clearTimeout(longPressTimer);
             
             if (isDragging) {
@@ -174,9 +206,13 @@ function setupDragAndDrop() {
                 isDragging = false;
                 draggedCard = null;
             }
+            
+            // Reset tap tracking
+            hasMoved = false;
+            tapStartTime = 0;
         }, { passive: false });
 
-        dragHandle.addEventListener('touchcancel', () => {
+        card.addEventListener('touchcancel', () => {
             clearTimeout(longPressTimer);
             if (draggedCard) {
                 // Revert styles
@@ -193,6 +229,8 @@ function setupDragAndDrop() {
             placeholder = null;
             isDragging = false;
             draggedCard = null;
+            hasMoved = false;
+            tapStartTime = 0;
         });
     });
 }

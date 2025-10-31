@@ -13,8 +13,9 @@ let eventData = {
     totalBalance: "",
     signature: ""
 };
-// Store the original total_balance from database to preserve it (it's read-only)
+// Store the original total_balance and services from database to preserve them (they're read-only)
 let originalTotalBalance = null;
+let originalServices = null;
 
 // Load client data from Supabase
 async function loadClientData() {
@@ -58,7 +59,9 @@ async function loadClientData() {
         eventData.clientAddress = clientData.client_address || "";
         eventData.venueName = clientData.venue_name || "";
         eventData.venueAddress = clientData.venue_address || "";
-        eventData.services = clientData.services || "";
+        // Store original services value (preserve it from database - it's read-only)
+        originalServices = clientData.services || null;
+        eventData.services = originalServices || "";
         // Store original total_balance value (preserve it from database - it's read-only)
         originalTotalBalance = clientData.total_balance ? parseFloat(clientData.total_balance) : null;
         eventData.totalBalance = originalTotalBalance ? `$${originalTotalBalance.toFixed(2)}` : "";
@@ -377,12 +380,9 @@ async function handleServiceAgreementSign() {
     
     // Save to Supabase
     try {
-        // Get services from read-only display
-        const servicesDisplay = document.querySelector('.event-date-display')?.parentElement?.parentElement?.querySelectorAll('.event-date-display')[6];
-        const servicesValue = servicesDisplay ? servicesDisplay.textContent.trim() : '';
-        
-        // Preserve total_balance from database (it's read-only and should never be changed)
-        // Use the original value we loaded, not what we extract from DOM
+        // Preserve services and total_balance from database (they're read-only and should never be changed)
+        // Use the original values we loaded, not what we extract from DOM
+        const servicesValue = originalServices || '';
         const totalBalanceValue = originalTotalBalance;
         
         // Parse event date to proper format
