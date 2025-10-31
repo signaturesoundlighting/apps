@@ -181,7 +181,6 @@ async function init() {
                             }
                         }
                     }
-                }
             }
         }
     }
