@@ -127,8 +127,44 @@ function checkDepositPaymentStatus() {
     return isPaid;
 }
 
+// Helper function to reset deposit payment (useful for testing)
+function resetDepositPayment() {
+    localStorage.removeItem('depositPaid');
+    
+    // Remove existing overlay if it exists
+    const existingOverlay = document.getElementById('depositPaymentOverlay');
+    if (existingOverlay) {
+        existingOverlay.remove();
+    }
+    
+    showDepositPayment();
+}
+
+// Helper function to reset both pre-onboarding steps (useful for testing)
+function resetPreOnboarding() {
+    localStorage.removeItem('serviceAgreementSigned');
+    localStorage.removeItem('serviceAgreementSignature');
+    localStorage.removeItem('depositPaid');
+    
+    // Remove existing overlays if they exist
+    const agreementOverlay = document.getElementById('serviceAgreementOverlay');
+    if (agreementOverlay) {
+        agreementOverlay.remove();
+    }
+    
+    const paymentOverlay = document.getElementById('depositPaymentOverlay');
+    if (paymentOverlay) {
+        paymentOverlay.remove();
+    }
+    
+    // Show service agreement (first step)
+    showServiceAgreement();
+}
+
 // Export functions for global access
 window.showDepositPayment = showDepositPayment;
 window.handleDepositPayment = handleDepositPayment;
 window.checkDepositPaymentStatus = checkDepositPaymentStatus;
+window.resetDepositPayment = resetDepositPayment;
+window.resetPreOnboarding = resetPreOnboarding;
 

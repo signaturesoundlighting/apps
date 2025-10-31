@@ -114,8 +114,23 @@ function checkServiceAgreementStatus() {
     return isSigned;
 }
 
+// Helper function to reset service agreement (useful for testing)
+function resetServiceAgreement() {
+    localStorage.removeItem('serviceAgreementSigned');
+    localStorage.removeItem('serviceAgreementSignature');
+    
+    // Remove existing overlay if it exists
+    const existingOverlay = document.getElementById('serviceAgreementOverlay');
+    if (existingOverlay) {
+        existingOverlay.remove();
+    }
+    
+    showServiceAgreement();
+}
+
 // Export functions for global access
 window.showServiceAgreement = showServiceAgreement;
 window.handleServiceAgreementSign = handleServiceAgreementSign;
 window.checkServiceAgreementStatus = checkServiceAgreementStatus;
+window.resetServiceAgreement = resetServiceAgreement;
 
