@@ -471,7 +471,7 @@ input[type="checkbox"], input[type="radio"] {
     background: #ff6b6b;
     color: white;
     border: none;
-    padding: 10px 20px;
+    padding: 10px 12px;
     border-radius: 8px;
     cursor: pointer;
     font-size: 14px;
@@ -480,6 +480,7 @@ input[type="checkbox"], input[type="radio"] {
     transition: all 0.2s;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
 }
 

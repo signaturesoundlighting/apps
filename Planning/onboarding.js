@@ -3,8 +3,8 @@
 let currentOnboardingStep = 0;
 const onboardingSteps = [
     {
-        title: "Congratulations! You're one step closer to an awesome wedding day",
-        subtitle: "Ready to start planning? Here's how our planning app works...",
+        title: "Congratulations!",
+        subtitle: "You're one step closer to an awesome wedding",
         buttonText: "Get Started",
         showConfetti: true
     },
