@@ -4,54 +4,36 @@ let currentOnboardingStep = 0;
 const onboardingSteps = [
     {
         title: "Congratulations!",
-        subtitle: "You're one step closer to an awesome wedding",
+        subtitle: "You're one step closer to an awesome wedding!  Let's start with a quick walkthrough of your planning app",
         buttonText: "Get Started",
         showConfetti: true
     },
     {
-        title: "Step 1",
-        subtitle: "",
+        title: "Click on events",
+        subtitle: "To see the details, answer questions, or delete any events",
         image: "../images/103025-instructions/1-instructions.jpg",
         buttonText: "Next",
         showConfetti: false
     },
     {
-        title: "Step 2",
-        subtitle: "",
+        title: "Click and drag",
+        subtitle: "To re-order events",
         image: "../images/103025-instructions/2-instructions.jpg",
         buttonText: "Next",
         showConfetti: false
     },
     {
-        title: "Step 3",
-        subtitle: "",
+        title: "Click add",
+        subtitle: "To add custom events",
         image: "../images/103025-instructions/3-instructions.jpg",
         buttonText: "Next",
         showConfetti: false
     },
     {
-        title: "Step 4",
+        title: "Track your progress",
         subtitle: "",
         image: "../images/103025-instructions/4-instructions.jpg",
-        buttonText: "Next",
-        showConfetti: false
-    },
-    {
-        title: "Click on events to fill in details or delete them",
-        subtitle: "",
-        buttonText: "Next",
-        showConfetti: false
-    },
-    {
-        title: "Re-order events by clicking and dragging",
-        subtitle: "",
-        buttonText: "Next",
-        showConfetti: false
-    },
-    {
-        title: "See your progress and how many days you have left to complete everything",
-        subtitle: "",
-        buttonText: "Get Started!",
+        buttonText: "Let's Go!",
         showConfetti: false
     }
 ];
