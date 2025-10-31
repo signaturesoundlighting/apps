@@ -111,25 +111,61 @@ async function getEvents(clientId) {
     return data || [];
 }
 
-async function saveEvent(eventData) {
+// Convert Supabase event format to local event format
+// Supabase: { id: UUID, client_id, event_order, type, name, time, details: JSONB }
+// Local: { id: number, type, name, time, details: {}, supabase_id: UUID }
+function convertSupabaseEventToLocal(supabaseEvent, localId) {
+    return {
+        id: localId, // Use provided local numeric ID
+        type: supabaseEvent.type,
+        name: supabaseEvent.name,
+        time: supabaseEvent.time || '',
+        details: supabaseEvent.details || {},
+        supabase_id: supabaseEvent.id // Store Supabase UUID for future updates
+    };
+}
+
+async function saveEvent(clientId, eventData, eventOrder = null) {
     if (!window.supabaseClient) {
         console.error('Supabase not initialized');
-        return false;
+        return null;
     }
     
-    const { error } = await window.supabaseClient
+    // Convert local event format to Supabase format
+    // eventData has: { id: number, type, name, time, details: {}, supabase_id?: UUID }
+    const supabaseEvent = {
+        client_id: clientId,
+        type: eventData.type,
+        name: eventData.name,
+        time: eventData.time || null,
+        details: eventData.details || {},
+        updated_at: new Date().toISOString()
+    };
+    
+    // Set event_order if provided (for new events or reordering)
+    if (eventOrder !== null) {
+        supabaseEvent.event_order = eventOrder;
+    }
+    
+    // If this event already exists in Supabase, include the Supabase ID
+    if (eventData.supabase_id) {
+        supabaseEvent.id = eventData.supabase_id;
+    }
+    
+    // Use upsert - if supabase_id exists, it will update; otherwise, it will insert
+    const { data, error } = await window.supabaseClient
         .from('events')
-        .upsert({
-            ...eventData,
-            updated_at: new Date().toISOString()
-        });
+        .upsert(supabaseEvent, { onConflict: 'id' })
+        .select()
+        .single();
     
     if (error) {
         console.error('Error saving event:', error);
-        return false;
+        return null;
     }
     
-    return true;
+    // Return the Supabase event data (includes the UUID id)
+    return data;
 }
 
 async function updateEventOrder(clientId, events) {
@@ -139,11 +175,19 @@ async function updateEventOrder(clientId, events) {
     }
     
     // Update all events with new order
-    const updates = events.map((event, index) => ({
-        id: event.id,
-        event_order: index,
-        updated_at: new Date().toISOString()
-    }));
+    // events array has local events with numeric IDs and supabase_id field
+    const updates = events
+        .filter(event => event.supabase_id) // Only update events that exist in Supabase
+        .map((event, index) => ({
+            id: event.supabase_id, // Use Supabase UUID
+            event_order: index,
+            updated_at: new Date().toISOString()
+        }));
+    
+    if (updates.length === 0) {
+        console.warn('No events with Supabase IDs to update order');
+        return false;
+    }
     
     // Supabase doesn't support bulk updates easily, so we'll do them individually
     // In production, you might want to use a stored procedure for this
@@ -165,16 +209,17 @@ async function updateEventOrder(clientId, events) {
     return true;
 }
 
-async function deleteEvent(eventId) {
+async function deleteEvent(supabaseEventId) {
     if (!window.supabaseClient) {
         console.error('Supabase not initialized');
         return false;
     }
     
+    // Delete by Supabase UUID
     const { error } = await window.supabaseClient
         .from('events')
         .delete()
-        .eq('id', eventId);
+        .eq('id', supabaseEventId);
     
     if (error) {
         console.error('Error deleting event:', error);
@@ -240,6 +285,7 @@ window.supabaseHelpers = {
     createClient,
     updateClient,
     getEvents,
+    convertSupabaseEventToLocal,
     saveEvent,
     updateEventOrder,
     deleteEvent,

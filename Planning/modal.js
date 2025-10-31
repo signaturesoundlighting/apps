@@ -60,7 +60,7 @@ function openGeneralInfo() {
     if (footer) footer.remove();
 }
 
-function saveGeneralInfo() {
+async function saveGeneralInfo() {
     generalInfo.venueName = document.getElementById('venueName')?.value || '';
     generalInfo.venueAddress = document.getElementById('venueAddress')?.value || '';
     generalInfo.differentCeremonyVenue = document.getElementById('differentCeremonyVenue')?.checked || false;
@@ -68,6 +68,29 @@ function saveGeneralInfo() {
     generalInfo.ceremonyVenueAddress = document.getElementById('ceremonyVenueAddress')?.value || '';
     generalInfo.plannerName = document.getElementById('plannerName')?.value || '';
     generalInfo.plannerEmail = document.getElementById('plannerEmail')?.value || '';
+    
+    // Save to Supabase
+    const clientId = window.supabaseHelpers?.getCurrentClientId();
+    if (clientId && window.supabaseHelpers && window.supabaseHelpers.saveGeneralInfo) {
+        try {
+            // Map local field names to Supabase field names
+            const generalInfoData = {
+                venue_name: generalInfo.venueName,
+                venue_address: generalInfo.venueAddress,
+                different_ceremony_venue: generalInfo.differentCeremonyVenue,
+                ceremony_venue_name: generalInfo.ceremonyVenueName,
+                ceremony_venue_address: generalInfo.ceremonyVenueAddress,
+                planner_name: generalInfo.plannerName,
+                planner_email: generalInfo.plannerEmail
+            };
+            
+            await window.supabaseHelpers.saveGeneralInfo(clientId, generalInfoData);
+            console.log('General info saved to Supabase');
+        } catch (error) {
+            console.error('Error saving general info to Supabase:', error);
+        }
+    }
+    
     showSaveIndicator();
     // Refresh badges after changes
     const modalBody = document.getElementById('modalBody');
@@ -278,7 +301,17 @@ function deleteEvent(eventId) {
         alert('The End of Wedding card cannot be deleted.');
         return;
     }
-    openConfirm('Are you sure you want to delete this event?', () => {
+    openConfirm('Are you sure you want to delete this event?', async () => {
+        // Delete from Supabase if it exists there
+        if (ev && ev.supabase_id && window.supabaseHelpers && window.supabaseHelpers.deleteEvent) {
+            try {
+                await window.supabaseHelpers.deleteEvent(ev.supabase_id);
+                console.log('Event deleted from Supabase');
+            } catch (error) {
+                console.error('Error deleting event from Supabase:', error);
+            }
+        }
+        
         events = events.filter(e => e.id !== eventId);
         renderEvents();
         setupDragAndDrop();
@@ -660,7 +693,7 @@ function closeConfirm() {
     __onConfirmYes = null;
 }
 
-function saveEventDetails(eventId) {
+async function saveEventDetails(eventId) {
     const event = events.find(e => e.id === eventId);
     if (!event) return;
 
@@ -713,6 +746,21 @@ function saveEventDetails(eventId) {
         setupDragAndDrop();
     }
 
+    // Save to Supabase
+    const clientId = window.supabaseHelpers?.getCurrentClientId();
+    if (clientId && window.supabaseHelpers && window.supabaseHelpers.saveEvent) {
+        try {
+            const savedEvent = await window.supabaseHelpers.saveEvent(clientId, event);
+            if (savedEvent) {
+                // Update the event with the Supabase ID if it's a new event
+                event.supabase_id = savedEvent.id;
+                console.log('Event saved to Supabase:', savedEvent);
+            }
+        } catch (error) {
+            console.error('Error saving event to Supabase:', error);
+        }
+    }
+    
     showSaveIndicator();
     // Refresh cards and progress so per-card counters update in real-time
     if (typeof renderEvents === 'function') { renderEvents(); if (typeof setupDragAndDrop==='function') setupDragAndDrop(); }

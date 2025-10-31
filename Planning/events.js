@@ -27,7 +27,7 @@ function backToAddOptions() {
     document.getElementById('standardEventsList').classList.remove('active');
 }
 
-function addStandardEvent(template) {
+async function addStandardEvent(template) {
     const newEvent = {
         id: nextId++,
         type: template.type,
@@ -41,6 +41,22 @@ function addStandardEvent(template) {
     } else {
         events.push(newEvent);
     }
+    
+    // Save to Supabase
+    const clientId = window.supabaseHelpers?.getCurrentClientId();
+    if (clientId && window.supabaseHelpers && window.supabaseHelpers.saveEvent) {
+        try {
+            const eventIndex = events.findIndex(e => e.id === newEvent.id);
+            const savedEvent = await window.supabaseHelpers.saveEvent(clientId, newEvent, eventIndex);
+            if (savedEvent) {
+                newEvent.supabase_id = savedEvent.id;
+                console.log('New event saved to Supabase:', savedEvent);
+            }
+        } catch (error) {
+            console.error('Error saving new event to Supabase:', error);
+        }
+    }
+    
     renderEvents();
     setupDragAndDrop();
     closeAddEventModal();
@@ -48,7 +64,7 @@ function addStandardEvent(template) {
     showSaveIndicator();
 }
 
-function createCustomEvent() {
+async function createCustomEvent() {
     const newEvent = {
         id: nextId++,
         type: 'custom',
@@ -62,6 +78,22 @@ function createCustomEvent() {
     } else {
         events.push(newEvent);
     }
+    
+    // Save to Supabase
+    const clientId = window.supabaseHelpers?.getCurrentClientId();
+    if (clientId && window.supabaseHelpers && window.supabaseHelpers.saveEvent) {
+        try {
+            const eventIndex = events.findIndex(e => e.id === newEvent.id);
+            const savedEvent = await window.supabaseHelpers.saveEvent(clientId, newEvent, eventIndex);
+            if (savedEvent) {
+                newEvent.supabase_id = savedEvent.id;
+                console.log('New custom event saved to Supabase:', savedEvent);
+            }
+        } catch (error) {
+            console.error('Error saving new custom event to Supabase:', error);
+        }
+    }
+    
     renderEvents();
     setupDragAndDrop();
     closeAddEventModal();

@@ -39,7 +39,7 @@ function createEventCard(event) {
     return card;
 }
 
-function updateEventOrder() {
+async function updateEventOrder() {
     const cards = document.querySelectorAll('.event-card');
     const newOrder = [];
     
@@ -52,5 +52,15 @@ function updateEventOrder() {
     });
     
     events = newOrder;
-    // Here you would sync with Airtable
+    
+    // Save order to Supabase
+    const clientId = window.supabaseHelpers?.getCurrentClientId();
+    if (clientId && window.supabaseHelpers && window.supabaseHelpers.updateEventOrder) {
+        try {
+            await window.supabaseHelpers.updateEventOrder(clientId, events);
+            console.log('Event order saved to Supabase');
+        } catch (error) {
+            console.error('Error saving event order to Supabase:', error);
+        }
+    }
 }

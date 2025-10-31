@@ -62,8 +62,50 @@ async function init() {
     // Update header with client data
     await updateHeader();
     
-    // Load events and data from Supabase (will be implemented when integrating events)
-    // For now, use existing data loading
+    // Load events from Supabase
+    if (window.supabaseHelpers && window.supabaseHelpers.getEvents) {
+        const supabaseEvents = await window.supabaseHelpers.getEvents(clientId);
+        
+        if (supabaseEvents && supabaseEvents.length > 0) {
+            // Convert Supabase events to local format
+            // Use the convertSupabaseEventToLocal helper
+            events = supabaseEvents.map((supabaseEvent, index) => {
+                // Use a simple numeric ID starting from 1
+                // If we need to preserve original IDs, we could store them in a mapping
+                return window.supabaseHelpers.convertSupabaseEventToLocal(supabaseEvent, index + 1);
+            });
+            
+            // Update nextId to be higher than the highest local ID
+            if (typeof nextId !== 'undefined') {
+                nextId = Math.max(nextId, events.length + 1);
+            }
+            
+            console.log('Loaded events from Supabase:', events);
+        } else {
+            console.log('No events found in Supabase, using default events');
+            // Keep default events from data.js
+        }
+    }
+    
+    // Load general info from Supabase
+    if (window.supabaseHelpers && window.supabaseHelpers.getGeneralInfo) {
+        const supabaseGeneralInfo = await window.supabaseHelpers.getGeneralInfo(clientId);
+        
+        if (supabaseGeneralInfo && typeof generalInfo !== 'undefined') {
+            // Map Supabase field names to local field names
+            generalInfo.venueName = supabaseGeneralInfo.venue_name || '';
+            generalInfo.venueAddress = supabaseGeneralInfo.venue_address || '';
+            generalInfo.differentCeremonyVenue = supabaseGeneralInfo.different_ceremony_venue || false;
+            generalInfo.ceremonyVenueName = supabaseGeneralInfo.ceremony_venue_name || '';
+            generalInfo.ceremonyVenueAddress = supabaseGeneralInfo.ceremony_venue_address || '';
+            generalInfo.plannerName = supabaseGeneralInfo.planner_name || '';
+            generalInfo.plannerEmail = supabaseGeneralInfo.planner_email || '';
+            
+            console.log('Loaded general info from Supabase:', generalInfo);
+        } else {
+            console.log('No general info found in Supabase, using defaults');
+        }
+    }
     
     if (typeof renderEvents === 'function') {
         renderEvents();
