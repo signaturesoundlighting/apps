@@ -54,8 +54,9 @@ export default {
             const formData = new URLSearchParams({
                 amount: amount.toString(),
                 currency: currency,
-                // Statement descriptor - appears on customer's card statement (max 22 chars)
-                statement_descriptor: 'WEDDING DJ DEPOSIT',
+                // Statement descriptor suffix - appears on customer's card statement after merchant name
+                // Max 23 characters, will be appended to your Stripe account name
+                statement_descriptor_suffix: 'WEDDING DJ DEPOSIT',
                 // For test mode, we can use automatic payment methods
                 'automatic_payment_methods[enabled]': 'true',
             });
