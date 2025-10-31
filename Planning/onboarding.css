@@ -68,6 +68,14 @@
     transform: translateY(0);
 }
 
+.onboarding-image {
+    max-width: 100%;
+    height: auto;
+    margin: 20px 0;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
 /* Confetti styles */
 .confetti-container {
     position: fixed;
@@ -110,6 +118,10 @@
     
     .onboarding-content {
         padding: 20px;
+    }
+    
+    .onboarding-image {
+        margin: 15px 0;
     }
 }
 

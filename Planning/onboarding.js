@@ -9,6 +9,34 @@ const onboardingSteps = [
         showConfetti: true
     },
     {
+        title: "",
+        subtitle: "",
+        image: "../images/103025-instructions/1-instructions.jpg",
+        buttonText: "Next",
+        showConfetti: false
+    },
+    {
+        title: "",
+        subtitle: "",
+        image: "../images/103025-instructions/2-instructions.jpg",
+        buttonText: "Next",
+        showConfetti: false
+    },
+    {
+        title: "",
+        subtitle: "",
+        image: "../images/103025-instructions/3-instructions.jpg",
+        buttonText: "Next",
+        showConfetti: false
+    },
+    {
+        title: "",
+        subtitle: "",
+        image: "../images/103025-instructions/4-instructions.jpg",
+        buttonText: "Next",
+        showConfetti: false
+    },
+    {
         title: "Click on events to fill in details or delete them",
         subtitle: "",
         buttonText: "Next",
@@ -72,17 +100,26 @@ function showOnboardingStep(step) {
     const content = document.createElement('div');
     content.className = 'onboarding-content';
     
-    const title = document.createElement('h1');
-    title.className = 'onboarding-title';
-    title.textContent = stepData.title;
-    
-    content.appendChild(title);
+    if (stepData.title) {
+        const title = document.createElement('h1');
+        title.className = 'onboarding-title';
+        title.textContent = stepData.title;
+        content.appendChild(title);
+    }
     
     if (stepData.subtitle) {
         const subtitle = document.createElement('h2');
         subtitle.className = 'onboarding-subtitle';
         subtitle.textContent = stepData.subtitle;
         content.appendChild(subtitle);
+    }
+    
+    if (stepData.image) {
+        const image = document.createElement('img');
+        image.className = 'onboarding-image';
+        image.src = stepData.image;
+        image.alt = 'Instructions';
+        content.appendChild(image);
     }
     
     const button = document.createElement('button');
