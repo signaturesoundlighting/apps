@@ -40,23 +40,44 @@ const onboardingSteps = [
 
 async function checkIfOnboardingNeeded() {
     // Check if user has seen onboarding before
-    // First check Supabase, then localStorage
+    // Prioritize Supabase check, use localStorage as fallback only
     const urlParams = new URLSearchParams(window.location.search);
     const clientId = urlParams.get('client_id') || localStorage.getItem('currentClientId');
     
-    let hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding') === 'true';
+    let hasSeenOnboarding = false;
     
-    // Check Supabase if client ID exists
+    // Check Supabase first (primary source of truth)
     if (clientId && window.supabaseHelpers && window.supabaseHelpers.getClientData) {
         const clientData = await window.supabaseHelpers.getClientData(clientId);
-        if (clientData && clientData.onboarding_completed) {
-            hasSeenOnboarding = true;
+        if (clientData) {
+            // If Supabase explicitly says onboarding is completed, use that
+            if (clientData.onboarding_completed === true) {
+                hasSeenOnboarding = true;
+            } else {
+                // If Supabase says false or null, onboarding is needed
+                // Don't check localStorage if Supabase has the data
+                hasSeenOnboarding = false;
+            }
+        } else {
+            // If Supabase doesn't have client data, fall back to localStorage
+            hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding') === 'true';
         }
+    } else {
+        // If no client ID or Supabase helpers not available, use localStorage as fallback
+        hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding') === 'true';
     }
     
+    console.log('Onboarding check:', {
+        clientId,
+        hasSeenOnboarding,
+        localStorage: localStorage.getItem('hasSeenOnboarding')
+    });
+    
     if (!hasSeenOnboarding) {
+        console.log('Showing onboarding');
         showOnboarding();
     } else {
+        console.log('Onboarding already completed, skipping');
         // Hide onboarding overlay if it exists
         const overlay = document.getElementById('onboardingOverlay');
         if (overlay) {
