@@ -156,8 +156,15 @@ function createConfetti() {
     }, 5000);
 }
 
+// Helper function to reset onboarding (useful for testing)
+function resetOnboarding() {
+    localStorage.removeItem('hasSeenOnboarding');
+    showOnboarding();
+}
+
 // Export functions for global access
 window.checkIfOnboardingNeeded = checkIfOnboardingNeeded;
 window.showOnboardingStep = showOnboardingStep;
 window.handleOnboardingNext = handleOnboardingNext;
+window.resetOnboarding = resetOnboarding;
 
