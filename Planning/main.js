@@ -237,7 +237,13 @@ async function init() {
     
     // Load general info from Supabase
     if (window.supabaseHelpers && window.supabaseHelpers.getGeneralInfo) {
-        const supabaseGeneralInfo = await window.supabaseHelpers.getGeneralInfo(clientId);
+        let supabaseGeneralInfo = null;
+        try {
+            supabaseGeneralInfo = await window.supabaseHelpers.getGeneralInfo(clientId);
+        } catch (error) {
+            console.error('Error loading general info from Supabase:', error);
+            // Continue with null - will use fallback
+        }
         
         if (typeof generalInfo !== 'undefined') {
             // Get client data to use as fallback for venue info

@@ -258,22 +258,24 @@ async function getGeneralInfo(clientId) {
         return null;
     }
     
-    const { data, error } = await window.supabaseClient
-        .from('general_info')
-        .select('*')
-        .eq('client_id', clientId)
-        .single();
-    
-    if (error) {
-        // If no record exists, that's okay
-        if (error.code === 'PGRST116') {
+    try {
+        const { data, error } = await window.supabaseClient
+            .from('general_info')
+            .select('*')
+            .eq('client_id', clientId)
+            .maybeSingle(); // Use maybeSingle() instead of single() to avoid errors when no record exists
+        
+        if (error) {
+            // Log the error but don't fail completely
+            console.error('Error fetching general info:', error);
             return null;
         }
-        console.error('Error fetching general info:', error);
+        
+        return data;
+    } catch (err) {
+        console.error('Exception fetching general info:', err);
         return null;
     }
-    
-    return data;
 }
 
 async function saveGeneralInfo(clientId, generalInfoData) {
@@ -282,20 +284,30 @@ async function saveGeneralInfo(clientId, generalInfoData) {
         return false;
     }
     
-    const { error } = await window.supabaseClient
-        .from('general_info')
-        .upsert({
-            client_id: clientId,
-            ...generalInfoData,
-            updated_at: new Date().toISOString()
-        });
-    
-    if (error) {
-        console.error('Error saving general info:', error);
+    try {
+        // Upsert with explicit conflict resolution on client_id
+        // Since general_info should have one record per client_id
+        const { data, error } = await window.supabaseClient
+            .from('general_info')
+            .upsert({
+                client_id: clientId,
+                ...generalInfoData,
+                updated_at: new Date().toISOString()
+            }, {
+                onConflict: 'client_id' // Specify conflict resolution on client_id
+            })
+            .select();
+        
+        if (error) {
+            console.error('Error saving general info:', error);
+            return false;
+        }
+        
+        return true;
+    } catch (err) {
+        console.error('Exception saving general info:', err);
         return false;
     }
-    
-    return true;
 }
 
 // Export functions for global access
