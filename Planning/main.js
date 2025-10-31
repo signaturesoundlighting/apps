@@ -6,5 +6,10 @@ function init() {
     if (typeof updateGeneralInfoCard === 'function') updateGeneralInfoCard();
 }
 
+// Check if onboarding is needed on page load
+if (typeof checkIfOnboardingNeeded === 'function') {
+    checkIfOnboardingNeeded();
+}
+
 // Initialize on load
 init();
