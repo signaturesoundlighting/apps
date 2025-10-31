@@ -1,5 +1,8 @@
 // Deposit Payment page system
 
+// Stripe Configuration
+const STRIPE_PUBLISHABLE_KEY = 'pk_test_51SOL0J42hg0JtIZtdOS6EDBt3kYaAfWv7DcD9d3l6UhqndI7VHnL2hKy3K61mQ8SzThpT8q1ljaVpK6aYLkJcQIz00cJwxm4wa';
+
 // Placeholder payment data - will be replaced with backend/Stripe integration
 const paymentData = {
     depositAmount: "$500.00", // Placeholder - will pull from backend
@@ -7,6 +10,11 @@ const paymentData = {
     dueDate: "10/18/26", // Placeholder - will pull from backend
     // Add more payment details as needed from backend/Stripe
 };
+
+let stripe = null;
+let elements = null;
+let cardElement = null;
+let paymentIntentClientSecret = null;
 
 function showDepositPayment() {
     // Create deposit payment overlay
@@ -54,44 +62,87 @@ function showDepositPayment() {
     `;
     content.appendChild(paymentSummary);
     
-    // Payment form container (placeholder for Stripe integration)
+    // Payment form container with Stripe Elements
     const paymentForm = document.createElement('div');
     paymentForm.className = 'payment-form-container';
-    paymentForm.innerHTML = `
-        <div class="payment-placeholder">
-            <h3>Payment Information</h3>
-            <p><em>Stripe payment integration will be added here.</em></p>
-            <p>This will include:</p>
-            <ul>
-                <li>Credit card payment form (via Stripe Elements)</li>
-                <li>Secure payment processing</li>
-                <li>Payment status tracking</li>
-                <li>Integration with backend to verify payment completion</li>
-            </ul>
-        </div>
+    
+    const paymentFormTitle = document.createElement('h3');
+    paymentFormTitle.textContent = 'Payment Information';
+    paymentFormTitle.style.color = '#1a9e8e';
+    paymentFormTitle.style.marginTop = '0';
+    paymentForm.appendChild(paymentFormTitle);
+    
+    // Initialize Stripe
+    if (typeof Stripe !== 'undefined') {
+        stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+        elements = stripe.elements();
         
-        <!-- Placeholder payment fields -->
-        <div class="payment-fields-placeholder">
-            <div class="form-field">
-                <label>Card Number</label>
-                <input type="text" placeholder="1234 5678 9012 3456" disabled />
-            </div>
-            <div class="form-row">
-                <div class="form-field">
-                    <label>Expiry Date</label>
-                    <input type="text" placeholder="MM/YY" disabled />
-                </div>
-                <div class="form-field">
-                    <label>CVV</label>
-                    <input type="text" placeholder="123" disabled />
-                </div>
-            </div>
-            <div class="form-field">
-                <label>Cardholder Name</label>
-                <input type="text" placeholder="John Doe" disabled />
-            </div>
-        </div>
-    `;
+        // Card element container
+        const cardContainer = document.createElement('div');
+        cardContainer.id = 'card-element';
+        cardContainer.className = 'stripe-card-element';
+        paymentForm.appendChild(cardContainer);
+        
+        // Create card element
+        cardElement = elements.create('card', {
+            style: {
+                base: {
+                    fontSize: '16px',
+                    color: '#32325d',
+                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                    '::placeholder': {
+                        color: '#aab7c4',
+                    },
+                },
+                invalid: {
+                    color: '#dc3545',
+                },
+            },
+        });
+        
+        // Mount card element
+        cardElement.mount('#card-element');
+        
+        // Handle real-time validation errors
+        cardElement.on('change', function(event) {
+            const errorElement = document.getElementById('card-errors');
+            if (event.error) {
+                if (!errorElement) {
+                    const errorDiv = document.createElement('div');
+                    errorDiv.id = 'card-errors';
+                    errorDiv.className = 'stripe-error';
+                    paymentForm.appendChild(errorDiv);
+                }
+                document.getElementById('card-errors').textContent = event.error.message;
+            } else {
+                if (errorElement) {
+                    errorElement.textContent = '';
+                }
+            }
+        });
+    } else {
+        // Fallback if Stripe.js hasn't loaded
+        const errorMsg = document.createElement('div');
+        errorMsg.className = 'stripe-error';
+        errorMsg.textContent = 'Payment system is loading. Please refresh the page if this message persists.';
+        paymentForm.appendChild(errorMsg);
+    }
+    
+    // Cardholder name field
+    const nameField = document.createElement('div');
+    nameField.className = 'form-field';
+    const nameLabel = document.createElement('label');
+    nameLabel.textContent = 'Cardholder Name';
+    nameLabel.setAttribute('for', 'cardholder-name');
+    nameField.appendChild(nameLabel);
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.id = 'cardholder-name';
+    nameInput.className = 'event-detail-input';
+    nameInput.placeholder = 'John Doe';
+    nameField.appendChild(nameInput);
+    paymentForm.appendChild(nameField);
+    
     content.appendChild(paymentForm);
     
     // Button container
@@ -111,23 +162,148 @@ function showDepositPayment() {
     overlay.appendChild(content);
 }
 
-function handleDepositPayment() {
-    // Placeholder payment handler - will integrate with Stripe later
-    // This will verify payment with Stripe and backend
+async function handleDepositPayment() {
+    const payButton = document.querySelector('.pre-onboarding-button.primary');
+    const cardholderName = document.getElementById('cardholder-name');
+    const cardholderNameValue = cardholderName ? cardholderName.value.trim() : '';
     
-    // For now, just mark as paid (placeholder)
-    localStorage.setItem('depositPaid', 'true');
-    
-    // Hide deposit payment overlay
-    const overlay = document.getElementById('depositPaymentOverlay');
-    if (overlay) {
-        overlay.style.display = 'none';
+    // Validate cardholder name
+    if (!cardholderNameValue) {
+        if (cardholderName) {
+            cardholderName.style.borderColor = '#dc3545';
+            cardholderName.classList.add('field-error');
+            cardholderName.focus();
+        }
+        alert('Please enter the cardholder name.');
+        return;
     }
     
-    // Proceed to onboarding
-    if (typeof checkIfOnboardingNeeded === 'function') {
-        checkIfOnboardingNeeded();
+    // Remove error styling from name field
+    if (cardholderName) {
+        cardholderName.style.borderColor = '';
+        cardholderName.classList.remove('field-error');
     }
+    
+    // Validate that Stripe is loaded
+    if (!stripe || !cardElement) {
+        alert('Payment system is not ready. Please refresh the page and try again.');
+        return;
+    }
+    
+    // Disable button and show loading state
+    if (payButton) {
+        payButton.disabled = true;
+        payButton.textContent = 'Processing...';
+    }
+    
+    try {
+        // TODO: Replace with backend endpoint to create PaymentIntent
+        // For now, we'll need to create a PaymentIntent on the backend first
+        // The backend should return a client_secret which we use here
+        
+        // Placeholder: You'll need to call your backend to create a PaymentIntent
+        // Example: const { clientSecret } = await fetch('/api/create-payment-intent', {...})
+        
+        // For now, using a test approach - in production you MUST create PaymentIntent on backend
+        // Convert deposit amount to cents (remove $ and convert to number)
+        const amountInCents = parseFloat(paymentData.depositAmount.replace('$', '').replace(',', '')) * 100;
+        
+        // Note: In production, the PaymentIntent MUST be created on your backend
+        // This is a placeholder structure - replace with actual backend call
+        const paymentIntentResponse = await createPaymentIntent(amountInCents, cardholderNameValue);
+        
+        if (!paymentIntentResponse || !paymentIntentResponse.clientSecret) {
+            throw new Error('Failed to create payment intent. Please try again.');
+        }
+        
+        paymentIntentClientSecret = paymentIntentResponse.clientSecret;
+        
+        // Confirm payment with Stripe
+        const { error, paymentIntent } = await stripe.confirmCardPayment(
+            paymentIntentClientSecret,
+            {
+                payment_method: {
+                    card: cardElement,
+                    billing_details: {
+                        name: cardholderNameValue,
+                    },
+                },
+            }
+        );
+        
+        if (error) {
+            // Show error to user
+            const errorElement = document.getElementById('card-errors') || document.createElement('div');
+            errorElement.id = 'card-errors';
+            errorElement.className = 'stripe-error';
+            errorElement.textContent = error.message;
+            if (!document.getElementById('card-errors')) {
+                const paymentForm = document.querySelector('.payment-form-container');
+                if (paymentForm) {
+                    paymentForm.appendChild(errorElement);
+                }
+            }
+            
+            // Re-enable button
+            if (payButton) {
+                payButton.disabled = false;
+                payButton.textContent = 'Complete Payment';
+            }
+            return;
+        }
+        
+        if (paymentIntent && paymentIntent.status === 'succeeded') {
+            // Payment succeeded
+            localStorage.setItem('depositPaid', 'true');
+            localStorage.setItem('paymentIntentId', paymentIntent.id);
+            
+            // Hide deposit payment overlay
+            const overlay = document.getElementById('depositPaymentOverlay');
+            if (overlay) {
+                overlay.style.display = 'none';
+            }
+            
+            // Proceed to onboarding
+            if (typeof checkIfOnboardingNeeded === 'function') {
+                checkIfOnboardingNeeded();
+            }
+        } else {
+            throw new Error('Payment was not successful. Please try again.');
+        }
+        
+    } catch (error) {
+        console.error('Payment error:', error);
+        alert(error.message || 'An error occurred processing your payment. Please try again.');
+        
+        // Re-enable button
+        if (payButton) {
+            payButton.disabled = false;
+            payButton.textContent = 'Complete Payment';
+        }
+    }
+}
+
+// Function to create PaymentIntent - REPLACE WITH ACTUAL BACKEND CALL
+async function createPaymentIntent(amountInCents, cardholderName) {
+    // TODO: Replace this with actual backend API call
+    // Example:
+    // const response = await fetch('/api/create-payment-intent', {
+    //     method: 'POST',
+    //     headers: {
+    //         'Content-Type': 'application/json',
+    //     },
+    //     body: JSON.stringify({
+    //         amount: amountInCents,
+    //         currency: 'usd',
+    //         metadata: {
+    //             cardholder_name: cardholderName,
+    //         },
+    //     }),
+    // });
+    // return await response.json();
+    
+    // For now, return error to indicate backend integration needed
+    throw new Error('Backend integration required: Please implement the createPaymentIntent function to call your backend API endpoint that creates a Stripe PaymentIntent.');
 }
 
 function checkDepositPaymentStatus() {

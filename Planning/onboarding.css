@@ -331,6 +331,30 @@
     background: #fafafa;
 }
 
+/* Stripe Elements Styles */
+.stripe-card-element {
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    background: white;
+    transition: border-color 0.2s;
+}
+
+.stripe-card-element:focus-within {
+    border-color: #1a9e8e;
+}
+
+.stripe-error {
+    color: #dc3545;
+    font-size: 14px;
+    margin-top: 10px;
+    padding: 10px;
+    background: #f8d7da;
+    border-radius: 4px;
+    border: 1px solid #f5c6cb;
+}
+
 .form-field {
     margin-bottom: 20px;
 }
