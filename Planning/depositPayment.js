@@ -13,12 +13,13 @@ let paymentData = {
 
 // Load payment data from Supabase
 async function loadPaymentData() {
-    // Get client ID from URL or localStorage
+    // Get client ID from URL (required)
     const urlParams = new URLSearchParams(window.location.search);
-    const clientId = urlParams.get('client_id') || localStorage.getItem('currentClientId');
+    const clientId = urlParams.get('client_id');
     
     if (!clientId) {
-        console.log('No client ID found for payment');
+        console.error('No client_id parameter found in URL');
+        alert('Invalid link: Missing client ID. Please use the link provided by your event coordinator.');
         return;
     }
     
@@ -28,15 +29,21 @@ async function loadPaymentData() {
     if (window.supabaseHelpers && window.supabaseHelpers.getClientData) {
         const clientData = await window.supabaseHelpers.getClientData(clientId);
         
-        if (clientData) {
-            // Calculate deposit (typically 10% or you can store this separately)
-            const totalBalance = parseFloat(clientData.total_balance) || 5000;
-            const depositAmount = totalBalance * 0.1; // 10% deposit
-            
-            paymentData.depositAmount = `$${depositAmount.toFixed(2)}`;
-            paymentData.totalAmount = clientData.total_balance ? `$${parseFloat(clientData.total_balance).toFixed(2)}` : "$5,000.00";
-            paymentData.dueDate = clientData.event_date ? new Date(clientData.event_date).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' }) : "";
+        if (!clientData) {
+            console.error('Client not found in database');
+            alert('Client not found. Please verify the link is correct.');
+            return;
         }
+        
+        // Calculate deposit (typically 10% or you can store this separately)
+        const totalBalance = parseFloat(clientData.total_balance) || 5000;
+        const depositAmount = totalBalance * 0.1; // 10% deposit
+        
+        paymentData.depositAmount = `$${depositAmount.toFixed(2)}`;
+        paymentData.totalAmount = clientData.total_balance ? `$${parseFloat(clientData.total_balance).toFixed(2)}` : "$5,000.00";
+        paymentData.dueDate = clientData.event_date ? new Date(clientData.event_date).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' }) : "";
+    } else {
+        console.warn('Supabase helpers not available');
     }
 }
 

@@ -15,33 +15,41 @@ let eventData = {
 
 // Load client data from Supabase
 async function loadClientData() {
-    // Get client ID from URL or localStorage
+    // Get client ID from URL (required)
     const urlParams = new URLSearchParams(window.location.search);
-    currentClientId = urlParams.get('client_id') || localStorage.getItem('currentClientId');
+    currentClientId = urlParams.get('client_id');
     
     if (!currentClientId) {
-        console.log('No client ID found - will create new client when form is submitted');
-        // Use default placeholder data
-        eventData.eventDate = new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' });
+        console.error('No client_id parameter found in URL');
+        alert('Invalid link: Missing client ID. Please use the link provided by your event coordinator.');
         return;
     }
+    
+    // Store in localStorage for reference
+    localStorage.setItem('currentClientId', currentClientId);
     
     // Load from Supabase
     if (window.supabaseHelpers && window.supabaseHelpers.getClientData) {
         const clientData = await window.supabaseHelpers.getClientData(currentClientId);
         
-        if (clientData) {
-            // Map database fields to eventData
-            eventData.eventDate = clientData.event_date ? new Date(clientData.event_date).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' }) : "";
-            eventData.clientName = clientData.client_name || "";
-            eventData.clientPhone = clientData.client_phone || "";
-            eventData.clientAddress = clientData.client_address || "";
-            eventData.venueName = clientData.venue_name || "";
-            eventData.venueAddress = clientData.venue_address || "";
-            eventData.services = clientData.services || "";
-            eventData.totalBalance = clientData.total_balance ? `$${parseFloat(clientData.total_balance).toFixed(2)}` : "";
-            eventData.signature = clientData.signature || "";
+        if (!clientData) {
+            console.error('Client not found in database');
+            alert('Client not found. Please verify the link is correct.');
+            return;
         }
+        
+        // Map database fields to eventData
+        eventData.eventDate = clientData.event_date ? new Date(clientData.event_date).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' }) : "";
+        eventData.clientName = clientData.client_name || "";
+        eventData.clientPhone = clientData.client_phone || "";
+        eventData.clientAddress = clientData.client_address || "";
+        eventData.venueName = clientData.venue_name || "";
+        eventData.venueAddress = clientData.venue_address || "";
+        eventData.services = clientData.services || "";
+        eventData.totalBalance = clientData.total_balance ? `$${parseFloat(clientData.total_balance).toFixed(2)}` : "";
+        eventData.signature = clientData.signature || "";
+    } else {
+        console.warn('Supabase helpers not available');
     }
 }
 
@@ -387,22 +395,9 @@ async function handleServiceAgreementSign() {
             if (!success) {
                 throw new Error('Failed to save client data');
             }
-        } else if (window.supabaseHelpers && window.supabaseHelpers.createClient) {
-            // Create new client
-            const newClient = await window.supabaseHelpers.createClient(clientData);
-            if (newClient && newClient.id) {
-                savedClientId = newClient.id;
-                currentClientId = savedClientId;
-                localStorage.setItem('currentClientId', savedClientId);
-            } else {
-                throw new Error('Failed to create client');
-            }
         } else {
-            console.warn('Supabase helpers not available - using localStorage fallback');
-            localStorage.setItem('serviceAgreementSigned', 'true');
-            if (signature) {
-                localStorage.setItem('serviceAgreementSignature', signature);
-            }
+            // Client ID should exist from URL - if not, this is an error
+            throw new Error('Client ID not found. Please use the link provided by your event coordinator.');
         }
         
         // Store signature status for flow control

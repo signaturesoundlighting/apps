@@ -38,9 +38,22 @@ const onboardingSteps = [
     }
 ];
 
-function checkIfOnboardingNeeded() {
+async function checkIfOnboardingNeeded() {
     // Check if user has seen onboarding before
-    const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
+    // First check Supabase, then localStorage
+    const urlParams = new URLSearchParams(window.location.search);
+    const clientId = urlParams.get('client_id') || localStorage.getItem('currentClientId');
+    
+    let hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding') === 'true';
+    
+    // Check Supabase if client ID exists
+    if (clientId && window.supabaseHelpers && window.supabaseHelpers.getClientData) {
+        const clientData = await window.supabaseHelpers.getClientData(clientId);
+        if (clientData && clientData.onboarding_completed) {
+            hasSeenOnboarding = true;
+        }
+    }
+    
     if (!hasSeenOnboarding) {
         showOnboarding();
     } else {
@@ -48,6 +61,10 @@ function checkIfOnboardingNeeded() {
         const overlay = document.getElementById('onboardingOverlay');
         if (overlay) {
             overlay.style.display = 'none';
+        }
+        // Initialize main app if onboarding already completed
+        if (typeof init === 'function') {
+            init();
         }
     }
 }
@@ -111,7 +128,7 @@ function showOnboardingStep(step) {
     overlay.appendChild(content);
 }
 
-function handleOnboardingNext() {
+async function handleOnboardingNext() {
     // Stop confetti when "Get Started" button is clicked (step 0)
     if (currentOnboardingStep === 0) {
         const confettiContainer = document.getElementById('confettiContainer');
@@ -123,8 +140,23 @@ function handleOnboardingNext() {
     if (currentOnboardingStep < onboardingSteps.length - 1) {
         showOnboardingStep(currentOnboardingStep + 1);
     } else {
-        // Finish onboarding
+        // Finish onboarding - mark as complete in Supabase
         localStorage.setItem('hasSeenOnboarding', 'true');
+        
+        // Get client ID and update in Supabase
+        const urlParams = new URLSearchParams(window.location.search);
+        const clientId = urlParams.get('client_id') || localStorage.getItem('currentClientId');
+        
+        if (clientId && window.supabaseHelpers && window.supabaseHelpers.updateClient) {
+            try {
+                await window.supabaseHelpers.updateClient(clientId, {
+                    onboarding_completed: true
+                });
+            } catch (error) {
+                console.error('Error updating onboarding status:', error);
+            }
+        }
+        
         const overlay = document.getElementById('onboardingOverlay');
         if (overlay) {
             overlay.style.display = 'none';
@@ -133,6 +165,11 @@ function handleOnboardingNext() {
         const confettiContainer = document.getElementById('confettiContainer');
         if (confettiContainer) {
             confettiContainer.remove();
+        }
+        
+        // Now that onboarding is complete, initialize the main app
+        if (typeof init === 'function') {
+            init();
         }
     }
 }
