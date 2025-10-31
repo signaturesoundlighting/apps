@@ -154,7 +154,15 @@ function computeEventCompletion(event) {
             total += 1;
             let value = (event.details || {})[fieldId];
             let hasValue = false;
-            if (value != null) {
+            
+            // Special handling for shoe game questions - they're stored in event.details.questions array
+            if (fieldId.startsWith('shoeQuestion_') && event.type === 'shoe-game') {
+                const questionIndex = parseInt(fieldId.replace('shoeQuestion_', ''), 10);
+                const questions = Array.isArray(event.details.questions) ? event.details.questions : [];
+                if (questions[questionIndex] && questions[questionIndex].trim()) {
+                    hasValue = true;
+                }
+            } else if (value != null) {
                 if (typeof value === 'string') {
                     const v = value.trim();
                     if (v.startsWith('[') && v.endsWith(']')) {
