@@ -39,7 +39,16 @@ async function loadClientData() {
         }
         
         // Map database fields to eventData
-        eventData.eventDate = clientData.event_date ? new Date(clientData.event_date).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' }) : "";
+        // Parse date string directly to avoid timezone issues
+        if (clientData.event_date) {
+            const dateStr = clientData.event_date; // Format: YYYY-MM-DD
+            const [year, month, day] = dateStr.split('-');
+            // Format as MM/DD/YY
+            const yy = year.substring(2); // Last 2 digits of year
+            eventData.eventDate = `${month}/${day}/${yy}`;
+        } else {
+            eventData.eventDate = "";
+        }
         eventData.clientName = clientData.client_name || "";
         eventData.clientPhone = clientData.client_phone || "";
         eventData.clientAddress = clientData.client_address || "";

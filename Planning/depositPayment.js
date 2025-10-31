@@ -29,6 +29,8 @@ async function loadPaymentData() {
     if (window.supabaseHelpers && window.supabaseHelpers.getClientData) {
         const clientData = await window.supabaseHelpers.getClientData(clientId);
         
+        console.log('Client data loaded from Supabase:', clientData);
+        
         if (!clientData) {
             console.error('Client not found in database');
             alert('Client not found. Please verify the link is correct.');
@@ -36,12 +38,31 @@ async function loadPaymentData() {
         }
         
         // Calculate deposit (typically 10% or you can store this separately)
-        const totalBalance = parseFloat(clientData.total_balance) || 5000;
+        // Use the total_balance from database, or default to 5000 if not set
+        const totalBalance = clientData.total_balance ? parseFloat(clientData.total_balance) : 5000;
         const depositAmount = totalBalance * 0.1; // 10% deposit
         
         paymentData.depositAmount = `$${depositAmount.toFixed(2)}`;
-        paymentData.totalAmount = clientData.total_balance ? `$${parseFloat(clientData.total_balance).toFixed(2)}` : "$5,000.00";
-        paymentData.dueDate = clientData.event_date ? new Date(clientData.event_date).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' }) : "";
+        paymentData.totalAmount = `$${totalBalance.toFixed(2)}`;
+        
+        console.log('Calculated payment amounts:', {
+            totalBalance,
+            depositAmount,
+            formattedDeposit: paymentData.depositAmount,
+            formattedTotal: paymentData.totalAmount
+        });
+        
+        // Parse date string directly to avoid timezone issues
+        if (clientData.event_date) {
+            const dateStr = clientData.event_date; // Format: YYYY-MM-DD
+            const [year, month, day] = dateStr.split('-');
+            const yy = year.substring(2); // Last 2 digits of year
+            paymentData.dueDate = `${month}/${day}/${yy}`;
+            console.log('Date parsed:', { dateStr, month, day, yy, formatted: paymentData.dueDate });
+        } else {
+            paymentData.dueDate = "";
+            console.warn('No event_date found in client data');
+        }
     } else {
         console.warn('Supabase helpers not available');
     }
@@ -55,6 +76,8 @@ let paymentIntentClientSecret = null;
 async function showDepositPayment() {
     // Load payment data from Supabase before showing form
     await loadPaymentData();
+    
+    console.log('Payment Data loaded:', paymentData);
     
     // Create deposit payment overlay
     const overlay = document.createElement('div');
