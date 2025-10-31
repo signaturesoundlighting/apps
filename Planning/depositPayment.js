@@ -119,21 +119,20 @@ async function showDepositPayment() {
     title.textContent = 'Deposit Payment';
     content.appendChild(title);
     
-    // Payment summary
+    // Subheader
+    const subheader = document.createElement('p');
+    subheader.className = 'deposit-subheader';
+    subheader.textContent = "We'll need this to officially save the date";
+    subheader.style.cssText = 'text-align: center; color: #666; margin-top: 10px; margin-bottom: 30px; font-size: 16px;';
+    content.appendChild(subheader);
+    
+    // Payment summary (deposit amount only)
     const paymentSummary = document.createElement('div');
     paymentSummary.className = 'payment-summary';
     paymentSummary.innerHTML = `
         <div class="payment-row">
             <span class="payment-label">Deposit Amount:</span>
             <span class="payment-value">${paymentData.depositAmount}</span>
-        </div>
-        <div class="payment-row">
-            <span class="payment-label">Total Amount:</span>
-            <span class="payment-value">${paymentData.totalAmount}</span>
-        </div>
-        <div class="payment-row">
-            <span class="payment-label">Due Date:</span>
-            <span class="payment-value">${paymentData.dueDate}</span>
         </div>
     `;
     content.appendChild(paymentSummary);
