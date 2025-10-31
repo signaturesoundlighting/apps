@@ -76,31 +76,46 @@ async function checkPreOnboardingRequirements() {
         }
     }
     
-    // Check service agreement status
-    const hasSignedAgreement = clientData?.signature ? true : 
-        (typeof checkServiceAgreementStatus === 'function' ? await checkServiceAgreementStatus() : false);
+    // Check service agreement status (must have a signature)
+    const hasSignedAgreement = clientData?.signature && clientData.signature.trim() !== '';
+    
+    console.log('Service Agreement Status:', {
+        hasSignature: !!clientData?.signature,
+        signatureValue: clientData?.signature,
+        hasSignedAgreement
+    });
     
     if (!hasSignedAgreement) {
+        console.log('Showing Service Agreement form');
         if (typeof showServiceAgreement === 'function') {
             await showServiceAgreement();
         }
         return;
     }
     
-    // Check deposit payment status
-    const hasPaidDeposit = clientData?.deposit_paid === true || 
-        (typeof checkDepositPaymentStatus === 'function' ? await checkDepositPaymentStatus() : false);
+    // Check deposit payment status (must be explicitly true)
+    const hasPaidDeposit = clientData?.deposit_paid === true;
+    
+    console.log('Deposit Payment Status:', {
+        deposit_paid: clientData?.deposit_paid,
+        hasPaidDeposit
+    });
     
     if (!hasPaidDeposit) {
+        console.log('Showing Deposit Payment form');
         if (typeof showDepositPayment === 'function') {
             await showDepositPayment();
         }
         return;
     }
     
-    // Check onboarding status
-    const hasCompletedOnboarding = clientData?.onboarding_completed === true ||
-        (localStorage.getItem('hasSeenOnboarding') === 'true');
+    // Check onboarding status (must be explicitly true)
+    const hasCompletedOnboarding = clientData?.onboarding_completed === true;
+    
+    console.log('Onboarding Status:', {
+        onboarding_completed: clientData?.onboarding_completed,
+        hasCompletedOnboarding
+    });
     
     if (!hasCompletedOnboarding) {
         // Proceed to onboarding
