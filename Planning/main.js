@@ -12,7 +12,19 @@ function getFirstName(fullName) {
 async function updateHeader() {
     const clientId = getClientIdFromUrl();
     
+    const coupleNameEl = document.querySelector('.couple-name');
+    const weddingDateEl = document.querySelector('.wedding-date');
+    
     if (!clientId) {
+        // No client ID - show defaults
+        if (coupleNameEl) {
+            coupleNameEl.textContent = 'John & Sarah';
+            coupleNameEl.style.visibility = 'visible';
+        }
+        if (weddingDateEl) {
+            weddingDateEl.textContent = '10/18/26';
+            weddingDateEl.style.visibility = 'visible';
+        }
         return;
     }
     
@@ -22,7 +34,6 @@ async function updateHeader() {
         
         if (clientData) {
             // Update couple name (first names only)
-            const coupleNameEl = document.querySelector('.couple-name');
             if (coupleNameEl) {
                 const clientFirstName = getFirstName(clientData.client_name);
                 const fianceFirstName = getFirstName(clientData.fiance_name);
@@ -33,18 +44,47 @@ async function updateHeader() {
                     coupleNameEl.textContent = clientFirstName;
                 } else if (fianceFirstName) {
                     coupleNameEl.textContent = fianceFirstName;
+                } else {
+                    // If both empty, use default
+                    coupleNameEl.textContent = 'John & Sarah';
                 }
-                // If both empty, keep default "John & Sarah"
+                // Make visible once content is set
+                coupleNameEl.style.visibility = 'visible';
             }
             
             // Update wedding date
-            const weddingDateEl = document.querySelector('.wedding-date');
-            if (weddingDateEl && clientData.event_date) {
-                const dateStr = clientData.event_date; // Format: YYYY-MM-DD
-                const [year, month, day] = dateStr.split('-');
-                const yy = year.substring(2); // Last 2 digits of year
-                weddingDateEl.textContent = `${month}/${day}/${yy}`;
+            if (weddingDateEl) {
+                if (clientData.event_date) {
+                    const dateStr = clientData.event_date; // Format: YYYY-MM-DD
+                    const [year, month, day] = dateStr.split('-');
+                    const yy = year.substring(2); // Last 2 digits of year
+                    weddingDateEl.textContent = `${month}/${day}/${yy}`;
+                } else {
+                    weddingDateEl.textContent = '10/18/26';
+                }
+                // Make visible once content is set
+                weddingDateEl.style.visibility = 'visible';
             }
+        } else {
+            // No client data found - show defaults
+            if (coupleNameEl) {
+                coupleNameEl.textContent = 'John & Sarah';
+                coupleNameEl.style.visibility = 'visible';
+            }
+            if (weddingDateEl) {
+                weddingDateEl.textContent = '10/18/26';
+                weddingDateEl.style.visibility = 'visible';
+            }
+        }
+    } else {
+        // Supabase helpers not available - show defaults
+        if (coupleNameEl) {
+            coupleNameEl.textContent = 'John & Sarah';
+            coupleNameEl.style.visibility = 'visible';
+        }
+        if (weddingDateEl) {
+            weddingDateEl.textContent = '10/18/26';
+            weddingDateEl.style.visibility = 'visible';
         }
     }
 }
