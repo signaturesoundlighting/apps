@@ -91,19 +91,98 @@ async function init() {
     if (window.supabaseHelpers && window.supabaseHelpers.getGeneralInfo) {
         const supabaseGeneralInfo = await window.supabaseHelpers.getGeneralInfo(clientId);
         
-        if (supabaseGeneralInfo && typeof generalInfo !== 'undefined') {
-            // Map Supabase field names to local field names
-            generalInfo.venueName = supabaseGeneralInfo.venue_name || '';
-            generalInfo.venueAddress = supabaseGeneralInfo.venue_address || '';
-            generalInfo.differentCeremonyVenue = supabaseGeneralInfo.different_ceremony_venue || false;
-            generalInfo.ceremonyVenueName = supabaseGeneralInfo.ceremony_venue_name || '';
-            generalInfo.ceremonyVenueAddress = supabaseGeneralInfo.ceremony_venue_address || '';
-            generalInfo.plannerName = supabaseGeneralInfo.planner_name || '';
-            generalInfo.plannerEmail = supabaseGeneralInfo.planner_email || '';
+        if (typeof generalInfo !== 'undefined') {
+            // Get client data to use as fallback for venue info
+            let clientData = null;
+            if (window.supabaseHelpers && window.supabaseHelpers.getClientData) {
+                clientData = await window.supabaseHelpers.getClientData(clientId);
+            }
             
-            console.log('Loaded general info from Supabase:', generalInfo);
-        } else {
-            console.log('No general info found in Supabase, using defaults');
+            if (supabaseGeneralInfo) {
+                // Map Supabase field names to local field names
+                generalInfo.venueName = supabaseGeneralInfo.venue_name || '';
+                generalInfo.venueAddress = supabaseGeneralInfo.venue_address || '';
+                
+                // If venue info is empty in general_info but exists in client data (contract), use it
+                if ((!generalInfo.venueName || !generalInfo.venueAddress) && clientData) {
+                    if (clientData.venue_name && !generalInfo.venueName) {
+                        generalInfo.venueName = clientData.venue_name;
+                    }
+                    if (clientData.venue_address && !generalInfo.venueAddress) {
+                        generalInfo.venueAddress = clientData.venue_address;
+                    }
+                    
+                    // Save the updated venue info if we pulled it from client data
+                    if ((clientData.venue_name && !supabaseGeneralInfo.venue_name) || 
+                        (clientData.venue_address && !supabaseGeneralInfo.venue_address)) {
+                        const generalInfoData = {
+                            venue_name: generalInfo.venueName,
+                            venue_address: generalInfo.venueAddress,
+                            different_ceremony_venue: supabaseGeneralInfo.different_ceremony_venue || false,
+                            ceremony_venue_name: supabaseGeneralInfo.ceremony_venue_name || '',
+                            ceremony_venue_address: supabaseGeneralInfo.ceremony_venue_address || '',
+                            planner_name: supabaseGeneralInfo.planner_name || '',
+                            planner_email: supabaseGeneralInfo.planner_email || ''
+                        };
+                        
+                        try {
+                            await window.supabaseHelpers.saveGeneralInfo(clientId, generalInfoData);
+                            console.log('Updated general info with venue data from contract');
+                        } catch (error) {
+                            console.error('Error updating general info with venue data:', error);
+                        }
+                    }
+                }
+                
+                generalInfo.differentCeremonyVenue = supabaseGeneralInfo.different_ceremony_venue || false;
+                generalInfo.ceremonyVenueName = supabaseGeneralInfo.ceremony_venue_name || '';
+                generalInfo.ceremonyVenueAddress = supabaseGeneralInfo.ceremony_venue_address || '';
+                generalInfo.plannerName = supabaseGeneralInfo.planner_name || '';
+                generalInfo.plannerEmail = supabaseGeneralInfo.planner_email || '';
+                
+                console.log('Loaded general info from Supabase:', generalInfo);
+            } else {
+                // No general_info record exists yet, so check client data for venue info from contract
+                console.log('No general info found in Supabase, checking client data for venue info');
+                
+                if (clientData) {
+                        // Populate venue name and address from contract (client data)
+                        generalInfo.venueName = clientData.venue_name || '';
+                        generalInfo.venueAddress = clientData.venue_address || '';
+                        // Keep other fields as defaults
+                        generalInfo.differentCeremonyVenue = false;
+                        generalInfo.ceremonyVenueName = '';
+                        generalInfo.ceremonyVenueAddress = '';
+                        generalInfo.plannerName = '';
+                        generalInfo.plannerEmail = '';
+                        
+                        console.log('Loaded venue info from client data (contract):', {
+                            venueName: generalInfo.venueName,
+                            venueAddress: generalInfo.venueAddress
+                        });
+                        
+                        // Save this to general_info table so it persists
+                        if (window.supabaseHelpers && window.supabaseHelpers.saveGeneralInfo) {
+                            const generalInfoData = {
+                                venue_name: generalInfo.venueName,
+                                venue_address: generalInfo.venueAddress,
+                                different_ceremony_venue: generalInfo.differentCeremonyVenue,
+                                ceremony_venue_name: generalInfo.ceremonyVenueName,
+                                ceremony_venue_address: generalInfo.ceremonyVenueAddress,
+                                planner_name: generalInfo.plannerName,
+                                planner_email: generalInfo.plannerEmail
+                            };
+                            
+                            try {
+                                await window.supabaseHelpers.saveGeneralInfo(clientId, generalInfoData);
+                                console.log('Initialized general info with venue data from contract');
+                            } catch (error) {
+                                console.error('Error saving initial general info:', error);
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
     
