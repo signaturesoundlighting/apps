@@ -63,9 +63,12 @@ async function getAllClients() {
 
 async function createClient(clientData) {
     if (!window.supabaseClient) {
-        console.error('Supabase not initialized');
-        return null;
+        const error = new Error('Supabase not initialized');
+        console.error('Error creating client:', error);
+        throw error;
     }
+    
+    console.log('Creating client with data:', clientData);
     
     const { data, error } = await window.supabaseClient
         .from('clients')
@@ -74,9 +77,25 @@ async function createClient(clientData) {
         .single();
     
     if (error) {
-        console.error('Error creating client:', error);
-        return null;
+        console.error('Error creating client - Supabase error:', error);
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
+        console.error('Error details:', error.details);
+        console.error('Error hint:', error.hint);
+        
+        const errorMsg = error.message || 'Failed to create client';
+        const detailedError = new Error(`Database error: ${errorMsg}${error.hint ? ' (' + error.hint + ')' : ''}`);
+        detailedError.supabaseError = error;
+        throw detailedError;
     }
+    
+    if (!data) {
+        const error = new Error('Client created but no data returned');
+        console.error('Error creating client:', error);
+        throw error;
+    }
+    
+    console.log('Client created successfully:', data);
     
     // Set as current client
     if (data.id) {

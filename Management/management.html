@@ -51,6 +51,7 @@
                 <button class="close-btn" onclick="closeCreateEventModal()">&times;</button>
             </div>
             <form id="createEventForm" onsubmit="createEvent(event)">
+                <div id="errorMessage" class="error-message" style="display: none;"></div>
                 <div class="form-group">
                     <label for="eventClientName">Client Name *</label>
                     <input type="text" id="eventClientName" required placeholder="John Smith">

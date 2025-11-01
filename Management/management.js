@@ -228,8 +228,9 @@ function escapeHtml(text) {
 function openCreateEventModal() {
     const modal = document.getElementById('createEventModal');
     modal.classList.add('active');
-    // Reset form
+    // Reset form and clear errors
     document.getElementById('createEventForm').reset();
+    hideErrorMessage();
 }
 
 // Close create event modal
@@ -246,9 +247,32 @@ document.addEventListener('click', (e) => {
     }
 });
 
+// Show error message in modal
+function showErrorMessage(message) {
+    const errorDiv = document.getElementById('errorMessage');
+    if (errorDiv) {
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+        // Scroll to error message
+        errorDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+}
+
+// Hide error message
+function hideErrorMessage() {
+    const errorDiv = document.getElementById('errorMessage');
+    if (errorDiv) {
+        errorDiv.style.display = 'none';
+        errorDiv.textContent = '';
+    }
+}
+
 // Create new event
 async function createEvent(event) {
     event.preventDefault();
+    
+    // Clear any previous errors
+    hideErrorMessage();
     
     const form = document.getElementById('createEventForm');
     const submitBtn = form.querySelector('button[type="submit"]');
@@ -264,17 +288,17 @@ async function createEvent(event) {
     
     // Validate
     if (!clientName || !eventDate || !services || isNaN(depositAmount) || isNaN(totalBalance)) {
-        alert('Please fill in all required fields with valid values.');
+        showErrorMessage('Please fill in all required fields with valid values.');
         return;
     }
     
     if (depositAmount < 0 || totalBalance < 0) {
-        alert('Amounts cannot be negative.');
+        showErrorMessage('Amounts cannot be negative.');
         return;
     }
     
     if (depositAmount > totalBalance) {
-        alert('Deposit amount cannot be greater than total balance.');
+        showErrorMessage('Deposit amount cannot be greater than total balance.');
         return;
     }
     
@@ -283,6 +307,9 @@ async function createEvent(event) {
     submitBtn.textContent = 'Creating...';
     
     try {
+        console.log('Starting event creation...');
+        console.log('Form values:', { clientName, fianceName, eventDate, services, depositAmount, totalBalance });
+        
         // Create client data object
         const clientData = {
             client_name: clientName,
@@ -298,12 +325,23 @@ async function createEvent(event) {
             onboarding_completed: false
         };
         
+        console.log('Client data to be inserted:', clientData);
+        
+        // Check if Supabase is initialized
+        if (!window.supabaseClient) {
+            throw new Error('Database connection not available. Please refresh the page and try again.');
+        }
+        
         // Create client in database
         const newClient = await window.supabaseHelpers.createClient(clientData);
         
+        console.log('createClient returned:', newClient);
+        
         if (!newClient) {
-            throw new Error('Failed to create event. Please try again.');
+            throw new Error('Failed to create event. No data returned from database.');
         }
+        
+        console.log('Event created successfully!', newClient);
         
         // Success
         closeCreateEventModal();
@@ -312,8 +350,34 @@ async function createEvent(event) {
         // Reload events list
         loadAllEvents();
     } catch (error) {
-        console.error('Error creating event:', error);
-        alert('Error creating event: ' + (error.message || 'Please try again.'));
+        console.error('=== ERROR CREATING EVENT ===');
+        console.error('Error object:', error);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        if (error.supabaseError) {
+            console.error('Supabase error details:', error.supabaseError);
+            console.error('Supabase error code:', error.supabaseError.code);
+            console.error('Supabase error message:', error.supabaseError.message);
+            console.error('Supabase error details:', error.supabaseError.details);
+            console.error('Supabase error hint:', error.supabaseError.hint);
+        }
+        console.error('=== END ERROR DETAILS ===');
+        
+        // Show error message in modal
+        let errorMsg = error.message || 'An unknown error occurred. Please try again.';
+        
+        // Add more details if available
+        if (error.supabaseError) {
+            if (error.supabaseError.code === '23505') {
+                errorMsg = 'This event may already exist. Please check the event list.';
+            } else if (error.supabaseError.code === '23502') {
+                errorMsg = 'Missing required field in database. Please contact support.';
+            } else if (error.supabaseError.hint) {
+                errorMsg += ' (' + error.supabaseError.hint + ')';
+            }
+        }
+        
+        showErrorMessage(errorMsg);
     } finally {
         // Re-enable submit button
         submitBtn.disabled = false;

@@ -288,6 +288,17 @@ body {
     min-height: 100px;
 }
 
+.error-message {
+    background: #fee;
+    border: 2px solid #fcc;
+    color: #c33;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    font-weight: 500;
+    display: block;
+}
+
 .form-actions {
     display: flex;
     gap: 10px;
