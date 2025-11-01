@@ -42,6 +42,25 @@ async function getClientData(clientId) {
     return data;
 }
 
+async function getAllClients() {
+    if (!window.supabaseClient) {
+        console.error('Supabase not initialized');
+        return [];
+    }
+    
+    const { data, error } = await window.supabaseClient
+        .from('clients')
+        .select('*')
+        .order('event_date', { ascending: false });
+    
+    if (error) {
+        console.error('Error fetching all clients:', error);
+        return [];
+    }
+    
+    return data || [];
+}
+
 async function createClient(clientData) {
     if (!window.supabaseClient) {
         console.error('Supabase not initialized');
@@ -340,6 +359,7 @@ window.supabaseHelpers = {
     getCurrentClientId,
     setCurrentClientId,
     getClientData,
+    getAllClients,
     createClient,
     updateClient,
     getEvents,

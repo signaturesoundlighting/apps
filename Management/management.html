@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Management Dashboard - Signature Sound & Lighting</title>
+    <link rel="stylesheet" href="management.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../Planning/supabaseConfig.js"></script>
+    <script src="../Planning/supabaseHelpers.js"></script>
+</head>
+<body>
+    <div class="header">
+        <img src="https://images.squarespace-cdn.com/content/v1/64909a307fc0025a2064d878/9b8fde02-b8f9-402b-be4c-366cb48134eb/Transparent+PNG+File.png" alt="Signature Sound & Lighting">
+        <h1>Event Management Dashboard</h1>
+    </div>
+
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <h2>All Events</h2>
+            <button class="btn-primary" onclick="openCreateEventModal()">+ Create New Event</button>
+        </div>
+
+        <div class="events-table-container">
+            <table class="events-table">
+                <thead>
+                    <tr>
+                        <th>Event Name</th>
+                        <th>Event Date</th>
+                        <th>Signature</th>
+                        <th>Deposit</th>
+                        <th>Onboarding</th>
+                        <th>Planning</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="eventsTableBody">
+                    <tr>
+                        <td colspan="7" class="loading">Loading events...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Create Event Modal -->
+    <div id="createEventModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create New Event</h2>
+                <button class="close-btn" onclick="closeCreateEventModal()">&times;</button>
+            </div>
+            <form id="createEventForm" onsubmit="createEvent(event)">
+                <div class="form-group">
+                    <label for="eventClientName">Client Name *</label>
+                    <input type="text" id="eventClientName" required placeholder="John Smith">
+                </div>
+                <div class="form-group">
+                    <label for="eventFianceName">Fiance Name</label>
+                    <input type="text" id="eventFianceName" placeholder="Jane Doe">
+                </div>
+                <div class="form-group">
+                    <label for="eventDate">Event Date *</label>
+                    <input type="date" id="eventDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="eventServices">Services *</label>
+                    <textarea id="eventServices" required placeholder="DJ Services, Lighting, Sound System"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="eventDepositAmount">Deposit Amount *</label>
+                    <input type="number" id="eventDepositAmount" required step="0.01" min="0" placeholder="500.00">
+                </div>
+                <div class="form-group">
+                    <label for="eventTotalBalance">Total Balance *</label>
+                    <input type="number" id="eventTotalBalance" required step="0.01" min="0" placeholder="5000.00">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="closeCreateEventModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Create Event</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="management.js"></script>
+</body>
+</html>
+
