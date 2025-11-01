@@ -8,8 +8,99 @@ const PIPELINE_STAGES = {
     PLANNING: 'Planning'
 };
 
+// Store errors persistently for debugging
+function logPersistentError(error) {
+    const errorData = {
+        timestamp: new Date().toISOString(),
+        message: error.message,
+        stack: error.stack,
+        supabaseError: error.supabaseError ? {
+            code: error.supabaseError.code,
+            message: error.supabaseError.message,
+            details: error.supabaseError.details,
+            hint: error.supabaseError.hint
+        } : null
+    };
+    
+    // Store in localStorage
+    try {
+        const existingErrors = JSON.parse(localStorage.getItem('management_errors') || '[]');
+        existingErrors.push(errorData);
+        // Keep only last 5 errors
+        if (existingErrors.length > 5) {
+            existingErrors.shift();
+        }
+        localStorage.setItem('management_errors', JSON.stringify(existingErrors));
+    } catch (e) {
+        console.error('Could not store error in localStorage:', e);
+    }
+    
+    // Also log to console with clear markers
+    console.error('🔴 PERSISTENT ERROR LOGGED:', errorData);
+}
+
+// Display any previous errors on page load
+function checkPreviousErrors() {
+    try {
+        const errors = JSON.parse(localStorage.getItem('management_errors') || '[]');
+        if (errors.length > 0) {
+            console.group('⚠️ Previous Errors (from localStorage)');
+            errors.forEach((error, index) => {
+                console.error(`Error ${index + 1} (${error.timestamp}):`, error);
+            });
+            console.groupEnd();
+        }
+    } catch (e) {
+        console.error('Could not read previous errors:', e);
+    }
+}
+
 // Initialize dashboard on load
 document.addEventListener('DOMContentLoaded', () => {
+    // Check for previous errors
+    checkPreviousErrors();
+    
+    // Set up global error handler
+    window.addEventListener('error', (event) => {
+        console.error('Global error caught:', event.error);
+        if (event.error) {
+            logPersistentError(event.error);
+        }
+    });
+    
+    // Set up unhandled promise rejection handler
+    window.addEventListener('unhandledrejection', (event) => {
+        console.error('Unhandled promise rejection:', event.reason);
+        if (event.reason) {
+            logPersistentError(event.reason instanceof Error ? event.reason : new Error(String(event.reason)));
+        }
+    });
+    
+    // Set up form handler to prevent default submission
+    const form = document.getElementById('createEventForm');
+    const submitBtn = document.getElementById('createEventSubmitBtn');
+    
+    if (form) {
+        // Add click handler to submit button as backup
+        if (submitBtn) {
+            submitBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const fakeEvent = { preventDefault: () => {}, stopPropagation: () => {} };
+                createEvent(fakeEvent);
+                return false;
+            });
+        }
+        
+        // Also add form submit handler
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            createEvent(e);
+            return false;
+        }, true); // Use capture phase
+    }
+    
     // Wait for Supabase to initialize
     const checkSupabase = setInterval(() => {
         if (window.supabaseClient) {
@@ -269,7 +360,13 @@ function hideErrorMessage() {
 
 // Create new event
 async function createEvent(event) {
-    event.preventDefault();
+    // Prevent form submission and page refresh
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
+    console.log('🔵 createEvent called', { event });
     
     // Clear any previous errors
     hideErrorMessage();
@@ -350,7 +447,10 @@ async function createEvent(event) {
         // Reload events list
         loadAllEvents();
     } catch (error) {
-        console.error('=== ERROR CREATING EVENT ===');
+        // Log error persistently so it survives page refresh
+        logPersistentError(error);
+        
+        console.error('🔴 === ERROR CREATING EVENT ===');
         console.error('Error object:', error);
         console.error('Error message:', error.message);
         console.error('Error stack:', error.stack);
@@ -361,7 +461,8 @@ async function createEvent(event) {
             console.error('Supabase error details:', error.supabaseError.details);
             console.error('Supabase error hint:', error.supabaseError.hint);
         }
-        console.error('=== END ERROR DETAILS ===');
+        console.error('🔴 === END ERROR DETAILS ===');
+        console.error('🔴 ERROR HAS BEEN LOGGED TO LOCALSTORAGE - Check console for details even after refresh');
         
         // Show error message in modal
         let errorMsg = error.message || 'An unknown error occurred. Please try again.';
@@ -375,13 +476,21 @@ async function createEvent(event) {
             } else if (error.supabaseError.hint) {
                 errorMsg += ' (' + error.supabaseError.hint + ')';
             }
+            // Add full error message
+            errorMsg = errorMsg + ' [Code: ' + error.supabaseError.code + ']';
         }
         
         showErrorMessage(errorMsg);
+        
+        // Also alert so user sees it even if modal closes
+        alert('ERROR: ' + errorMsg + '\n\nFull error details are in the browser console.');
     } finally {
         // Re-enable submit button
         submitBtn.disabled = false;
         submitBtn.textContent = originalText;
     }
+    
+    // Always return false to prevent form submission
+    return false;
 }
 
