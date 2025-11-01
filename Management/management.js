@@ -442,7 +442,6 @@ async function createEvent(event) {
         
         // Success
         closeCreateEventModal();
-        alert('Event created successfully!');
         
         // Reload events list
         loadAllEvents();
