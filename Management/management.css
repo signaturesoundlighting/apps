@@ -100,10 +100,27 @@ body {
     border-radius: 4px;
     transition: background 0.2s;
     display: inline-block;
+    margin-right: 8px;
 }
 
 .btn-link:hover {
     background: #e9ecef;
+}
+
+.btn-delete {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-delete:hover {
+    background: #c82333;
 }
 
 .events-table-container {

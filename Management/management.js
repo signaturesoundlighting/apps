@@ -229,6 +229,9 @@ function createEventRow(client) {
     // Actions (link to planning page)
     const planningLink = `../Planning/index.html?client_id=${client.id}`;
     
+    // Escape event name for JavaScript string (handle quotes and special chars)
+    const escapedEventName = eventName.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, '\\n');
+    
     row.innerHTML = `
         <td class="event-name">${escapeHtml(eventName)}</td>
         <td>${eventDate}</td>
@@ -238,6 +241,7 @@ function createEventRow(client) {
         <td>${planningStage}</td>
         <td class="actions">
             <a href="${planningLink}" target="_blank" class="btn-link">View Planning</a>
+            <button class="btn-delete" onclick="deleteClient('${client.id}', '${escapedEventName}')" title="Delete event">Delete</button>
         </td>
     `;
     
@@ -272,27 +276,27 @@ function formatDate(dateString) {
 // Get signature stage indicator
 function getSignatureStage(client) {
     if (client.signature && client.signature.trim() !== '') {
-        return '<span class="stage-complete">✓ 100%</span>';
+        return '<span class="stage-complete">✓</span>';
     } else {
-        return '<span class="stage-incomplete">✗ 0%</span>';
+        return '<span class="stage-incomplete">✗</span>';
     }
 }
 
 // Get deposit stage indicator
 function getDepositStage(client) {
     if (client.deposit_paid === true) {
-        return '<span class="stage-complete">✓ 100%</span>';
+        return '<span class="stage-complete">✓</span>';
     } else {
-        return '<span class="stage-incomplete">✗ 0%</span>';
+        return '<span class="stage-incomplete">✗</span>';
     }
 }
 
 // Get onboarding stage indicator
 function getOnboardingStage(client) {
     if (client.onboarding_completed === true) {
-        return '<span class="stage-complete">✓ 100%</span>';
+        return '<span class="stage-complete">✓</span>';
     } else {
-        return '<span class="stage-incomplete">✗ 0%</span>';
+        return '<span class="stage-incomplete">✗</span>';
     }
 }
 
@@ -492,4 +496,43 @@ async function createEvent(event) {
     // Always return false to prevent form submission
     return false;
 }
+
+// Delete a client/event (exposed globally for onclick handler)
+async function deleteClient(clientId, eventName) {
+    const confirmMessage = `Are you sure you want to delete "${eventName}"?\n\nThis action cannot be undone and will delete all associated data (events, general info, etc.).`;
+    
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+    
+    try {
+        console.log('Deleting client:', clientId);
+        
+        if (!window.supabaseClient) {
+            throw new Error('Database connection not available.');
+        }
+        
+        // Delete the client (cascade will delete related events and general_info)
+        const { error } = await window.supabaseClient
+            .from('clients')
+            .delete()
+            .eq('id', clientId);
+        
+        if (error) {
+            console.error('Error deleting client:', error);
+            throw new Error(`Failed to delete event: ${error.message}`);
+        }
+        
+        console.log('Client deleted successfully');
+        
+        // Reload events list
+        loadAllEvents();
+    } catch (error) {
+        console.error('Error deleting client:', error);
+        alert('Error deleting event: ' + (error.message || 'Please try again.'));
+    }
+}
+
+// Expose deleteClient globally for onclick handlers
+window.deleteClient = deleteClient;
 
