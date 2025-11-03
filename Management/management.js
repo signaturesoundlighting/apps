@@ -241,6 +241,7 @@ function createEventRow(client) {
         <td>${planningStage}</td>
         <td class="actions">
             <a href="${planningLink}" target="_blank" class="btn-link">View Planning</a>
+            <button class="btn-export" onclick="exportTimeline('${client.id}', '${escapedEventName}')" title="Export timeline PDF">Export</button>
             <button class="btn-delete" onclick="deleteClient('${client.id}', '${escapedEventName}')" title="Delete event">Delete</button>
         </td>
     `;
@@ -604,8 +605,398 @@ async function toggleDeposit(clientId) {
     }
 }
 
+// Export timeline PDF
+async function exportTimeline(clientId, eventName) {
+    try {
+        // Check if jsPDF is loaded
+        if (!window.jspdf || !window.jspdf.jsPDF) {
+            throw new Error('PDF library not loaded. Please refresh the page and try again.');
+        }
+        
+        // Fetch all necessary data
+        const [clientData, events, generalInfo] = await Promise.all([
+            window.supabaseHelpers.getClientData(clientId),
+            window.supabaseHelpers.getEvents(clientId),
+            window.supabaseHelpers.getGeneralInfo(clientId)
+        ]);
+        
+        if (!clientData) {
+            throw new Error('Could not fetch client data');
+        }
+        
+        // Generate PDF
+        generateTimelinePDF(clientData, events || [], generalInfo);
+    } catch (error) {
+        console.error('Error exporting timeline:', error);
+        alert('Error generating PDF: ' + (error.message || 'Please try again.'));
+    }
+}
+
+// Generate the formatted PDF timeline
+function generateTimelinePDF(clientData, events, generalInfo) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'letter'
+    });
+    
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    let yPosition = 20;
+    const margin = 15;
+    const contentWidth = pageWidth - (margin * 2);
+    
+    // Color scheme (Signature Sound & Lighting teal)
+    const primaryColor = [26, 158, 142]; // #1a9e8e
+    const darkColor = [20, 128, 115];
+    const lightGray = [245, 245, 245];
+    const darkGray = [51, 51, 51];
+    
+    // Helper function to add a new page if needed
+    function checkPageBreak(requiredSpace = 20) {
+        if (yPosition + requiredSpace > pageHeight - margin) {
+            doc.addPage();
+            yPosition = margin;
+            return true;
+        }
+        return false;
+    }
+    
+    // Helper to add text with wrapping
+    function addText(text, x, y, options = {}) {
+        const maxWidth = options.maxWidth || contentWidth;
+        const fontSize = options.fontSize || 12;
+        const align = options.align || 'left';
+        doc.setFontSize(fontSize);
+        doc.setTextColor(...(options.color || darkColor));
+        const lines = doc.splitTextToSize(text, maxWidth);
+        doc.text(lines, x, y, { align });
+        return lines.length * (fontSize * 0.35); // Approximate line height
+    }
+    
+    // Header section
+    doc.setFillColor(...primaryColor);
+    doc.rect(margin, margin, contentWidth, 25, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    const clientName = clientData.client_name || '';
+    const fianceName = clientData.fiance_name || '';
+    const fullName = fianceName ? `${clientName} & ${fianceName}` : clientName;
+    doc.text('EVENT TIMELINE', margin + 5, margin + 15);
+    doc.setFontSize(18);
+    doc.text(fullName, margin + 5, margin + 23);
+    
+    yPosition = margin + 35;
+    
+    // Event Date
+    if (clientData.event_date) {
+        const eventDate = formatDateForPDF(clientData.event_date);
+        doc.setFontSize(14);
+        doc.setTextColor(...darkColor);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Event Date: ${eventDate}`, margin, yPosition);
+        yPosition += 10;
+    }
+    
+    // Venue Information Section
+    if (generalInfo) {
+        checkPageBreak(30);
+        doc.setFillColor(...lightGray);
+        doc.rect(margin, yPosition, contentWidth, 8, 'F');
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...darkColor);
+        doc.text('VENUE INFORMATION', margin + 2, yPosition + 6);
+        yPosition += 12;
+        
+        let venueInfo = [];
+        if (generalInfo.venue_name) venueInfo.push(`Venue: ${generalInfo.venue_name}`);
+        if (generalInfo.venue_address) venueInfo.push(`Address: ${generalInfo.venue_address}`);
+        if (generalInfo.different_ceremony_venue && generalInfo.ceremony_venue_name) {
+            venueInfo.push(`Ceremony Venue: ${generalInfo.ceremony_venue_name}`);
+            if (generalInfo.ceremony_venue_address) {
+                venueInfo.push(`Ceremony Address: ${generalInfo.ceremony_venue_address}`);
+            }
+        }
+        
+        if (venueInfo.length > 0) {
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(...darkGray);
+            venueInfo.forEach(info => {
+                checkPageBreak(6);
+                yPosition += addText(info, margin + 2, yPosition, { fontSize: 10 });
+                yPosition += 2;
+            });
+            yPosition += 3;
+        }
+    }
+    
+    // Planner Contact Section
+    if (generalInfo && (generalInfo.planner_name || generalInfo.planner_email)) {
+        checkPageBreak(20);
+        doc.setFillColor(...lightGray);
+        doc.rect(margin, yPosition, contentWidth, 8, 'F');
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...darkColor);
+        doc.text('PLANNER CONTACT', margin + 2, yPosition + 6);
+        yPosition += 12;
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...darkGray);
+        if (generalInfo.planner_name) {
+            yPosition += addText(`Name: ${generalInfo.planner_name}`, margin + 2, yPosition, { fontSize: 10 });
+            yPosition += 2;
+        }
+        if (generalInfo.planner_email) {
+            yPosition += addText(`Email: ${generalInfo.planner_email}`, margin + 2, yPosition, { fontSize: 10 });
+            yPosition += 2;
+        }
+        yPosition += 3;
+    }
+    
+    // Services
+    if (clientData.services) {
+        checkPageBreak(15);
+        doc.setFontSize(10);
+        doc.setTextColor(...darkGray);
+        doc.setFont('helvetica', 'bold');
+        yPosition += addText(`Services: ${clientData.services}`, margin, yPosition, { fontSize: 10 });
+        yPosition += 5;
+    }
+    
+    // Timeline Section
+    checkPageBreak(20);
+    yPosition += 5;
+    doc.setFillColor(...primaryColor);
+    doc.rect(margin, yPosition, contentWidth, 8, 'F');
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(255, 255, 255);
+    doc.text('EVENT TIMELINE', margin + 2, yPosition + 6);
+    yPosition += 15;
+    
+    // Sort events by time (events with times first, then by event_order)
+    const sortedEvents = [...events].sort((a, b) => {
+        const aTime = a.time || '';
+        const bTime = b.time || '';
+        if (aTime && !bTime) return -1;
+        if (!aTime && bTime) return 1;
+        if (aTime && bTime) {
+            const timeCompare = aTime.localeCompare(bTime);
+            if (timeCompare !== 0) return timeCompare;
+        }
+        return (a.event_order || 0) - (b.event_order || 0);
+    });
+    
+    // Add each event to timeline
+    sortedEvents.forEach((event, index) => {
+        checkPageBreak(30);
+        
+        // Event header with time
+        const eventTime = event.time ? formatTimeForPDF(event.time) : 'Time TBD';
+        doc.setFillColor(...lightGray);
+        doc.rect(margin, yPosition, contentWidth, 6, 'F');
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...darkColor);
+        doc.text(`${eventTime} - ${event.name}`, margin + 2, yPosition + 4.5);
+        yPosition += 8;
+        
+        // Event details
+        const details = event.details || {};
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...darkGray);
+        
+        // Add event-specific details
+        const detailLines = formatEventDetails(event.type, details);
+        
+        detailLines.forEach(detail => {
+            if (detail.trim()) {
+                checkPageBreak(5);
+                yPosition += addText(detail, margin + 4, yPosition, { fontSize: 9, maxWidth: contentWidth - 8 });
+                yPosition += 1;
+            }
+        });
+        
+        yPosition += 5; // Space between events
+    });
+    
+    // Footer
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+            `Signature Sound & Lighting - Page ${i} of ${totalPages}`,
+            pageWidth / 2,
+            pageHeight - 10,
+            { align: 'center' }
+        );
+    }
+    
+    // Generate filename
+    const filename = `Timeline_${fullName.replace(/[^a-zA-Z0-9]/g, '_')}_${clientData.event_date || 'Event'}.pdf`;
+    
+    // Save PDF
+    doc.save(filename);
+}
+
+// Format date for PDF
+function formatDateForPDF(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString + 'T00:00:00');
+    return date.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+}
+
+// Format time for PDF
+function formatTimeForPDF(timeString) {
+    if (!timeString) return '';
+    // Convert 24-hour to 12-hour format if needed
+    const [hours, minutes] = timeString.split(':');
+    const hour = parseInt(hours, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${minutes} ${ampm}`;
+}
+
+// Format event details based on event type
+function formatEventDetails(eventType, details) {
+    const lines = [];
+    
+    // Helper to add formatted song info
+    function addSongLine(label, songData) {
+        if (!songData) return;
+        try {
+            const song = typeof songData === 'string' ? JSON.parse(songData) : songData;
+            if (song && song.trackName) {
+                const artist = song.artistName ? ` by ${song.artistName}` : '';
+                lines.push(`${label}: ${song.trackName}${artist}`);
+            }
+        } catch (e) {
+            // If not JSON, treat as plain text
+            if (songData && songData.trim()) {
+                lines.push(`${label}: ${songData}`);
+            }
+        }
+    }
+    
+    switch (eventType) {
+        case 'ceremony':
+            if (details.location) lines.push(`Location: ${details.location}`);
+            if (details.arrivalMusicStyle) lines.push(`Arrival Music: ${details.arrivalMusicStyle}`);
+            addSongLine('Processional', details.processionalSong);
+            addSongLine('Grand Entrance', details.brideEntrance);
+            if (details.hasSpecialActivity === 'yes' && details.specialActivityDetails) {
+                lines.push(`Special Activity: ${details.specialActivityDetails}`);
+            }
+            if (details.recessionalSong) {
+                try {
+                    const song = typeof details.recessionalSong === 'string' ? JSON.parse(details.recessionalSong) : details.recessionalSong;
+                    if (song && song.trackName) {
+                        lines.push(`Recessional: ${song.trackName}${song.artistName ? ` by ${song.artistName}` : ''}`);
+                    }
+                } catch (e) {
+                    if (details.recessionalSong) lines.push(`Recessional: ${details.recessionalSong}`);
+                }
+            }
+            break;
+            
+        case 'intros':
+            if (details.introOrder) {
+                const order = typeof details.introOrder === 'string' ? JSON.parse(details.introOrder) : details.introOrder;
+                if (Array.isArray(order) && order.length > 0) {
+                    lines.push('Introduction Order:');
+                    order.forEach((intro, idx) => {
+                        const name = intro.name || `Person ${idx + 1}`;
+                        const song = intro.song ? (typeof intro.song === 'string' ? JSON.parse(intro.song) : intro.song) : null;
+                        if (song && song.trackName) {
+                            lines.push(`  ${name}: ${song.trackName}${song.artistName ? ` by ${song.artistName}` : ''}`);
+                        } else {
+                            lines.push(`  ${name}`);
+                        }
+                    });
+                }
+            }
+            break;
+            
+        case 'first-dance':
+        case 'special-dance-1':
+        case 'special-dance-2':
+        case 'private-last-dance':
+        case 'last-group-dance':
+            addSongLine('Song', details.songChoice);
+            if (details.danceType && eventType.includes('special')) {
+                const danceTypes = {
+                    'father-daughter': 'Father-Daughter Dance',
+                    'mother-son': 'Mother-Son Dance',
+                    'other': details.otherDanceType || 'Other'
+                };
+                lines.push(`Dance Type: ${danceTypes[details.danceType] || details.danceType}`);
+            }
+            break;
+            
+        case 'blessing':
+        case 'welcome':
+        case 'toasts':
+            if (details.speakerName) lines.push(`Speaker: ${details.speakerName}`);
+            if (details.welcomeSong) {
+                addSongLine('Welcome Song', details.welcomeSong);
+            }
+            break;
+            
+        case 'shoe-game':
+            if (Array.isArray(details.questions) && details.questions.length > 0) {
+                lines.push('Questions:');
+                details.questions.forEach((q, idx) => {
+                    if (q && q.trim()) {
+                        lines.push(`  ${idx + 1}. ${q}`);
+                    }
+                });
+            }
+            break;
+            
+        case 'open-dancing':
+            if (details.startAt && details.endAt) {
+                lines.push(`Duration: ${details.startAt} - ${details.endAt}`);
+            }
+            if (details.danceDuration) {
+                lines.push(`Dance Duration: ${details.danceDuration}`);
+            }
+            if (details.lineDances && typeof details.lineDances === 'object') {
+                const lineDanceEntries = Object.entries(details.lineDances);
+                if (lineDanceEntries.length > 0) {
+                    lines.push('Line Dances:');
+                    lineDanceEntries.forEach(([dance, timing]) => {
+                        lines.push(`  ${dance}: ${timing}`);
+                    });
+                }
+            }
+            break;
+    }
+    
+    // Add any other details
+    if (details.otherDetails) {
+        lines.push(`Notes: ${details.otherDetails}`);
+    }
+    
+    return lines.length > 0 ? lines : ['(No additional details)'];
+}
+
 // Expose functions globally for onclick handlers
 window.deleteClient = deleteClient;
 window.toggleSignature = toggleSignature;
 window.toggleDeposit = toggleDeposit;
+window.exportTimeline = exportTimeline;
 
