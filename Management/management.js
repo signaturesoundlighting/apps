@@ -381,6 +381,7 @@ async function createEvent(event) {
     const originalText = submitBtn.textContent;
     
     // Get form values
+    const eventType = document.getElementById('eventType').value.trim();
     const clientName = document.getElementById('eventClientName').value.trim();
     const fianceName = document.getElementById('eventFianceName').value.trim();
     const eventDate = document.getElementById('eventDate').value;
@@ -389,7 +390,7 @@ async function createEvent(event) {
     const totalBalance = parseFloat(document.getElementById('eventTotalBalance').value);
     
     // Validate
-    if (!clientName || !eventDate || !services || isNaN(depositAmount) || isNaN(totalBalance)) {
+    if (!eventType || !clientName || !eventDate || !services || isNaN(depositAmount) || isNaN(totalBalance)) {
         showErrorMessage('Please fill in all required fields with valid values.');
         return;
     }
@@ -410,10 +411,11 @@ async function createEvent(event) {
     
     try {
         console.log('Starting event creation...');
-        console.log('Form values:', { clientName, fianceName, eventDate, services, depositAmount, totalBalance });
+        console.log('Form values:', { eventType, clientName, fianceName, eventDate, services, depositAmount, totalBalance });
         
         // Create client data object
         const clientData = {
+            event_type: eventType,
             client_name: clientName,
             fiance_name: fianceName || null,
             event_date: eventDate,

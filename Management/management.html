@@ -55,6 +55,16 @@
             <form id="createEventForm" onsubmit="return createEvent(event)">
                 <div id="errorMessage" class="error-message" style="display: none;"></div>
                 <div class="form-group">
+                    <label for="eventType">Event Type *</label>
+                    <select id="eventType" required>
+                        <option value="">Select Event Type</option>
+                        <option value="Wedding">Wedding</option>
+                        <option value="Corporate">Corporate</option>
+                        <option value="School">School</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label for="eventClientName">Client Name *</label>
                     <input type="text" id="eventClientName" required placeholder="John Smith">
                 </div>
