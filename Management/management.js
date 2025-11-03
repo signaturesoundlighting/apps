@@ -1031,8 +1031,9 @@ function formatEventDetails(eventType, details, event = null) {
             if (details.hasSpecialActivity === 'yes' && details.specialActivityDetails) {
                 lines.push(`Special Activity: ${details.specialActivityDetails}`);
             }
-            if (details.specialActivityType) lines.push(`Special Activity Type: ${details.specialActivityType}`);
+            // Special Activity Song comes before Special Activity Type
             if (details.specialActivitySongTitle) addSongLine('Special Activity Song', details.specialActivitySongTitle);
+            if (details.specialActivityType) lines.push(`Special Activity Type: ${details.specialActivityType}`);
             addSongLine('Recessional', details.recessionalSong);
             break;
             
@@ -1226,7 +1227,7 @@ function formatEventDetails(eventType, details, event = null) {
         'introOrder', 'songChoice', 'danceType', 'otherDanceType', 'danceDuration', 'startAt', 'endAt',
         'speakerName', 'welcomeSong', 'blessingSong', 'toastOrder', 'questions', 'lineDances',
         'musicStyle', 'musicChoice', 'cocktailSongs', 'cocktailSongs_playlist', 'serviceStyle',
-        'otherDetails'
+        'otherDetails', 'startTime', 'start_time', 'time' // Exclude time fields from display
     ]);
     
     // Also add event-specific duration fields
