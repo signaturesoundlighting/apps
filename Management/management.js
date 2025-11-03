@@ -122,6 +122,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 10000);
 });
 
+// Store all clients for filtering
+let allClientsData = [];
+
 // Load all events from database
 async function loadAllEvents() {
     const tbody = document.getElementById('eventsTableBody');
@@ -132,6 +135,7 @@ async function loadAllEvents() {
         
         if (!clients || clients.length === 0) {
             tbody.innerHTML = '<tr><td colspan="9" class="no-events">No events found. Create your first event to get started!</td></tr>';
+            allClientsData = [];
             return;
         }
         
@@ -146,15 +150,88 @@ async function loadAllEvents() {
             })
         );
         
-        tbody.innerHTML = '';
-        eventsWithProgress.forEach(client => {
-            const row = createEventRow(client);
-            tbody.appendChild(row);
-        });
+        // Store all clients data for filtering
+        allClientsData = eventsWithProgress;
+        
+        // Apply current filter
+        filterEventsByStage();
     } catch (error) {
         console.error('Error loading events:', error);
         tbody.innerHTML = '<tr><td colspan="9" class="error">Error loading events. Please refresh the page.</td></tr>';
+        allClientsData = [];
     }
+}
+
+// Determine event stage based on client data
+function getEventStage(client) {
+    // Check if archived
+    if (client.archived === true) {
+        return 'archive';
+    }
+    
+    // Check if completed (event date is in the past)
+    if (client.event_date) {
+        const eventDate = new Date(client.event_date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (eventDate < today) {
+            return 'completed';
+        }
+    }
+    
+    // Check signature status
+    const hasSignature = client.signature && client.signature.trim() !== '';
+    const hasDeposit = client.deposit_paid === true;
+    
+    if (hasSignature && hasDeposit) {
+        return 'booked';
+    } else if (hasSignature && !hasDeposit) {
+        return 'awaiting-deposit';
+    } else {
+        return 'awaiting-signature';
+    }
+}
+
+// Filter events by stage
+function filterEventsByStage() {
+    const tbody = document.getElementById('eventsTableBody');
+    const filterValue = document.getElementById('stageFilter').value;
+    
+    if (!allClientsData || allClientsData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="no-events">No events found.</td></tr>';
+        return;
+    }
+    
+    let filteredClients;
+    
+    if (filterValue === 'all') {
+        // Show all non-archived events
+        filteredClients = allClientsData.filter(client => !client.archived);
+    } else if (filterValue === 'archive') {
+        // Show only archived events
+        filteredClients = allClientsData.filter(client => client.archived === true);
+    } else {
+        // Filter by stage
+        filteredClients = allClientsData.filter(client => {
+            // Exclude archived events unless we're viewing archive
+            if (client.archived === true) {
+                return false;
+            }
+            const stage = getEventStage(client);
+            return stage === filterValue;
+        });
+    }
+    
+    if (filteredClients.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="no-events">No events found for this filter.</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = '';
+    filteredClients.forEach(client => {
+        const row = createEventRow(client);
+        tbody.appendChild(row);
+    });
 }
 
 // Calculate planning progress percentage based on events and general info completion
@@ -648,7 +725,8 @@ async function createEvent(event) {
             signature_date: null,
             deposit_paid: false,
             payment_intent_id: null,
-            onboarding_completed: false
+            onboarding_completed: false,
+            archived: false
         };
         
         console.log('Client data to be inserted:', clientData);
@@ -722,36 +800,36 @@ async function createEvent(event) {
     return false;
 }
 
-// Delete a client/event (exposed globally for onclick handler)
+// Archive a client/event (exposed globally for onclick handler)
 async function deleteClient(clientId, eventName) {
-    const confirmMessage = `Are you sure you want to delete "${eventName}"?\n\nThis action cannot be undone and will delete all associated data (events, general info, etc.).`;
+    const confirmMessage = `Are you sure you want to archive "${eventName}"?\n\nThis will move the event to the archive. You can view archived events using the filter dropdown.`;
     
     if (!confirm(confirmMessage)) {
         return;
     }
     
     try {
-        console.log('Deleting client:', clientId);
+        console.log('Archiving client:', clientId);
         
         if (!window.supabaseClient) {
             throw new Error('Database connection not available.');
         }
         
-        // Delete the client (cascade will delete related events and general_info)
+        // Archive the client instead of deleting
         const { error } = await window.supabaseClient
             .from('clients')
-            .delete()
+            .update({ archived: true })
             .eq('id', clientId);
         
         if (error) {
-            console.error('Error deleting client:', error);
-            throw new Error(`Failed to delete event: ${error.message}`);
+            console.error('Error archiving client:', error);
+            throw new Error(`Failed to archive event: ${error.message}`);
         }
         
-        console.log('Client deleted successfully');
+        console.log('Client archived successfully');
         
         // Reload events list
-        loadAllEvents();
+        await loadAllEvents();
     } catch (error) {
         console.error('Error deleting client:', error);
         alert('Error deleting event: ' + (error.message || 'Please try again.'));
@@ -1499,4 +1577,5 @@ window.deleteClient = deleteClient;
 window.toggleSignature = toggleSignature;
 window.toggleDeposit = toggleDeposit;
 window.exportTimeline = exportTimeline;
+window.filterEventsByStage = filterEventsByStage;
 

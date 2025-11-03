@@ -20,7 +20,20 @@
     <div class="dashboard-container">
         <div class="dashboard-header">
             <h2>All Events</h2>
-            <button class="btn-primary" onclick="openCreateEventModal()">+ Create New Event</button>
+            <div class="dashboard-controls">
+                <div class="filter-group">
+                    <label for="stageFilter">Filter by Stage:</label>
+                    <select id="stageFilter" onchange="filterEventsByStage()">
+                        <option value="all">All Events</option>
+                        <option value="booked">Booked</option>
+                        <option value="awaiting-deposit">Awaiting Deposit</option>
+                        <option value="awaiting-signature">Awaiting Signature</option>
+                        <option value="completed">Completed</option>
+                        <option value="archive">Archive</option>
+                    </select>
+                </div>
+                <button class="btn-primary" onclick="openCreateEventModal()">+ Create New Event</button>
+            </div>
         </div>
 
         <div class="events-table-container">
