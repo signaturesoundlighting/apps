@@ -140,13 +140,20 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    margin-right: 8px;
     width: 36px;
     height: 36px;
+    margin: 0;
+    flex-shrink: 0;
 }
 
 .btn-link:hover {
     background: #e9ecef;
+}
+
+.btn-link svg {
+    width: 20px;
+    height: 20px;
+    display: block;
 }
 
 .btn-export {
@@ -157,16 +164,23 @@ body {
     border-radius: 4px;
     cursor: pointer;
     transition: background 0.2s;
-    margin-right: 8px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 36px;
     height: 36px;
+    margin: 0;
+    flex-shrink: 0;
 }
 
 .btn-export:hover {
     background: #158077;
+}
+
+.btn-export svg {
+    width: 20px;
+    height: 20px;
+    display: block;
 }
 
 .btn-delete {
@@ -182,10 +196,18 @@ body {
     justify-content: center;
     width: 36px;
     height: 36px;
+    margin: 0;
+    flex-shrink: 0;
 }
 
 .btn-delete:hover {
     background: #c82333;
+}
+
+.btn-delete svg {
+    width: 20px;
+    height: 20px;
+    display: block;
 }
 
 .events-table-container {
@@ -400,8 +422,13 @@ body {
     justify-content: center;
     align-items: center;
     gap: 8px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     min-height: 40px;
+    width: 100%;
+}
+
+.actions > * {
+    flex-shrink: 0;
 }
 
 /* Modal Styles */
