@@ -1031,9 +1031,19 @@ function formatEventDetails(eventType, details, event = null) {
             if (details.hasSpecialActivity === 'yes' && details.specialActivityDetails) {
                 lines.push(`Special Activity: ${details.specialActivityDetails}`);
             }
-            // Special Activity Song comes before Special Activity Type
-            if (details.specialActivitySongTitle) addSongLine('Special Activity Song', details.specialActivitySongTitle);
-            if (details.specialActivityType) lines.push(`Special Activity Type: ${details.specialActivityType}`);
+            // Special activity fields in order:
+            // 1. Special Activity Type (if yes)
+            if (details.hasSpecialActivity === 'yes' && details.specialActivityType) {
+                lines.push(`Special Activity Type: ${details.specialActivityType}`);
+            }
+            // 2. Special Activity Song (yes/no)
+            if (details.hasSpecialActivity === 'yes' && details.specialActivitySong) {
+                lines.push(`Special Activity Song: ${details.specialActivitySong === 'yes' ? 'Yes' : 'No'}`);
+            }
+            // 3. Special Activity Song Title (actual song if yes)
+            if (details.specialActivitySong === 'yes' && details.specialActivitySongTitle) {
+                addSongLine('Special Activity Song', details.specialActivitySongTitle);
+            }
             addSongLine('Recessional', details.recessionalSong);
             break;
             
