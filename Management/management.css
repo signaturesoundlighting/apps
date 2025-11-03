@@ -415,6 +415,7 @@ body {
 .form-group input[type="text"],
 .form-group input[type="date"],
 .form-group input[type="number"],
+.form-group input[type="tel"],
 .form-group textarea,
 .form-group select {
     width: 100%;
@@ -436,6 +437,12 @@ body {
 .form-group select:focus {
     outline: none;
     border-color: #1a9e8e;
+}
+
+/* Make modal scrollable if content is long */
+.modal-content {
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 .form-group textarea {

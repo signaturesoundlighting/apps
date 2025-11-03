@@ -402,7 +402,11 @@ async function openEditEventModal(clientId) {
         document.getElementById('editEventType').value = client.event_type || '';
         document.getElementById('editClientName').value = client.client_name || '';
         document.getElementById('editFianceName').value = client.fiance_name || '';
+        document.getElementById('editClientPhone').value = client.client_phone || '';
+        document.getElementById('editClientAddress').value = client.client_address || '';
         document.getElementById('editEventDate').value = client.event_date || '';
+        document.getElementById('editVenueName').value = client.venue_name || '';
+        document.getElementById('editVenueAddress').value = client.venue_address || '';
         document.getElementById('editServices').value = client.services || '';
         document.getElementById('editDepositAmount').value = client.deposit_amount || '';
         document.getElementById('editTotalBalance').value = client.total_balance || '';
@@ -464,7 +468,11 @@ async function updateEvent(event) {
     const eventType = document.getElementById('editEventType').value.trim();
     const clientName = document.getElementById('editClientName').value.trim();
     const fianceName = document.getElementById('editFianceName').value.trim();
+    const clientPhone = document.getElementById('editClientPhone').value.trim();
+    const clientAddress = document.getElementById('editClientAddress').value.trim();
     const eventDate = document.getElementById('editEventDate').value;
+    const venueName = document.getElementById('editVenueName').value.trim();
+    const venueAddress = document.getElementById('editVenueAddress').value.trim();
     const services = document.getElementById('editServices').value.trim();
     const depositAmount = parseFloat(document.getElementById('editDepositAmount').value);
     const totalBalance = parseFloat(document.getElementById('editTotalBalance').value);
@@ -491,14 +499,18 @@ async function updateEvent(event) {
     
     try {
         console.log('Starting event update...');
-        console.log('Form values:', { clientId, eventType, clientName, fianceName, eventDate, services, depositAmount, totalBalance });
+        console.log('Form values:', { clientId, eventType, clientName, fianceName, clientPhone, clientAddress, eventDate, venueName, venueAddress, services, depositAmount, totalBalance });
         
         // Update client data object
         const clientData = {
             event_type: eventType,
             client_name: clientName,
             fiance_name: fianceName || null,
+            client_phone: clientPhone || null,
+            client_address: clientAddress || null,
             event_date: eventDate,
+            venue_name: venueName || null,
+            venue_address: venueAddress || null,
             services: services,
             deposit_amount: depositAmount,
             total_balance: totalBalance
