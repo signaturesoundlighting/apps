@@ -644,7 +644,7 @@ async function generateTimelinePDF(clientData, events, generalInfo) {
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 15;
-    let yPosition = margin; // Start at top margin for logo
+    let yPosition = margin; // Start position
     const contentWidth = pageWidth - (margin * 2);
     
     // Color scheme (Signature Sound & Lighting teal)
@@ -656,6 +656,10 @@ async function generateTimelinePDF(clientData, events, generalInfo) {
     // Company logo URL
     const logoUrl = 'https://images.squarespace-cdn.com/content/v1/64909a307fc0025a2064d878/9b8fde02-b8f9-402b-be4c-366cb48134eb/Transparent+PNG+File.png';
     
+    // Track logo height for spacing
+    let logoHeight = 0;
+    const logoSpacing = 10; // Space after logo
+    
     // Add logo at the very top - use canvas to handle CORS properly
     try {
         const img = new Image();
@@ -663,7 +667,8 @@ async function generateTimelinePDF(clientData, events, generalInfo) {
         
         await new Promise((resolve) => {
             const timeout = setTimeout(() => {
-                console.warn('Logo load timeout');
+                console.warn('Logo load timeout - continuing without logo');
+                logoHeight = 0;
                 resolve();
             }, 5000);
             
@@ -679,16 +684,16 @@ async function generateTimelinePDF(clientData, events, generalInfo) {
                     
                     const base64data = canvas.toDataURL('image/png');
                     const logoWidth = 60;
-                    const logoHeight = (img.height / img.width) * logoWidth;
+                    logoHeight = (img.height / img.width) * logoWidth;
                     const logoX = (pageWidth - logoWidth) / 2;
                     
-                    // Add logo at current yPosition (top margin)
-                    doc.addImage(base64data, 'PNG', logoX, yPosition, logoWidth, logoHeight);
-                    // Move yPosition down below logo
-                    yPosition += logoHeight + 10;
+                    // Add logo at top margin
+                    doc.addImage(base64data, 'PNG', logoX, margin, logoWidth, logoHeight);
+                    console.log('Logo added successfully at y:', margin, 'height:', logoHeight);
                     resolve();
                 } catch (e) {
                     console.warn('Could not add logo to PDF:', e);
+                    logoHeight = 0;
                     resolve();
                 }
             };
@@ -696,6 +701,7 @@ async function generateTimelinePDF(clientData, events, generalInfo) {
             img.onerror = () => {
                 clearTimeout(timeout);
                 console.warn('Could not load logo image');
+                logoHeight = 0;
                 resolve();
             };
             
@@ -703,8 +709,11 @@ async function generateTimelinePDF(clientData, events, generalInfo) {
         });
     } catch (e) {
         console.warn('Error loading logo:', e);
-        // Continue without logo
+        logoHeight = 0;
     }
+    
+    // Set yPosition to start BELOW the logo (or at margin if no logo)
+    yPosition = margin + logoHeight + logoSpacing;
     
     // Helper function to add a new page if needed
     function checkPageBreak(requiredSpace = 20) {
@@ -728,18 +737,28 @@ async function generateTimelinePDF(clientData, events, generalInfo) {
         return lines.length * (fontSize * 0.35); // Approximate line height
     }
     
-    // Header section - now starts BELOW the logo
+    // Header section - starts BELOW the logo (yPosition already adjusted)
     doc.setFillColor(...primaryColor);
-    doc.rect(margin, yPosition, contentWidth, 25, 'F');
+    const headerHeight = 25;
+    doc.rect(margin, yPosition, contentWidth, headerHeight, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(24);
     doc.setFont('helvetica', 'bold');
-    const clientName = clientData.client_name || '';
-    const fianceName = clientData.fiance_name || '';
-    const fullName = fianceName ? `${clientName} & ${fianceName}` : clientName;
+    
+    // Helper to extract first name from full name
+    function getFirstName(fullName) {
+        if (!fullName || typeof fullName !== 'string') return '';
+        const parts = fullName.trim().split(/\s+/);
+        return parts[0] || '';
+    }
+    
+    const clientFirstName = getFirstName(clientData.client_name || '');
+    const fianceFirstName = getFirstName(clientData.fiance_name || '');
+    const displayName = fianceFirstName ? `${clientFirstName} & ${fianceFirstName}` : clientFirstName;
+    
     doc.text('EVENT TIMELINE', margin + 5, yPosition + 15);
     doc.setFontSize(18);
-    doc.text(fullName, margin + 5, yPosition + 23);
+    doc.text(displayName, margin + 5, yPosition + 23);
     
     // Move yPosition below header block
     yPosition += 35;
@@ -834,17 +853,12 @@ async function generateTimelinePDF(clientData, events, generalInfo) {
     doc.text('EVENT TIMELINE', margin + 2, yPosition + 6);
     yPosition += 15;
     
-    // Sort events by time (events with times first, then by event_order)
+    // Events are already sorted by event_order from Supabase, maintain that order
+    // Just ensure events without event_order are at the end
     const sortedEvents = [...events].sort((a, b) => {
-        const aTime = a.time || '';
-        const bTime = b.time || '';
-        if (aTime && !bTime) return -1;
-        if (!aTime && bTime) return 1;
-        if (aTime && bTime) {
-            const timeCompare = aTime.localeCompare(bTime);
-            if (timeCompare !== 0) return timeCompare;
-        }
-        return (a.event_order || 0) - (b.event_order || 0);
+        const aOrder = a.event_order !== null && a.event_order !== undefined ? a.event_order : 9999;
+        const bOrder = b.event_order !== null && b.event_order !== undefined ? b.event_order : 9999;
+        return aOrder - bOrder;
     });
     
     // Add each event to timeline
@@ -915,8 +929,16 @@ async function generateTimelinePDF(clientData, events, generalInfo) {
         );
     }
     
-    // Generate filename
-    const filename = `Timeline_${fullName.replace(/[^a-zA-Z0-9]/g, '_')}_${clientData.event_date || 'Event'}.pdf`;
+    // Generate filename (use first names for display name)
+    function getFirstName(fullName) {
+        if (!fullName || typeof fullName !== 'string') return '';
+        const parts = fullName.trim().split(/\s+/);
+        return parts[0] || '';
+    }
+    const clientFirstName = getFirstName(clientData.client_name || '');
+    const fianceFirstName = getFirstName(clientData.fiance_name || '');
+    const displayName = fianceFirstName ? `${clientFirstName} & ${fianceFirstName}` : clientFirstName;
+    const filename = `Timeline_${displayName.replace(/[^a-zA-Z0-9]/g, '_')}_${clientData.event_date || 'Event'}.pdf`;
     
     // Save PDF
     doc.save(filename);
