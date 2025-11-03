@@ -118,45 +118,53 @@
                         <option value="Other">Other</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label for="editClientName">Client Name *</label>
-                    <input type="text" id="editClientName" required placeholder="John Smith">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editClientName">Client Name *</label>
+                        <input type="text" id="editClientName" required placeholder="John Smith">
+                    </div>
+                    <div class="form-group">
+                        <label for="editFianceName">Fiance Name</label>
+                        <input type="text" id="editFianceName" placeholder="Jane Doe">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="editFianceName">Fiance Name</label>
-                    <input type="text" id="editFianceName" placeholder="Jane Doe">
-                </div>
-                <div class="form-group">
-                    <label for="editClientPhone">Client Phone</label>
-                    <input type="tel" id="editClientPhone" placeholder="(555) 123-4567">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editClientPhone">Client Phone</label>
+                        <input type="tel" id="editClientPhone" placeholder="(555) 123-4567">
+                    </div>
+                    <div class="form-group">
+                        <label for="editEventDate">Event Date *</label>
+                        <input type="date" id="editEventDate" required>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="editClientAddress">Client Address</label>
                     <input type="text" id="editClientAddress" placeholder="123 Main St, City, State ZIP">
                 </div>
-                <div class="form-group">
-                    <label for="editEventDate">Event Date *</label>
-                    <input type="date" id="editEventDate" required>
-                </div>
-                <div class="form-group">
-                    <label for="editVenueName">Venue Name</label>
-                    <input type="text" id="editVenueName" placeholder="Venue Name">
-                </div>
-                <div class="form-group">
-                    <label for="editVenueAddress">Venue Address</label>
-                    <input type="text" id="editVenueAddress" placeholder="123 Venue St, City, State ZIP">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editVenueName">Venue Name</label>
+                        <input type="text" id="editVenueName" placeholder="Venue Name">
+                    </div>
+                    <div class="form-group">
+                        <label for="editVenueAddress">Venue Address</label>
+                        <input type="text" id="editVenueAddress" placeholder="123 Venue St, City, State ZIP">
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="editServices">Services *</label>
                     <textarea id="editServices" required placeholder="DJ Services, Lighting, Sound System"></textarea>
                 </div>
-                <div class="form-group">
-                    <label for="editDepositAmount">Deposit Amount *</label>
-                    <input type="number" id="editDepositAmount" required step="0.01" min="0" placeholder="500.00">
-                </div>
-                <div class="form-group">
-                    <label for="editTotalBalance">Total Balance *</label>
-                    <input type="number" id="editTotalBalance" required step="0.01" min="0" placeholder="5000.00">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editDepositAmount">Deposit Amount *</label>
+                        <input type="number" id="editDepositAmount" required step="0.01" min="0" placeholder="500.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="editTotalBalance">Total Balance *</label>
+                        <input type="number" id="editTotalBalance" required step="0.01" min="0" placeholder="5000.00">
+                    </div>
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn-secondary" onclick="closeEditEventModal()">Cancel</button>
