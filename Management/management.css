@@ -95,12 +95,15 @@ body {
 .btn-link {
     color: #1a9e8e;
     text-decoration: none;
-    font-weight: 500;
-    padding: 6px 12px;
+    padding: 8px;
     border-radius: 4px;
     transition: background 0.2s;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     margin-right: 8px;
+    width: 36px;
+    height: 36px;
 }
 
 .btn-link:hover {
@@ -111,13 +114,16 @@ body {
     background: #1a9e8e;
     color: white;
     border: none;
-    padding: 6px 12px;
+    padding: 8px;
     border-radius: 4px;
-    font-size: 14px;
-    font-weight: 500;
     cursor: pointer;
     transition: background 0.2s;
     margin-right: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
 }
 
 .btn-export:hover {
@@ -128,12 +134,15 @@ body {
     background: #dc3545;
     color: white;
     border: none;
-    padding: 6px 12px;
+    padding: 8px;
     border-radius: 4px;
-    font-size: 14px;
-    font-weight: 500;
     cursor: pointer;
     transition: background 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
 }
 
 .btn-delete:hover {

@@ -251,9 +251,21 @@ function createEventRow(client) {
         <td>${planningStage}</td>
         <td class="remaining-balance">${escapeHtml(formattedBalance)}</td>
         <td class="actions">
-            <a href="${planningLink}" target="_blank" class="btn-link">View Planning</a>
-            <button class="btn-export" onclick="exportTimeline('${client.id}', '${escapedEventName}')" title="Export timeline PDF">Export</button>
-            <button class="btn-delete" onclick="deleteClient('${client.id}', '${escapedEventName}')" title="Delete event">Delete</button>
+            <a href="${planningLink}" target="_blank" class="btn-link" title="View Planning">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor">
+                    <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                </svg>
+            </a>
+            <button class="btn-export" onclick="exportTimeline('${client.id}', '${escapedEventName}')" title="Export timeline PDF">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor">
+                    <path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/>
+                </svg>
+            </button>
+            <button class="btn-delete" onclick="deleteClient('${client.id}', '${escapedEventName}')" title="Delete event">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor">
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                </svg>
+            </button>
         </td>
     `;
     
