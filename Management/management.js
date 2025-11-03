@@ -227,7 +227,7 @@ function createEventRow(client) {
     const planningStage = getPlanningStage(client.planningProgress || 0);
     
     // Actions (link to planning page)
-    const planningLink = `../Planning/index.html?client_id=${client.id}`;
+    const planningLink = `https://apps.signature-sl.com/Planning/?client_id=${client.id}`;
     
     // Escape event name for JavaScript string (handle quotes and special chars)
     const escapedEventName = eventName.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, '\\n');
