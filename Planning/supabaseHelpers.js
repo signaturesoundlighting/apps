@@ -51,7 +51,7 @@ async function getAllClients() {
     const { data, error } = await window.supabaseClient
         .from('clients')
         .select('*')
-        .order('event_date', { ascending: false });
+        .order('event_date', { ascending: true });
     
     if (error) {
         console.error('Error fetching all clients:', error);
