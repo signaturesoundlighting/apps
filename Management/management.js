@@ -125,13 +125,13 @@ document.addEventListener('DOMContentLoaded', () => {
 // Load all events from database
 async function loadAllEvents() {
     const tbody = document.getElementById('eventsTableBody');
-    tbody.innerHTML = '<tr><td colspan="7" class="loading">Loading events...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="loading">Loading events...</td></tr>';
     
     try {
         const clients = await window.supabaseHelpers.getAllClients();
         
         if (!clients || clients.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="no-events">No events found. Create your first event to get started!</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="no-events">No events found. Create your first event to get started!</td></tr>';
             return;
         }
         
@@ -153,7 +153,7 @@ async function loadAllEvents() {
         });
     } catch (error) {
         console.error('Error loading events:', error);
-        tbody.innerHTML = '<tr><td colspan="7" class="error">Error loading events. Please refresh the page.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="error">Error loading events. Please refresh the page.</td></tr>';
     }
 }
 
@@ -220,6 +220,9 @@ function createEventRow(client) {
     // Format event date
     const eventDate = client.event_date ? formatDate(client.event_date) : 'N/A';
     
+    // Format event type
+    const eventType = client.event_type || 'N/A';
+    
     // Pipeline stages
     const signatureStage = getSignatureStage(client);
     const depositStage = getDepositStage(client);
@@ -235,6 +238,7 @@ function createEventRow(client) {
     row.innerHTML = `
         <td class="event-name">${escapeHtml(eventName)}</td>
         <td>${eventDate}</td>
+        <td>${escapeHtml(eventType)}</td>
         <td>${signatureStage}</td>
         <td>${depositStage}</td>
         <td>${onboardingStage}</td>
