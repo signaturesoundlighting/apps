@@ -178,6 +178,37 @@ body {
     border-bottom: 1px solid #e9ecef;
 }
 
+.events-table td.event-name {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.event-name-text {
+    flex: 1;
+}
+
+.btn-edit-name {
+    background: none;
+    border: 2px solid #1a9e8e;
+    color: #1a9e8e;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+}
+
+.btn-edit-name:hover {
+    background: #1a9e8e;
+    color: white;
+}
+
 .events-table td:nth-child(4),
 .events-table td:nth-child(5),
 .events-table td:nth-child(6),

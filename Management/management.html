@@ -98,6 +98,58 @@
         </div>
     </div>
 
+    <!-- Edit Event Modal -->
+    <div id="editEventModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Event</h2>
+                <button class="close-btn" onclick="closeEditEventModal()">&times;</button>
+            </div>
+            <form id="editEventForm" onsubmit="return updateEvent(event)">
+                <div id="editErrorMessage" class="error-message" style="display: none;"></div>
+                <input type="hidden" id="editClientId">
+                <div class="form-group">
+                    <label for="editEventType">Event Type *</label>
+                    <select id="editEventType" required>
+                        <option value="">Select Event Type</option>
+                        <option value="Wedding">Wedding</option>
+                        <option value="Corporate">Corporate</option>
+                        <option value="School">School</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editClientName">Client Name *</label>
+                    <input type="text" id="editClientName" required placeholder="John Smith">
+                </div>
+                <div class="form-group">
+                    <label for="editFianceName">Fiance Name</label>
+                    <input type="text" id="editFianceName" placeholder="Jane Doe">
+                </div>
+                <div class="form-group">
+                    <label for="editEventDate">Event Date *</label>
+                    <input type="date" id="editEventDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="editServices">Services *</label>
+                    <textarea id="editServices" required placeholder="DJ Services, Lighting, Sound System"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="editDepositAmount">Deposit Amount *</label>
+                    <input type="number" id="editDepositAmount" required step="0.01" min="0" placeholder="500.00">
+                </div>
+                <div class="form-group">
+                    <label for="editTotalBalance">Total Balance *</label>
+                    <input type="number" id="editTotalBalance" required step="0.01" min="0" placeholder="5000.00">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="closeEditEventModal()">Cancel</button>
+                    <button type="submit" id="editEventSubmitBtn" class="btn-primary">Update Event</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="management.js"></script>
 </body>
 </html>

@@ -241,8 +241,17 @@ function createEventRow(client) {
     // Escape event name for JavaScript string (handle quotes and special chars)
     const escapedEventName = eventName.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, '\\n');
     
+    const escapedClientId = escapeHtml(client.id);
+    
     row.innerHTML = `
-        <td class="event-name">${escapeHtml(eventName)}</td>
+        <td class="event-name">
+            <button class="btn-edit-name" onclick="openEditEventModal('${escapedClientId}')" title="Edit event">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor">
+                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                </svg>
+            </button>
+            <span class="event-name-text">${escapeHtml(eventName)}</span>
+        </td>
         <td>${eventDate}</td>
         <td>${escapeHtml(eventType)}</td>
         <td>${signatureStage}</td>
@@ -256,12 +265,12 @@ function createEventRow(client) {
                     <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
                 </svg>
             </a>
-            <button class="btn-export" onclick="exportTimeline('${client.id}', '${escapedEventName}')" title="Export timeline PDF">
+            <button class="btn-export" onclick="exportTimeline('${escapedClientId}', '${escapedEventName}')" title="Export timeline PDF">
                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor">
                     <path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/>
                 </svg>
             </button>
-            <button class="btn-delete" onclick="deleteClient('${client.id}', '${escapedEventName}')" title="Delete event">
+            <button class="btn-delete" onclick="deleteClient('${escapedClientId}', '${escapedEventName}')" title="Delete event">
                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor">
                     <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
                 </svg>
@@ -369,11 +378,178 @@ function closeCreateEventModal() {
     modal.classList.remove('active');
 }
 
+// Open edit event modal
+async function openEditEventModal(clientId) {
+    const modal = document.getElementById('editEventModal');
+    hideEditErrorMessage();
+    
+    try {
+        // Fetch client data
+        const { data: client, error } = await window.supabaseClient
+            .from('clients')
+            .select('*')
+            .eq('id', clientId)
+            .single();
+        
+        if (error) throw error;
+        if (!client) {
+            showEditErrorMessage('Event not found.');
+            return;
+        }
+        
+        // Populate form with client data
+        document.getElementById('editClientId').value = client.id;
+        document.getElementById('editEventType').value = client.event_type || '';
+        document.getElementById('editClientName').value = client.client_name || '';
+        document.getElementById('editFianceName').value = client.fiance_name || '';
+        document.getElementById('editEventDate').value = client.event_date || '';
+        document.getElementById('editServices').value = client.services || '';
+        document.getElementById('editDepositAmount').value = client.deposit_amount || '';
+        document.getElementById('editTotalBalance').value = client.total_balance || '';
+        
+        // Open modal
+        modal.classList.add('active');
+    } catch (error) {
+        console.error('Error loading event data:', error);
+        showEditErrorMessage('Failed to load event data. Please try again.');
+    }
+}
+
+// Close edit event modal
+function closeEditEventModal() {
+    const modal = document.getElementById('editEventModal');
+    modal.classList.remove('active');
+    document.getElementById('editEventForm').reset();
+    hideEditErrorMessage();
+}
+
+// Show error message in edit modal
+function showEditErrorMessage(message) {
+    const errorDiv = document.getElementById('editErrorMessage');
+    if (errorDiv) {
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+        errorDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+}
+
+// Hide error message in edit modal
+function hideEditErrorMessage() {
+    const errorDiv = document.getElementById('editErrorMessage');
+    if (errorDiv) {
+        errorDiv.style.display = 'none';
+        errorDiv.textContent = '';
+    }
+}
+
+// Update event
+async function updateEvent(event) {
+    // Prevent form submission and page refresh
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
+    console.log('🔵 updateEvent called', { event });
+    
+    // Clear any previous errors
+    hideEditErrorMessage();
+    
+    const form = document.getElementById('editEventForm');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    
+    // Get form values
+    const clientId = document.getElementById('editClientId').value;
+    const eventType = document.getElementById('editEventType').value.trim();
+    const clientName = document.getElementById('editClientName').value.trim();
+    const fianceName = document.getElementById('editFianceName').value.trim();
+    const eventDate = document.getElementById('editEventDate').value;
+    const services = document.getElementById('editServices').value.trim();
+    const depositAmount = parseFloat(document.getElementById('editDepositAmount').value);
+    const totalBalance = parseFloat(document.getElementById('editTotalBalance').value);
+    
+    // Validate
+    if (!clientId || !eventType || !clientName || !eventDate || !services || isNaN(depositAmount) || isNaN(totalBalance)) {
+        showEditErrorMessage('Please fill in all required fields with valid values.');
+        return;
+    }
+    
+    if (depositAmount < 0 || totalBalance < 0) {
+        showEditErrorMessage('Amounts cannot be negative.');
+        return;
+    }
+    
+    if (depositAmount > totalBalance) {
+        showEditErrorMessage('Deposit amount cannot be greater than total balance.');
+        return;
+    }
+    
+    // Disable submit button
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Updating...';
+    
+    try {
+        console.log('Starting event update...');
+        console.log('Form values:', { clientId, eventType, clientName, fianceName, eventDate, services, depositAmount, totalBalance });
+        
+        // Update client data object
+        const clientData = {
+            event_type: eventType,
+            client_name: clientName,
+            fiance_name: fianceName || null,
+            event_date: eventDate,
+            services: services,
+            deposit_amount: depositAmount,
+            total_balance: totalBalance
+        };
+        
+        console.log('Client data to be updated:', clientData);
+        
+        // Check if Supabase is initialized
+        if (!window.supabaseClient) {
+            throw new Error('Database connection not available. Please refresh the page and try again.');
+        }
+        
+        // Update client in database
+        const { error } = await window.supabaseClient
+            .from('clients')
+            .update(clientData)
+            .eq('id', clientId);
+        
+        if (error) {
+            console.error('Error updating client:', error);
+            throw error;
+        }
+        
+        console.log('✅ Event updated successfully');
+        
+        // Close modal and reload events
+        closeEditEventModal();
+        await loadAllEvents();
+        
+        // Show success message (optional - could add a toast notification)
+        alert('Event updated successfully!');
+        
+    } catch (error) {
+        console.error('Error updating event:', error);
+        showEditErrorMessage(error.message || 'Failed to update event. Please try again.');
+    } finally {
+        // Re-enable submit button
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    }
+}
+
 // Close modal when clicking outside
 document.addEventListener('click', (e) => {
-    const modal = document.getElementById('createEventModal');
-    if (e.target === modal) {
+    const createModal = document.getElementById('createEventModal');
+    const editModal = document.getElementById('editEventModal');
+    if (e.target === createModal) {
         closeCreateEventModal();
+    }
+    if (e.target === editModal) {
+        closeEditEventModal();
     }
 });
 
