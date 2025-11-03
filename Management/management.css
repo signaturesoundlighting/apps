@@ -222,6 +222,15 @@ body {
     table-layout: fixed;
 }
 
+/* Ensure all cells in a row have consistent height for proper border alignment */
+.events-table tbody tr {
+    height: auto;
+}
+
+.events-table tbody tr td {
+    height: auto;
+}
+
 /* Set column widths to prevent truncation and ensure alignment */
 .events-table th:nth-child(1),
 .events-table td:nth-child(1) {
@@ -245,32 +254,39 @@ body {
 }
 
 .events-table th:nth-child(4),
-.events-table td:nth-child(4),
+.events-table td:nth-child(4) {
+    width: 10%;
+    min-width: 120px;
+    white-space: nowrap;
+}
+
 .events-table th:nth-child(5),
-.events-table td:nth-child(5) {
+.events-table td:nth-child(5),
+.events-table th:nth-child(6),
+.events-table td:nth-child(6) {
     width: 7%;
     min-width: 90px;
 }
 
-.events-table th:nth-child(6),
-.events-table td:nth-child(6) {
+.events-table th:nth-child(7),
+.events-table td:nth-child(7) {
     width: 7%;
     min-width: 80px;
 }
 
-.events-table th:nth-child(7),
-.events-table td:nth-child(7),
 .events-table th:nth-child(8),
 .events-table td:nth-child(8),
 .events-table th:nth-child(9),
-.events-table td:nth-child(9) {
+.events-table td:nth-child(9),
+.events-table th:nth-child(10),
+.events-table td:nth-child(10) {
     width: 11%;
     min-width: 130px;
     white-space: nowrap;
 }
 
-.events-table th:nth-child(10),
-.events-table td:nth-child(10) {
+.events-table th:nth-child(11),
+.events-table td:nth-child(11) {
     width: 14%;
     min-width: 140px;
 }
@@ -290,31 +306,73 @@ body {
     box-sizing: border-box;
 }
 
-/* Event Name - left aligned */
+/* Name - left aligned */
 .events-table th:nth-child(1),
 .events-table td:nth-child(1) {
     text-align: left !important;
 }
 
-/* Event Date - left aligned (to match data) */
+/* Date - left aligned (to match data) */
 .events-table th:nth-child(2),
 .events-table td:nth-child(2) {
     text-align: left !important;
 }
 
-/* Event Type - left aligned (to match data) */
+/* Type - left aligned (to match data) */
 .events-table th:nth-child(3),
 .events-table td:nth-child(3) {
     text-align: left !important;
 }
 
+/* Stage - left aligned */
+.events-table th:nth-child(4),
+.events-table td:nth-child(4) {
+    text-align: left !important;
+}
+
+/* Signature, Deposit columns - center aligned */
+.events-table td:nth-child(5),
+.events-table td:nth-child(6),
+.events-table th:nth-child(5),
+.events-table th:nth-child(6) {
+    text-align: center !important;
+}
+
+/* Planning column - left aligned (to match data) */
+.events-table td:nth-child(7),
+.events-table th:nth-child(7) {
+    text-align: left !important;
+}
+
+/* Full Balance, Deposit Amount, Remaining Balance columns - right aligned */
+.events-table td:nth-child(8),
+.events-table td:nth-child(9),
+.events-table td:nth-child(10),
+.events-table th:nth-child(8),
+.events-table th:nth-child(9),
+.events-table th:nth-child(10) {
+    text-align: right !important;
+}
+
+/* Actions column - center aligned */
+.events-table td:nth-child(11),
+.events-table th:nth-child(11) {
+    text-align: center !important;
+}
+
 .events-table td {
     padding: 15px;
-    border-bottom: 1px solid #e9ecef;
     vertical-align: middle;
     box-sizing: border-box;
-    height: auto;
     line-height: 1.5;
+}
+
+.events-table tbody tr {
+    border-bottom: 1px solid #e9ecef;
+}
+
+.events-table tbody tr:last-child {
+    border-bottom: none;
 }
 
 .events-table td.event-name {
@@ -504,12 +562,15 @@ body {
     align-items: center;
     gap: 8px;
     flex-wrap: nowrap;
-    min-height: 40px;
     width: 100%;
+    margin: 0;
+    padding: 0;
 }
 
 .actions > * {
     flex-shrink: 0;
+    margin: 0;
+    vertical-align: middle;
 }
 
 /* Modal Styles */

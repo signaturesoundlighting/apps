@@ -128,13 +128,13 @@ let allClientsData = [];
 // Load all events from database
 async function loadAllEvents() {
     const tbody = document.getElementById('eventsTableBody');
-    tbody.innerHTML = '<tr><td colspan="10" class="loading">Loading events...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" class="loading">Loading events...</td></tr>';
     
     try {
         const clients = await window.supabaseHelpers.getAllClients();
         
         if (!clients || clients.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" class="no-events">No events found. Create your first event to get started!</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="11" class="no-events">No events found. Create your first event to get started!</td></tr>';
             allClientsData = [];
             return;
         }
@@ -157,7 +157,7 @@ async function loadAllEvents() {
         filterEventsByStage();
     } catch (error) {
         console.error('Error loading events:', error);
-        tbody.innerHTML = '<tr><td colspan="10" class="error">Error loading events. Please refresh the page.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" class="error">Error loading events. Please refresh the page.</td></tr>';
         allClientsData = [];
     }
 }
@@ -198,7 +198,7 @@ function filterEventsByStage() {
     const filterValue = document.getElementById('stageFilter').value;
     
     if (!allClientsData || allClientsData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" class="no-events">No events found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" class="no-events">No events found.</td></tr>';
         return;
     }
     
@@ -223,7 +223,7 @@ function filterEventsByStage() {
     }
     
     if (filteredClients.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" class="no-events">No events found for this filter.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" class="no-events">No events found for this filter.</td></tr>';
         return;
     }
     
@@ -309,6 +309,8 @@ function createEventRow(client) {
     const formattedRemainingBalance = formatCurrency(remainingBalance);
     
     // Pipeline stages
+    const eventStage = getEventStage(client);
+    const stageDisplay = formatStageDisplay(eventStage);
     const signatureStage = getSignatureStage(client);
     const depositStage = getDepositStage(client);
     const planningStage = getPlanningStage(client.planningProgress || 0);
@@ -334,6 +336,7 @@ function createEventRow(client) {
         </td>
         <td>${eventDate}</td>
         <td>${escapeHtml(eventType)}</td>
+        <td class="stage">${escapeHtml(stageDisplay)}</td>
         <td>${signatureStage}</td>
         <td>${depositStage}</td>
         <td>${planningStage}</td>
@@ -428,6 +431,19 @@ function getOnboardingStage(client) {
 // Get planning stage indicator with percentage (just percentage, no icons)
 function getPlanningStage(percentage) {
     return `${percentage}%`;
+}
+
+// Format stage display text
+function formatStageDisplay(stage) {
+    if (!stage) return 'N/A';
+    const stageMap = {
+        'booked': 'Booked',
+        'awaiting-deposit': 'Awaiting Deposit',
+        'awaiting-signature': 'Awaiting Signature',
+        'completed': 'Completed',
+        'archive': 'Archive'
+    };
+    return stageMap[stage] || stage.charAt(0).toUpperCase() + stage.slice(1).replace(/-/g, ' ');
 }
 
 // Escape HTML to prevent XSS
