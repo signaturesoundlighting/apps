@@ -874,6 +874,9 @@ async function generateTimelinePDF(clientData, events, generalInfo) {
         doc.text(`${eventTime} - ${event.name}`, margin + 2, yPosition + 4.5);
         yPosition += 8;
         
+        // Add extra space between header and details
+        yPosition += 5;
+        
         // Event details - ensure it's an object and parse if needed
         let details = event.details || {};
         
@@ -896,7 +899,7 @@ async function generateTimelinePDF(clientData, events, generalInfo) {
         console.log(`Event: ${event.name} (${event.type})`, 'Details:', details);
         console.log('Keys in details:', Object.keys(details || {}));
         
-        doc.setFontSize(9);
+        doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(...darkGray);
         
@@ -906,7 +909,7 @@ async function generateTimelinePDF(clientData, events, generalInfo) {
         detailLines.forEach(detail => {
             if (detail && detail.trim() && detail.trim() !== '(No additional details)') {
                 checkPageBreak(5);
-                yPosition += addText(detail, margin + 4, yPosition, { fontSize: 9, maxWidth: contentWidth - 8 });
+                yPosition += addText(detail, margin + 4, yPosition, { fontSize: 10, maxWidth: contentWidth - 8 });
                 yPosition += 1;
             }
         });
