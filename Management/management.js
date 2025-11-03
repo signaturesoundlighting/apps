@@ -656,43 +656,53 @@ async function generateTimelinePDF(clientData, events, generalInfo) {
     // Company logo URL
     const logoUrl = 'https://images.squarespace-cdn.com/content/v1/64909a307fc0025a2064d878/9b8fde02-b8f9-402b-be4c-366cb48134eb/Transparent+PNG+File.png';
     
-    // Add logo at the top
+    // Add logo at the top - convert to base64 for jsPDF compatibility
     try {
-        // Create an image element to load the logo
-        const logoImg = new Image();
-        logoImg.crossOrigin = 'anonymous';
-        
-        await new Promise((resolve, reject) => {
-            logoImg.onload = () => {
-                try {
-                    // Add logo to PDF (centered, max width 60mm)
-                    const logoWidth = 60;
-                    const logoHeight = (logoImg.height / logoImg.width) * logoWidth;
-                    const logoX = (pageWidth - logoWidth) / 2;
-                    doc.addImage(logoImg, 'PNG', logoX, yPosition, logoWidth, logoHeight);
-                    yPosition += logoHeight + 10;
-                    resolve();
-                } catch (e) {
-                    console.warn('Could not add logo to PDF:', e);
-                    resolve(); // Continue without logo
-                }
-            };
-            logoImg.onerror = () => {
-                console.warn('Could not load logo image');
-                resolve(); // Continue without logo
-            };
-            logoImg.src = logoUrl;
-            // Timeout after 3 seconds
-            setTimeout(() => {
-                if (!logoImg.complete) {
-                    console.warn('Logo load timeout');
-                    resolve(); // Continue without logo
-                }
-            }, 3000);
-        });
+        const response = await fetch(logoUrl, { mode: 'cors' });
+        if (response.ok) {
+            const blob = await response.blob();
+            const reader = new FileReader();
+            
+            await new Promise((resolve) => {
+                reader.onloadend = () => {
+                    try {
+                        const base64data = reader.result;
+                        if (base64data) {
+                            // Create an image to get dimensions
+                            const img = new Image();
+                            img.onload = () => {
+                                try {
+                                    const logoWidth = 60;
+                                    const logoHeight = (img.height / img.width) * logoWidth;
+                                    const logoX = (pageWidth - logoWidth) / 2;
+                                    doc.addImage(base64data, 'PNG', logoX, yPosition, logoWidth, logoHeight);
+                                    yPosition += logoHeight + 10;
+                                    resolve();
+                                } catch (e) {
+                                    console.warn('Could not add logo to PDF:', e);
+                                    resolve();
+                                }
+                            };
+                            img.onerror = () => resolve();
+                            img.src = base64data;
+                        } else {
+                            resolve();
+                        }
+                    } catch (e) {
+                        console.warn('Error processing logo:', e);
+                        resolve();
+                    }
+                };
+                reader.onerror = () => resolve();
+                reader.readAsDataURL(blob);
+                setTimeout(() => resolve(), 5000); // 5 second timeout
+            });
+        } else {
+            console.warn('Could not fetch logo:', response.status);
+        }
     } catch (e) {
         console.warn('Error loading logo:', e);
-        // Continue without logo
+        // Continue without logo - PDF generation continues
     }
     
     // Helper function to add a new page if needed
@@ -869,6 +879,7 @@ async function generateTimelinePDF(clientData, events, generalInfo) {
         
         // Debug: Log event details to console for troubleshooting
         console.log(`Event: ${event.name} (${event.type})`, 'Details:', details);
+        console.log('Keys in details:', Object.keys(details || {}));
         
         doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
@@ -936,18 +947,51 @@ function formatTimeForPDF(timeString) {
 function formatEventDetails(eventType, details) {
     const lines = [];
     
-    // Helper to add formatted song info
+    // Helper to add formatted song info (handles arrays and objects)
     function addSongLine(label, songData) {
         if (!songData) return;
+        
         try {
-            const song = typeof songData === 'string' ? JSON.parse(songData) : songData;
-            if (song && song.trackName) {
-                const artist = song.artistName ? ` by ${song.artistName}` : '';
-                lines.push(`${label}: ${song.trackName}${artist}`);
+            // Parse if string
+            let parsed = typeof songData === 'string' ? JSON.parse(songData) : songData;
+            
+            // Handle array of songs (common format)
+            if (Array.isArray(parsed)) {
+                if (parsed.length > 0) {
+                    parsed.forEach((song, idx) => {
+                        if (song && song.trackName) {
+                            const artist = song.artistName ? ` by ${song.artistName}` : '';
+                            if (parsed.length > 1) {
+                                lines.push(`${label} ${idx + 1}: ${song.trackName}${artist}`);
+                            } else {
+                                lines.push(`${label}: ${song.trackName}${artist}`);
+                            }
+                        } else if (song && song.type === 'link' && song.url) {
+                            lines.push(`${label}: ${song.url}`);
+                        }
+                    });
+                }
+                return;
+            }
+            
+            // Handle single song object
+            if (parsed && typeof parsed === 'object') {
+                if (parsed.trackName) {
+                    const artist = parsed.artistName ? ` by ${parsed.artistName}` : '';
+                    lines.push(`${label}: ${parsed.trackName}${artist}`);
+                } else if (parsed.type === 'link' && parsed.url) {
+                    lines.push(`${label}: ${parsed.url}`);
+                }
+                return;
+            }
+            
+            // Fallback: treat as plain text
+            if (typeof parsed === 'string' && parsed.trim()) {
+                lines.push(`${label}: ${parsed}`);
             }
         } catch (e) {
             // If not JSON, treat as plain text
-            if (songData && songData.trim()) {
+            if (typeof songData === 'string' && songData.trim()) {
                 lines.push(`${label}: ${songData}`);
             }
         }
@@ -962,16 +1006,9 @@ function formatEventDetails(eventType, details) {
             if (details.hasSpecialActivity === 'yes' && details.specialActivityDetails) {
                 lines.push(`Special Activity: ${details.specialActivityDetails}`);
             }
-            if (details.recessionalSong) {
-                try {
-                    const song = typeof details.recessionalSong === 'string' ? JSON.parse(details.recessionalSong) : details.recessionalSong;
-                    if (song && song.trackName) {
-                        lines.push(`Recessional: ${song.trackName}${song.artistName ? ` by ${song.artistName}` : ''}`);
-                    }
-                } catch (e) {
-                    if (details.recessionalSong) lines.push(`Recessional: ${details.recessionalSong}`);
-                }
-            }
+            if (details.specialActivityType) lines.push(`Special Activity Type: ${details.specialActivityType}`);
+            if (details.specialActivitySongTitle) addSongLine('Special Activity Song', details.specialActivitySongTitle);
+            addSongLine('Recessional', details.recessionalSong);
             break;
             
         case 'intros':
@@ -1009,11 +1046,32 @@ function formatEventDetails(eventType, details) {
             break;
             
         case 'blessing':
+            if (details.speakerName) lines.push(`Speaker: ${details.speakerName}`);
+            if (details.blessingSong) addSongLine('Song', details.blessingSong);
+            break;
+            
         case 'welcome':
-        case 'toasts':
             if (details.speakerName) lines.push(`Speaker: ${details.speakerName}`);
             if (details.welcomeSong) {
                 addSongLine('Welcome Song', details.welcomeSong);
+            }
+            break;
+            
+        case 'toasts':
+            if (details.speakerName) lines.push(`Speaker: ${details.speakerName}`);
+            if (details.toastOrder) {
+                try {
+                    const toastOrder = typeof details.toastOrder === 'string' ? JSON.parse(details.toastOrder) : details.toastOrder;
+                    if (Array.isArray(toastOrder) && toastOrder.length > 0) {
+                        lines.push('Toast Order:');
+                        toastOrder.forEach((toast, idx) => {
+                            const name = toast.name || toast.speakerName || `Speaker ${idx + 1}`;
+                            lines.push(`  ${idx + 1}. ${name}`);
+                        });
+                    }
+                } catch (e) {
+                    // Ignore parse errors
+                }
             }
             break;
             
