@@ -218,24 +218,27 @@ body {
     width: 100%;
     border-collapse: collapse;
     margin-top: 20px;
-    table-layout: auto;
+    table-layout: fixed;
 }
 
-/* Set minimum widths for columns to prevent truncation */
+/* Set column widths to prevent truncation and ensure alignment */
 .events-table th:nth-child(1),
 .events-table td:nth-child(1) {
+    width: 15%;
     min-width: 200px;
     white-space: nowrap;
 }
 
 .events-table th:nth-child(2),
 .events-table td:nth-child(2) {
+    width: 10%;
     min-width: 120px;
     white-space: nowrap;
 }
 
 .events-table th:nth-child(3),
 .events-table td:nth-child(3) {
+    width: 8%;
     min-width: 100px;
     white-space: nowrap;
 }
@@ -244,11 +247,13 @@ body {
 .events-table td:nth-child(4),
 .events-table th:nth-child(5),
 .events-table td:nth-child(5) {
+    width: 7%;
     min-width: 90px;
 }
 
 .events-table th:nth-child(6),
 .events-table td:nth-child(6) {
+    width: 7%;
     min-width: 80px;
 }
 
@@ -258,12 +263,14 @@ body {
 .events-table td:nth-child(8),
 .events-table th:nth-child(9),
 .events-table td:nth-child(9) {
+    width: 11%;
     min-width: 130px;
     white-space: nowrap;
 }
 
 .events-table th:nth-child(10),
 .events-table td:nth-child(10) {
+    width: 14%;
     min-width: 140px;
 }
 
@@ -278,6 +285,8 @@ body {
     font-size: 14px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    vertical-align: middle;
+    box-sizing: border-box;
 }
 
 /* Event Name - left aligned */
@@ -301,6 +310,8 @@ body {
 .events-table td {
     padding: 15px;
     border-bottom: 1px solid #e9ecef;
+    vertical-align: middle;
+    box-sizing: border-box;
 }
 
 .events-table td.event-name {
@@ -309,6 +320,7 @@ body {
     gap: 10px;
     white-space: nowrap;
     overflow: visible;
+    vertical-align: middle;
 }
 
 .event-name-text {
