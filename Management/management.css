@@ -217,6 +217,7 @@ body {
 .events-table {
     width: 100%;
     border-collapse: collapse;
+    border-spacing: 0;
     margin-top: 20px;
     table-layout: fixed;
 }
@@ -312,15 +313,27 @@ body {
     border-bottom: 1px solid #e9ecef;
     vertical-align: middle;
     box-sizing: border-box;
+    height: auto;
+    line-height: 1.5;
 }
 
 .events-table td.event-name {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.events-table td.event-name .event-name-container {
     display: flex;
     align-items: center;
     gap: 10px;
     white-space: nowrap;
-    overflow: visible;
-    vertical-align: middle;
+}
+
+.event-name-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
 }
 
 .event-name-text {
