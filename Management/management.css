@@ -233,22 +233,22 @@ body {
     letter-spacing: 0.5px;
 }
 
-/* Default left alignment for first column */
+/* Event Name - left aligned */
 .events-table th:nth-child(1),
 .events-table td:nth-child(1) {
-    text-align: left;
+    text-align: left !important;
 }
 
-/* Event Date - center aligned */
+/* Event Date - left aligned (to match data) */
 .events-table th:nth-child(2),
 .events-table td:nth-child(2) {
-    text-align: center;
+    text-align: left !important;
 }
 
-/* Event Type - center aligned */
+/* Event Type - left aligned (to match data) */
 .events-table th:nth-child(3),
 .events-table td:nth-child(3) {
-    text-align: center;
+    text-align: left !important;
 }
 
 .events-table td {
@@ -287,14 +287,18 @@ body {
     color: white;
 }
 
-/* Signature, Deposit, Planning columns - center aligned */
+/* Signature, Deposit columns - center aligned */
 .events-table td:nth-child(4),
 .events-table td:nth-child(5),
-.events-table td:nth-child(6),
 .events-table th:nth-child(4),
-.events-table th:nth-child(5),
-.events-table th:nth-child(6) {
+.events-table th:nth-child(5) {
     text-align: center !important;
+}
+
+/* Planning column - left aligned (to match data) */
+.events-table td:nth-child(6),
+.events-table th:nth-child(6) {
+    text-align: left !important;
 }
 
 /* Full Balance, Deposit Amount, Remaining Balance columns - right aligned */
