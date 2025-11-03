@@ -373,7 +373,7 @@ function formatEventName(clientName, fianceName) {
     }
 }
 
-// Format date from YYYY-MM-DD to readable format
+// Format date from YYYY-MM-DD to readable format (single line)
 function formatDate(dateString) {
     if (!dateString) return 'N/A';
     

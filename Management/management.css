@@ -218,6 +218,53 @@ body {
     width: 100%;
     border-collapse: collapse;
     margin-top: 20px;
+    table-layout: auto;
+}
+
+/* Set minimum widths for columns to prevent truncation */
+.events-table th:nth-child(1),
+.events-table td:nth-child(1) {
+    min-width: 200px;
+    white-space: nowrap;
+}
+
+.events-table th:nth-child(2),
+.events-table td:nth-child(2) {
+    min-width: 120px;
+    white-space: nowrap;
+}
+
+.events-table th:nth-child(3),
+.events-table td:nth-child(3) {
+    min-width: 100px;
+    white-space: nowrap;
+}
+
+.events-table th:nth-child(4),
+.events-table td:nth-child(4),
+.events-table th:nth-child(5),
+.events-table td:nth-child(5) {
+    min-width: 90px;
+}
+
+.events-table th:nth-child(6),
+.events-table td:nth-child(6) {
+    min-width: 80px;
+}
+
+.events-table th:nth-child(7),
+.events-table td:nth-child(7),
+.events-table th:nth-child(8),
+.events-table td:nth-child(8),
+.events-table th:nth-child(9),
+.events-table td:nth-child(9) {
+    min-width: 130px;
+    white-space: nowrap;
+}
+
+.events-table th:nth-child(10),
+.events-table td:nth-child(10) {
+    min-width: 140px;
 }
 
 .events-table thead {
@@ -260,10 +307,15 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
+    white-space: nowrap;
+    overflow: visible;
 }
 
 .event-name-text {
     flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .btn-edit-name {
