@@ -303,7 +303,8 @@ function createEventRow(client) {
     // Calculate balances and format currency
     const totalBalance = parseFloat(client.total_balance) || 0;
     const depositAmount = parseFloat(client.deposit_amount) || 0;
-    const remainingBalance = totalBalance - depositAmount;
+    // Only subtract deposit if it's been paid
+    const remainingBalance = client.deposit_paid === true ? totalBalance - depositAmount : totalBalance;
     const formattedTotalBalance = formatCurrency(totalBalance);
     const formattedDepositAmount = formatCurrency(depositAmount);
     const formattedRemainingBalance = formatCurrency(remainingBalance);
@@ -503,6 +504,10 @@ async function openEditEventModal(clientId) {
         document.getElementById('editSignature').checked = hasSignature;
         document.getElementById('editDepositPaid').checked = client.deposit_paid === true;
         
+        // Update deposit status color and remaining balance
+        updateDepositStatusColor();
+        updateRemainingBalance();
+        
         // Open modal
         modal.classList.add('active');
     } catch (error) {
@@ -648,6 +653,38 @@ async function updateEvent(event) {
         // Re-enable submit button
         submitBtn.disabled = false;
         submitBtn.textContent = originalText;
+    }
+}
+
+// Update remaining balance display in edit modal
+function updateRemainingBalance() {
+    const totalBalance = parseFloat(document.getElementById('editTotalBalance').value) || 0;
+    const depositAmount = parseFloat(document.getElementById('editDepositAmount').value) || 0;
+    const depositPaid = document.getElementById('editDepositPaid').checked;
+    
+    // Only subtract deposit if it's been paid
+    const remainingBalance = depositPaid ? totalBalance - depositAmount : totalBalance;
+    const formatted = formatCurrency(remainingBalance);
+    
+    const display = document.getElementById('remainingBalanceDisplay');
+    if (display) {
+        display.textContent = formatted;
+    }
+}
+
+// Update deposit status color based on checkbox state
+function updateDepositStatusColor() {
+    const checkbox = document.getElementById('editDepositPaid');
+    const label = document.getElementById('depositCheckboxLabel');
+    
+    if (checkbox && label) {
+        if (checkbox.checked) {
+            label.style.color = '#28a745'; // Green
+            label.style.fontWeight = '600';
+        } else {
+            label.style.color = '#dc3545'; // Red
+            label.style.fontWeight = '500';
+        }
     }
 }
 

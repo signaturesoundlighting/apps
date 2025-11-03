@@ -172,11 +172,11 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="editDepositAmount">Deposit Amount *</label>
-                        <input type="number" id="editDepositAmount" required step="0.01" min="0" placeholder="500.00">
+                        <input type="number" id="editDepositAmount" required step="0.01" min="0" placeholder="500.00" oninput="updateRemainingBalance()">
                     </div>
                     <div class="form-group">
                         <label for="editTotalBalance">Total Balance *</label>
-                        <input type="number" id="editTotalBalance" required step="0.01" min="0" placeholder="5000.00">
+                        <input type="number" id="editTotalBalance" required step="0.01" min="0" placeholder="5000.00" oninput="updateRemainingBalance()">
                     </div>
                 </div>
                 <div class="form-row">
@@ -192,12 +192,16 @@
                     <div class="form-group">
                         <label for="editDepositPaid">Deposit Status</label>
                         <div class="deposit-status">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="editDepositPaid">
+                            <label class="checkbox-label deposit-checkbox-label" id="depositCheckboxLabel">
+                                <input type="checkbox" id="editDepositPaid" onchange="updateRemainingBalance(); updateDepositStatusColor()">
                                 <span>Deposit Paid</span>
                             </label>
                         </div>
                     </div>
+                </div>
+                <div class="form-group">
+                    <label>Remaining Balance</label>
+                    <div id="remainingBalanceDisplay" class="remaining-balance-display">$0.00</div>
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn-secondary" onclick="closeEditEventModal()">Cancel</button>

@@ -745,6 +745,28 @@ body {
     margin-top: 8px;
 }
 
+.deposit-checkbox-label {
+    transition: color 0.2s ease, font-weight 0.2s ease;
+}
+
+.deposit-checkbox-label input[type="checkbox"]:checked {
+    accent-color: #28a745; /* Green when checked */
+}
+
+.deposit-checkbox-label input[type="checkbox"]:not(:checked) {
+    accent-color: #dc3545; /* Red when unchecked */
+}
+
+.remaining-balance-display {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    margin-top: 8px;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .dashboard-header {
