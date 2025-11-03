@@ -154,8 +154,14 @@ body {
 
 .events-table td:nth-child(3),
 .events-table td:nth-child(4),
+.events-table td:nth-child(5),
+.events-table td:nth-child(6),
+.events-table td:nth-child(7),
 .events-table th:nth-child(3),
-.events-table th:nth-child(4) {
+.events-table th:nth-child(4),
+.events-table th:nth-child(5),
+.events-table th:nth-child(6),
+.events-table th:nth-child(7) {
     text-align: center;
 }
 
@@ -257,6 +263,11 @@ body {
 
 .actions {
     text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
 /* Modal Styles */
