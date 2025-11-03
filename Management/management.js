@@ -656,53 +656,52 @@ async function generateTimelinePDF(clientData, events, generalInfo) {
     // Company logo URL
     const logoUrl = 'https://images.squarespace-cdn.com/content/v1/64909a307fc0025a2064d878/9b8fde02-b8f9-402b-be4c-366cb48134eb/Transparent+PNG+File.png';
     
-    // Add logo at the top - convert to base64 for jsPDF compatibility
+    // Add logo at the top - use canvas to handle CORS properly
     try {
-        const response = await fetch(logoUrl, { mode: 'cors' });
-        if (response.ok) {
-            const blob = await response.blob();
-            const reader = new FileReader();
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        
+        await new Promise((resolve) => {
+            const timeout = setTimeout(() => {
+                console.warn('Logo load timeout');
+                resolve();
+            }, 5000);
             
-            await new Promise((resolve) => {
-                reader.onloadend = () => {
-                    try {
-                        const base64data = reader.result;
-                        if (base64data) {
-                            // Create an image to get dimensions
-                            const img = new Image();
-                            img.onload = () => {
-                                try {
-                                    const logoWidth = 60;
-                                    const logoHeight = (img.height / img.width) * logoWidth;
-                                    const logoX = (pageWidth - logoWidth) / 2;
-                                    doc.addImage(base64data, 'PNG', logoX, yPosition, logoWidth, logoHeight);
-                                    yPosition += logoHeight + 10;
-                                    resolve();
-                                } catch (e) {
-                                    console.warn('Could not add logo to PDF:', e);
-                                    resolve();
-                                }
-                            };
-                            img.onerror = () => resolve();
-                            img.src = base64data;
-                        } else {
-                            resolve();
-                        }
-                    } catch (e) {
-                        console.warn('Error processing logo:', e);
-                        resolve();
-                    }
-                };
-                reader.onerror = () => resolve();
-                reader.readAsDataURL(blob);
-                setTimeout(() => resolve(), 5000); // 5 second timeout
-            });
-        } else {
-            console.warn('Could not fetch logo:', response.status);
-        }
+            img.onload = () => {
+                clearTimeout(timeout);
+                try {
+                    // Draw image to canvas to get base64 data
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    
+                    const base64data = canvas.toDataURL('image/png');
+                    const logoWidth = 60;
+                    const logoHeight = (img.height / img.width) * logoWidth;
+                    const logoX = (pageWidth - logoWidth) / 2;
+                    
+                    doc.addImage(base64data, 'PNG', logoX, yPosition, logoWidth, logoHeight);
+                    yPosition += logoHeight + 10;
+                    resolve();
+                } catch (e) {
+                    console.warn('Could not add logo to PDF:', e);
+                    resolve();
+                }
+            };
+            
+            img.onerror = () => {
+                clearTimeout(timeout);
+                console.warn('Could not load logo image');
+                resolve();
+            };
+            
+            img.src = logoUrl;
+        });
     } catch (e) {
         console.warn('Error loading logo:', e);
-        // Continue without logo - PDF generation continues
+        // Continue without logo
     }
     
     // Helper function to add a new page if needed
@@ -885,8 +884,8 @@ async function generateTimelinePDF(clientData, events, generalInfo) {
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(...darkGray);
         
-        // Add event-specific details
-        const detailLines = formatEventDetails(event.type, details);
+        // Add event-specific details (pass event object for ID references)
+        const detailLines = formatEventDetails(event.type, details, event);
         
         detailLines.forEach(detail => {
             if (detail && detail.trim() && detail.trim() !== '(No additional details)') {
@@ -935,16 +934,26 @@ function formatDateForPDF(dateString) {
 // Format time for PDF
 function formatTimeForPDF(timeString) {
     if (!timeString) return '';
-    // Convert 24-hour to 12-hour format if needed
+    
+    // Check if already in 12-hour format with AM/PM
+    if (timeString.includes('AM') || timeString.includes('PM')) {
+        return timeString.trim();
+    }
+    
+    // Convert 24-hour to 12-hour format
     const [hours, minutes] = timeString.split(':');
+    if (!hours || !minutes) return timeString;
+    
     const hour = parseInt(hours, 10);
+    if (isNaN(hour)) return timeString;
+    
     const ampm = hour >= 12 ? 'PM' : 'AM';
     const hour12 = hour % 12 || 12;
     return `${hour12}:${minutes} ${ampm}`;
 }
 
 // Format event details based on event type
-function formatEventDetails(eventType, details) {
+function formatEventDetails(eventType, details, event = null) {
     const lines = [];
     
     // Helper to add formatted song info (handles arrays and objects)
@@ -1030,12 +1039,24 @@ function formatEventDetails(eventType, details) {
             break;
             
         case 'first-dance':
+            addSongLine('Song', details.songChoice);
+            const firstDanceDuration = event ? details[`danceDuration_${event.id}`] : null;
+            const firstDanceDurationGeneric = details.danceDuration || firstDanceDuration;
+            if (firstDanceDurationGeneric) {
+                if (firstDanceDurationGeneric === 'part') {
+                    if (details.startAt && details.endAt) {
+                        lines.push(`Duration: ${details.startAt} - ${details.endAt}`);
+                    }
+                } else {
+                    lines.push('Duration: Whole song');
+                }
+            }
+            break;
+            
         case 'special-dance-1':
         case 'special-dance-2':
-        case 'private-last-dance':
-        case 'last-group-dance':
             addSongLine('Song', details.songChoice);
-            if (details.danceType && eventType.includes('special')) {
+            if (details.danceType) {
                 const danceTypes = {
                     'father-daughter': 'Father-Daughter Dance',
                     'mother-son': 'Mother-Son Dance',
@@ -1043,6 +1064,18 @@ function formatEventDetails(eventType, details) {
                 };
                 lines.push(`Dance Type: ${danceTypes[details.danceType] || details.danceType}`);
             }
+            const specialDanceDuration = event ? details[`danceDuration_${event.id}`] : null;
+            const specialDanceDurationGeneric = details.danceDuration || specialDanceDuration;
+            if (specialDanceDurationGeneric === 'part') {
+                if (details.startAt && details.endAt) {
+                    lines.push(`Duration: ${details.startAt} - ${details.endAt}`);
+                }
+            }
+            break;
+            
+        case 'private-last-dance':
+        case 'last-group-dance':
+            addSongLine('Song', details.songChoice);
             break;
             
         case 'blessing':
@@ -1105,8 +1138,22 @@ function formatEventDetails(eventType, details) {
             break;
             
         case 'cocktail-hour':
-            if (details.musicStyle) lines.push(`Music Style: ${details.musicStyle}`);
             if (details.location) lines.push(`Location: ${details.location}`);
+            if (details.musicChoice) {
+                if (details.musicChoice === 'genre' && details.musicStyle) {
+                    lines.push(`Music Style: ${details.musicStyle}`);
+                } else if (details.musicChoice === 'playlist') {
+                    addSongLine('Songs/Playlist', details.cocktailSongs);
+                    if (details.cocktailSongs_playlist) {
+                        lines.push(`Playlist Link: ${details.cocktailSongs_playlist}`);
+                    }
+                } else if (details.musicChoice === 'dj') {
+                    lines.push('Music: DJ\'s choice');
+                }
+            } else if (details.musicStyle) {
+                // Fallback for old data format
+                lines.push(`Music Style: ${details.musicStyle}`);
+            }
             break;
             
         case 'dinner':
@@ -1154,6 +1201,41 @@ function formatEventDetails(eventType, details) {
     if (details.otherDetails && details.otherDetails.trim()) {
         lines.push(`Notes: ${details.otherDetails}`);
     }
+    
+    // Fallback: Show any other detail fields that weren't handled above
+    // This catches any fields we might have missed
+    const handledFields = new Set([
+        'location', 'arrivalMusicStyle', 'processionalSong', 'brideEntrance', 'recessionalSong',
+        'hasSpecialActivity', 'specialActivityDetails', 'specialActivityType', 'specialActivitySongTitle',
+        'introOrder', 'songChoice', 'danceType', 'otherDanceType', 'danceDuration', 'startAt', 'endAt',
+        'speakerName', 'welcomeSong', 'blessingSong', 'toastOrder', 'questions', 'lineDances',
+        'musicStyle', 'musicChoice', 'cocktailSongs', 'cocktailSongs_playlist', 'serviceStyle',
+        'otherDetails'
+    ]);
+    
+    // Also add event-specific duration fields
+    if (event && event.id) {
+        handledFields.add(`danceDuration_${event.id}`);
+    }
+    
+    // Add any unhandled fields (but skip empty strings, empty arrays, and song JSON arrays)
+    Object.keys(details).forEach(key => {
+        if (!handledFields.has(key) && details[key] !== null && details[key] !== undefined && details[key] !== '') {
+            const value = details[key];
+            // Skip if it's an empty array or JSON array string of songs
+            if (Array.isArray(value) && value.length === 0) return;
+            if (typeof value === 'string' && value.trim().startsWith('[') && value.includes('trackName')) return;
+            
+            // Format the value nicely
+            if (typeof value === 'string' && value.trim()) {
+                lines.push(`${key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}: ${value}`);
+            } else if (typeof value === 'boolean') {
+                lines.push(`${key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}: ${value ? 'Yes' : 'No'}`);
+            } else if (Array.isArray(value) && value.length > 0) {
+                lines.push(`${key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}: ${value.join(', ')}`);
+            }
+        }
+    });
     
     return lines.length > 0 ? lines : ['(No additional details)'];
 }
