@@ -125,13 +125,13 @@ document.addEventListener('DOMContentLoaded', () => {
 // Load all events from database
 async function loadAllEvents() {
     const tbody = document.getElementById('eventsTableBody');
-    tbody.innerHTML = '<tr><td colspan="8" class="loading">Loading events...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="loading">Loading events...</td></tr>';
     
     try {
         const clients = await window.supabaseHelpers.getAllClients();
         
         if (!clients || clients.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="no-events">No events found. Create your first event to get started!</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="no-events">No events found. Create your first event to get started!</td></tr>';
             return;
         }
         
@@ -153,7 +153,7 @@ async function loadAllEvents() {
         });
     } catch (error) {
         console.error('Error loading events:', error);
-        tbody.innerHTML = '<tr><td colspan="8" class="error">Error loading events. Please refresh the page.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="error">Error loading events. Please refresh the page.</td></tr>';
     }
 }
 
@@ -223,6 +223,12 @@ function createEventRow(client) {
     // Format event type
     const eventType = client.event_type || 'N/A';
     
+    // Calculate remaining balance
+    const totalBalance = parseFloat(client.total_balance) || 0;
+    const depositAmount = parseFloat(client.deposit_amount) || 0;
+    const remainingBalance = totalBalance - depositAmount;
+    const formattedBalance = formatCurrency(remainingBalance);
+    
     // Pipeline stages
     const signatureStage = getSignatureStage(client);
     const depositStage = getDepositStage(client);
@@ -243,6 +249,7 @@ function createEventRow(client) {
         <td>${depositStage}</td>
         <td>${onboardingStage}</td>
         <td>${planningStage}</td>
+        <td class="remaining-balance">${escapeHtml(formattedBalance)}</td>
         <td class="actions">
             <a href="${planningLink}" target="_blank" class="btn-link">View Planning</a>
             <button class="btn-export" onclick="exportTimeline('${client.id}', '${escapedEventName}')" title="Export timeline PDF">Export</button>
@@ -276,6 +283,17 @@ function formatDate(dateString) {
         month: 'short', 
         day: 'numeric' 
     });
+}
+
+// Format currency amount
+function formatCurrency(amount) {
+    if (isNaN(amount)) return '$0.00';
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(amount);
 }
 
 // Get signature stage indicator (clickable)
