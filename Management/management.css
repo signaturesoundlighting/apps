@@ -152,6 +152,17 @@ body {
     border-bottom: 1px solid #e9ecef;
 }
 
+.events-table td:nth-child(3),
+.events-table td:nth-child(4),
+.events-table th:nth-child(3),
+.events-table th:nth-child(4) {
+    text-align: center;
+}
+
+.events-table td button.stage-toggle {
+    margin: 0 auto;
+}
+
 .events-table tbody tr:hover {
     background: #f8f9fa;
 }
@@ -187,6 +198,50 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 5px;
+}
+
+.stage-toggle {
+    background: none;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    min-height: 40px;
+}
+
+.stage-toggle.stage-complete {
+    color: #28a745;
+    border-color: #28a745;
+    background: rgba(40, 167, 69, 0.1);
+}
+
+.stage-toggle.stage-complete:hover {
+    background: rgba(40, 167, 69, 0.2);
+    border-color: #218838;
+    transform: scale(1.05);
+}
+
+.stage-toggle.stage-incomplete {
+    color: #dc3545;
+    border-color: #dc3545;
+    background: rgba(220, 53, 69, 0.1);
+}
+
+.stage-toggle.stage-incomplete:hover {
+    background: rgba(220, 53, 69, 0.2);
+    border-color: #c82333;
+    transform: scale(1.05);
+}
+
+.stage-toggle:active {
+    transform: scale(0.95);
 }
 
 .loading, .no-events, .error {

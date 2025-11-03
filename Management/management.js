@@ -273,22 +273,22 @@ function formatDate(dateString) {
     });
 }
 
-// Get signature stage indicator
+// Get signature stage indicator (clickable)
 function getSignatureStage(client) {
-    if (client.signature && client.signature.trim() !== '') {
-        return '<span class="stage-complete">✓</span>';
-    } else {
-        return '<span class="stage-incomplete">✗</span>';
-    }
+    const isComplete = client.signature && client.signature.trim() !== '';
+    const statusClass = isComplete ? 'stage-complete' : 'stage-incomplete';
+    const icon = isComplete ? '✓' : '✗';
+    const escapedId = escapeHtml(client.id);
+    return `<button class="stage-toggle ${statusClass}" onclick="toggleSignature('${escapedId}')" title="Click to ${isComplete ? 'mark as not signed' : 'mark as signed'}">${icon}</button>`;
 }
 
-// Get deposit stage indicator
+// Get deposit stage indicator (clickable)
 function getDepositStage(client) {
-    if (client.deposit_paid === true) {
-        return '<span class="stage-complete">✓</span>';
-    } else {
-        return '<span class="stage-incomplete">✗</span>';
-    }
+    const isComplete = client.deposit_paid === true;
+    const statusClass = isComplete ? 'stage-complete' : 'stage-incomplete';
+    const icon = isComplete ? '✓' : '✗';
+    const escapedId = escapeHtml(client.id);
+    return `<button class="stage-toggle ${statusClass}" onclick="toggleDeposit('${escapedId}')" title="Click to ${isComplete ? 'mark as not paid' : 'mark as paid'}">${icon}</button>`;
 }
 
 // Get onboarding stage indicator
@@ -533,6 +533,79 @@ async function deleteClient(clientId, eventName) {
     }
 }
 
-// Expose deleteClient globally for onclick handlers
+// Toggle signature status
+async function toggleSignature(clientId) {
+    try {
+        // Get current client data
+        const client = await window.supabaseHelpers.getClientData(clientId);
+        if (!client) {
+            throw new Error('Could not fetch client data');
+        }
+        
+        // Determine new signature status
+        const hasSignature = client.signature && client.signature.trim() !== '';
+        let updateData;
+        
+        if (hasSignature) {
+            // Clear signature
+            updateData = {
+                signature: null,
+                signature_date: null
+            };
+        } else {
+            // Mark as signed (set signature to "Signed" and current date)
+            updateData = {
+                signature: 'Signed',
+                signature_date: new Date().toISOString()
+            };
+        }
+        
+        // Update in database
+        const success = await window.supabaseHelpers.updateClient(clientId, updateData);
+        
+        if (!success) {
+            throw new Error('Failed to update signature status');
+        }
+        
+        // Reload events list to show updated status
+        loadAllEvents();
+    } catch (error) {
+        console.error('Error toggling signature:', error);
+        alert('Error updating signature status: ' + (error.message || 'Please try again.'));
+    }
+}
+
+// Toggle deposit paid status
+async function toggleDeposit(clientId) {
+    try {
+        // Get current client data
+        const client = await window.supabaseHelpers.getClientData(clientId);
+        if (!client) {
+            throw new Error('Could not fetch client data');
+        }
+        
+        // Toggle deposit_paid status
+        const updateData = {
+            deposit_paid: !client.deposit_paid
+        };
+        
+        // Update in database
+        const success = await window.supabaseHelpers.updateClient(clientId, updateData);
+        
+        if (!success) {
+            throw new Error('Failed to update deposit status');
+        }
+        
+        // Reload events list to show updated status
+        loadAllEvents();
+    } catch (error) {
+        console.error('Error toggling deposit:', error);
+        alert('Error updating deposit status: ' + (error.message || 'Please try again.'));
+    }
+}
+
+// Expose functions globally for onclick handlers
 window.deleteClient = deleteClient;
+window.toggleSignature = toggleSignature;
+window.toggleDeposit = toggleDeposit;
 
