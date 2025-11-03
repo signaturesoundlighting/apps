@@ -251,21 +251,23 @@ body {
 .events-table td:nth-child(4),
 .events-table td:nth-child(5),
 .events-table td:nth-child(6),
-.events-table td:nth-child(7),
 .events-table th:nth-child(4),
 .events-table th:nth-child(5),
-.events-table th:nth-child(6),
-.events-table th:nth-child(7) {
+.events-table th:nth-child(6) {
     text-align: center;
 }
 
+.events-table td.full-balance,
+.events-table td.deposit-amount,
 .events-table td.remaining-balance,
-.events-table th:nth-child(8) {
+.events-table th:nth-child(7),
+.events-table th:nth-child(8),
+.events-table th:nth-child(9) {
     text-align: right;
 }
 
-.events-table td:nth-child(9),
-.events-table th:nth-child(9) {
+.events-table td:nth-child(10),
+.events-table th:nth-child(10) {
     text-align: center;
 }
 

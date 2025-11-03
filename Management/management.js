@@ -128,13 +128,13 @@ let allClientsData = [];
 // Load all events from database
 async function loadAllEvents() {
     const tbody = document.getElementById('eventsTableBody');
-    tbody.innerHTML = '<tr><td colspan="9" class="loading">Loading events...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="loading">Loading events...</td></tr>';
     
     try {
         const clients = await window.supabaseHelpers.getAllClients();
         
         if (!clients || clients.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9" class="no-events">No events found. Create your first event to get started!</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="no-events">No events found. Create your first event to get started!</td></tr>';
             allClientsData = [];
             return;
         }
@@ -157,7 +157,7 @@ async function loadAllEvents() {
         filterEventsByStage();
     } catch (error) {
         console.error('Error loading events:', error);
-        tbody.innerHTML = '<tr><td colspan="9" class="error">Error loading events. Please refresh the page.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" class="error">Error loading events. Please refresh the page.</td></tr>';
         allClientsData = [];
     }
 }
@@ -198,7 +198,7 @@ function filterEventsByStage() {
     const filterValue = document.getElementById('stageFilter').value;
     
     if (!allClientsData || allClientsData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" class="no-events">No events found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" class="no-events">No events found.</td></tr>';
         return;
     }
     
@@ -223,7 +223,7 @@ function filterEventsByStage() {
     }
     
     if (filteredClients.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" class="no-events">No events found for this filter.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" class="no-events">No events found for this filter.</td></tr>';
         return;
     }
     
@@ -300,16 +300,17 @@ function createEventRow(client) {
     // Format event type
     const eventType = client.event_type || 'N/A';
     
-    // Calculate remaining balance
+    // Calculate balances and format currency
     const totalBalance = parseFloat(client.total_balance) || 0;
     const depositAmount = parseFloat(client.deposit_amount) || 0;
     const remainingBalance = totalBalance - depositAmount;
-    const formattedBalance = formatCurrency(remainingBalance);
+    const formattedTotalBalance = formatCurrency(totalBalance);
+    const formattedDepositAmount = formatCurrency(depositAmount);
+    const formattedRemainingBalance = formatCurrency(remainingBalance);
     
     // Pipeline stages
     const signatureStage = getSignatureStage(client);
     const depositStage = getDepositStage(client);
-    const onboardingStage = getOnboardingStage(client);
     const planningStage = getPlanningStage(client.planningProgress || 0);
     
     // Actions (link to planning page)
@@ -333,9 +334,10 @@ function createEventRow(client) {
         <td>${escapeHtml(eventType)}</td>
         <td>${signatureStage}</td>
         <td>${depositStage}</td>
-        <td>${onboardingStage}</td>
         <td>${planningStage}</td>
-        <td class="remaining-balance">${escapeHtml(formattedBalance)}</td>
+        <td class="full-balance">${escapeHtml(formattedTotalBalance)}</td>
+        <td class="deposit-amount">${escapeHtml(formattedDepositAmount)}</td>
+        <td class="remaining-balance">${escapeHtml(formattedRemainingBalance)}</td>
         <td class="actions">
             <a href="${planningLink}" target="_blank" class="btn-link" title="View Planning">
                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor">
@@ -421,15 +423,9 @@ function getOnboardingStage(client) {
     }
 }
 
-// Get planning stage indicator with percentage
+// Get planning stage indicator with percentage (just percentage, no icons)
 function getPlanningStage(percentage) {
-    if (percentage === 100) {
-        return `<span class="stage-complete">✓ ${percentage}%</span>`;
-    } else if (percentage > 0) {
-        return `<span class="stage-partial">○ ${percentage}%</span>`;
-    } else {
-        return '<span class="stage-incomplete">✗ 0%</span>';
-    }
+    return `${percentage}%`;
 }
 
 // Escape HTML to prevent XSS
