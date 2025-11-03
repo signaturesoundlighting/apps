@@ -643,8 +643,8 @@ async function generateTimelinePDF(clientData, events, generalInfo) {
     
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    let yPosition = 20;
     const margin = 15;
+    let yPosition = margin; // Start at top margin for logo
     const contentWidth = pageWidth - (margin * 2);
     
     // Color scheme (Signature Sound & Lighting teal)
@@ -656,7 +656,7 @@ async function generateTimelinePDF(clientData, events, generalInfo) {
     // Company logo URL
     const logoUrl = 'https://images.squarespace-cdn.com/content/v1/64909a307fc0025a2064d878/9b8fde02-b8f9-402b-be4c-366cb48134eb/Transparent+PNG+File.png';
     
-    // Add logo at the top - use canvas to handle CORS properly
+    // Add logo at the very top - use canvas to handle CORS properly
     try {
         const img = new Image();
         img.crossOrigin = 'anonymous';
@@ -682,7 +682,9 @@ async function generateTimelinePDF(clientData, events, generalInfo) {
                     const logoHeight = (img.height / img.width) * logoWidth;
                     const logoX = (pageWidth - logoWidth) / 2;
                     
+                    // Add logo at current yPosition (top margin)
                     doc.addImage(base64data, 'PNG', logoX, yPosition, logoWidth, logoHeight);
+                    // Move yPosition down below logo
                     yPosition += logoHeight + 10;
                     resolve();
                 } catch (e) {
@@ -726,20 +728,21 @@ async function generateTimelinePDF(clientData, events, generalInfo) {
         return lines.length * (fontSize * 0.35); // Approximate line height
     }
     
-    // Header section
+    // Header section - now starts BELOW the logo
     doc.setFillColor(...primaryColor);
-    doc.rect(margin, margin, contentWidth, 25, 'F');
+    doc.rect(margin, yPosition, contentWidth, 25, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(24);
     doc.setFont('helvetica', 'bold');
     const clientName = clientData.client_name || '';
     const fianceName = clientData.fiance_name || '';
     const fullName = fianceName ? `${clientName} & ${fianceName}` : clientName;
-    doc.text('EVENT TIMELINE', margin + 5, margin + 15);
+    doc.text('EVENT TIMELINE', margin + 5, yPosition + 15);
     doc.setFontSize(18);
-    doc.text(fullName, margin + 5, margin + 23);
+    doc.text(fullName, margin + 5, yPosition + 23);
     
-    yPosition = margin + 35;
+    // Move yPosition below header block
+    yPosition += 35;
     
     // Event Date
     if (clientData.event_date) {
