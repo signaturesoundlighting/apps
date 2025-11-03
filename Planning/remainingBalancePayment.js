@@ -1,7 +1,7 @@
 // Remaining Balance Payment page system
 
-// Stripe Configuration (same as deposit payment)
-const STRIPE_PUBLISHABLE_KEY = 'pk_live_51RDrc9KrHOWv98vrmFa3XVBCavY2PPrJyegfZPmBy3RtN356MFT7vRzU7sdUiYysDHlzpsvvSxmNLhO4NWyPYVRt00XKlNCJfK';
+// Stripe Configuration (use the same key as deposit payment from window)
+const STRIPE_PUBLISHABLE_KEY_REMAINING = (typeof window !== 'undefined' && window.STRIPE_PUBLISHABLE_KEY) || 'pk_live_51RDrc9KrHOWv98vrmFa3XVBCavY2PPrJyegfZPmBy3RtN356MFT7vRzU7sdUiYysDHlzpsvvSxmNLhO4NWyPYVRt00XKlNCJfK';
 
 // Payment data - will be loaded from Supabase
 let remainingBalancePaymentData = {
@@ -195,7 +195,7 @@ async function showRemainingBalancePayment() {
     setTimeout(() => {
         if (typeof Stripe !== 'undefined') {
             try {
-                stripeRemainingBalance = Stripe(STRIPE_PUBLISHABLE_KEY);
+                stripeRemainingBalance = Stripe(STRIPE_PUBLISHABLE_KEY_REMAINING);
                 elementsRemainingBalance = stripeRemainingBalance.elements();
                 
                 // Create card element

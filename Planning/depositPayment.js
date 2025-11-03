@@ -1,7 +1,11 @@
 // Deposit Payment page system
 
 // Stripe Configuration
-const STRIPE_PUBLISHABLE_KEY = 'pk_live_51RDrc9KrHOWv98vrmFa3XVBCavY2PPrJyegfZPmBy3RtN356MFT7vRzU7sdUiYysDHlzpsvvSxmNLhO4NWyPYVRt00XKlNCJfK';
+// Store in window to share with other payment scripts
+if (typeof window !== 'undefined' && !window.STRIPE_PUBLISHABLE_KEY) {
+    window.STRIPE_PUBLISHABLE_KEY = 'pk_live_51RDrc9KrHOWv98vrmFa3XVBCavY2PPrJyegfZPmBy3RtN356MFT7vRzU7sdUiYysDHlzpsvvSxmNLhO4NWyPYVRt00XKlNCJfK';
+}
+const STRIPE_PUBLISHABLE_KEY = window.STRIPE_PUBLISHABLE_KEY || 'pk_live_51RDrc9KrHOWv98vrmFa3XVBCavY2PPrJyegfZPmBy3RtN356MFT7vRzU7sdUiYysDHlzpsvvSxmNLhO4NWyPYVRt00XKlNCJfK';
 
 // Backend API endpoint for creating PaymentIntents
 // TODO: Replace with your actual Cloudflare Worker URL after deployment
