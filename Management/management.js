@@ -624,8 +624,8 @@ async function exportTimeline(clientId, eventName) {
             throw new Error('Could not fetch client data');
         }
         
-        // Generate PDF
-        generateTimelinePDF(clientData, events || [], generalInfo);
+        // Generate PDF (now async)
+        await generateTimelinePDF(clientData, events || [], generalInfo);
     } catch (error) {
         console.error('Error exporting timeline:', error);
         alert('Error generating PDF: ' + (error.message || 'Please try again.'));
@@ -633,7 +633,7 @@ async function exportTimeline(clientId, eventName) {
 }
 
 // Generate the formatted PDF timeline
-function generateTimelinePDF(clientData, events, generalInfo) {
+async function generateTimelinePDF(clientData, events, generalInfo) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({
         orientation: 'portrait',
@@ -652,6 +652,48 @@ function generateTimelinePDF(clientData, events, generalInfo) {
     const darkColor = [20, 128, 115];
     const lightGray = [245, 245, 245];
     const darkGray = [51, 51, 51];
+    
+    // Company logo URL
+    const logoUrl = 'https://images.squarespace-cdn.com/content/v1/64909a307fc0025a2064d878/9b8fde02-b8f9-402b-be4c-366cb48134eb/Transparent+PNG+File.png';
+    
+    // Add logo at the top
+    try {
+        // Create an image element to load the logo
+        const logoImg = new Image();
+        logoImg.crossOrigin = 'anonymous';
+        
+        await new Promise((resolve, reject) => {
+            logoImg.onload = () => {
+                try {
+                    // Add logo to PDF (centered, max width 60mm)
+                    const logoWidth = 60;
+                    const logoHeight = (logoImg.height / logoImg.width) * logoWidth;
+                    const logoX = (pageWidth - logoWidth) / 2;
+                    doc.addImage(logoImg, 'PNG', logoX, yPosition, logoWidth, logoHeight);
+                    yPosition += logoHeight + 10;
+                    resolve();
+                } catch (e) {
+                    console.warn('Could not add logo to PDF:', e);
+                    resolve(); // Continue without logo
+                }
+            };
+            logoImg.onerror = () => {
+                console.warn('Could not load logo image');
+                resolve(); // Continue without logo
+            };
+            logoImg.src = logoUrl;
+            // Timeout after 3 seconds
+            setTimeout(() => {
+                if (!logoImg.complete) {
+                    console.warn('Logo load timeout');
+                    resolve(); // Continue without logo
+                }
+            }, 3000);
+        });
+    } catch (e) {
+        console.warn('Error loading logo:', e);
+        // Continue without logo
+    }
     
     // Helper function to add a new page if needed
     function checkPageBreak(requiredSpace = 20) {
@@ -807,8 +849,27 @@ function generateTimelinePDF(clientData, events, generalInfo) {
         doc.text(`${eventTime} - ${event.name}`, margin + 2, yPosition + 4.5);
         yPosition += 8;
         
-        // Event details
-        const details = event.details || {};
+        // Event details - ensure it's an object and parse if needed
+        let details = event.details || {};
+        
+        // If details is a string, try to parse it
+        if (typeof details === 'string') {
+            try {
+                details = JSON.parse(details);
+            } catch (e) {
+                console.warn('Could not parse event details as JSON:', e);
+                details = {};
+            }
+        }
+        
+        // Ensure details is an object
+        if (typeof details !== 'object' || details === null) {
+            details = {};
+        }
+        
+        // Debug: Log event details to console for troubleshooting
+        console.log(`Event: ${event.name} (${event.type})`, 'Details:', details);
+        
         doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(...darkGray);
@@ -817,7 +878,7 @@ function generateTimelinePDF(clientData, events, generalInfo) {
         const detailLines = formatEventDetails(event.type, details);
         
         detailLines.forEach(detail => {
-            if (detail.trim()) {
+            if (detail && detail.trim() && detail.trim() !== '(No additional details)') {
                 checkPageBreak(5);
                 yPosition += addText(detail, margin + 4, yPosition, { fontSize: 9, maxWidth: contentWidth - 8 });
                 yPosition += 1;
@@ -984,10 +1045,55 @@ function formatEventDetails(eventType, details) {
                 }
             }
             break;
+            
+        case 'cocktail-hour':
+            if (details.musicStyle) lines.push(`Music Style: ${details.musicStyle}`);
+            if (details.location) lines.push(`Location: ${details.location}`);
+            break;
+            
+        case 'dinner':
+            if (details.serviceStyle) lines.push(`Service Style: ${details.serviceStyle}`);
+            if (details.musicStyle) lines.push(`Music Style: ${details.musicStyle}`);
+            break;
+            
+        case 'cake-cutting':
+            if (details.songChoice) {
+                addSongLine('Song', details.songChoice);
+            }
+            if (details.location) lines.push(`Location: ${details.location}`);
+            break;
+            
+        case 'photo-dash':
+            if (details.songChoice) {
+                addSongLine('Song', details.songChoice);
+            }
+            break;
+            
+        case 'grand-exit':
+            if (details.songChoice) {
+                addSongLine('Song', details.songChoice);
+            }
+            if (details.exitType) lines.push(`Exit Type: ${details.exitType}`);
+            break;
+            
+        case 'end-of-wedding':
+            if (details.endTime) {
+                lines.push(`End Time: ${formatTimeForPDF(details.endTime)}`);
+            }
+            break;
+            
+        default:
+            // For any unhandled event types, try to show common fields
+            if (details.songChoice) {
+                addSongLine('Song', details.songChoice);
+            }
+            if (details.location) lines.push(`Location: ${details.location}`);
+            if (details.musicStyle) lines.push(`Music Style: ${details.musicStyle}`);
+            break;
     }
     
-    // Add any other details
-    if (details.otherDetails) {
+    // Add any other details (always check this last)
+    if (details.otherDetails && details.otherDetails.trim()) {
         lines.push(`Notes: ${details.otherDetails}`);
     }
     

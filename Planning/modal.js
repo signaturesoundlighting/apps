@@ -155,11 +155,19 @@ function openModal(eventId) {
     
     modalTitle.innerHTML = `
         <span id="eventNameDisplay">${event.name}</span>
-        <button class="edit-name-btn" onclick="toggleEventNameEdit()" title="Edit event name">
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-            </svg>
-        </button>
+        <div style="display:flex; gap:8px; align-items:center;">
+            <button class="edit-name-btn" onclick="toggleEventNameEdit()" title="Edit event name">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                </svg>
+            </button>
+            ${event.type === 'end-of-wedding' ? '' : `
+            <button class="delete-event-btn" id="headerDeleteBtn_${eventId}">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                </svg>
+            </button>`}
+        </div>
     `;
     modalBody.innerHTML = generateModalContent(event);
     modal.classList.add('active');
@@ -207,13 +215,13 @@ function openModal(eventId) {
         }
     });
     
-    // Build footer (includes Delete button)
+    // Build footer (navigation only; delete moved to header)
     addModalFooter(eventId);
 
-    // Wire delete after footer is in DOM
-    const deleteBtn = document.getElementById(`deleteBtn_${eventId}`);
-    if (deleteBtn) {
-        deleteBtn.addEventListener('click', (e) => {
+    // Wire header delete after header is in DOM
+    const headerDeleteBtn = document.getElementById(`headerDeleteBtn_${eventId}`);
+    if (headerDeleteBtn) {
+        headerDeleteBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
             deleteEvent(eventId);
@@ -281,13 +289,8 @@ function addModalFooter(eventId) {
         modalContent.appendChild(footer);
     }
     
-    const current = events.find(e => e.id === eventId);
-    const deleteHtml = current && current.type === 'end-of-wedding' ? '' : `
-        <button class="delete-event-btn" id="deleteBtn_${eventId}">
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-            </svg>
-        </button>`;
+    // Delete button has been moved to the header; footer now only shows navigation
+    const deleteHtml = '';
     footer.innerHTML = `
         <button class="nav-btn" onclick="navigateEvent('prev')" ${!hasPrev ? 'disabled' : ''}>
             <svg viewBox="0 0 24 24" fill="currentColor">
