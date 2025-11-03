@@ -128,13 +128,13 @@ let allClientsData = [];
 // Load all events from database
 async function loadAllEvents() {
     const tbody = document.getElementById('eventsTableBody');
-    tbody.innerHTML = '<tr><td colspan="11" class="loading">Loading events...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="loading">Loading events...</td></tr>';
     
     try {
         const clients = await window.supabaseHelpers.getAllClients();
         
         if (!clients || clients.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="11" class="no-events">No events found. Create your first event to get started!</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="no-events">No events found. Create your first event to get started!</td></tr>';
             allClientsData = [];
             return;
         }
@@ -157,7 +157,7 @@ async function loadAllEvents() {
         filterEventsByStage();
     } catch (error) {
         console.error('Error loading events:', error);
-        tbody.innerHTML = '<tr><td colspan="11" class="error">Error loading events. Please refresh the page.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="error">Error loading events. Please refresh the page.</td></tr>';
         allClientsData = [];
     }
 }
@@ -198,7 +198,7 @@ function filterEventsByStage() {
     const filterValue = document.getElementById('stageFilter').value;
     
     if (!allClientsData || allClientsData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="11" class="no-events">No events found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="no-events">No events found.</td></tr>';
         return;
     }
     
@@ -223,7 +223,7 @@ function filterEventsByStage() {
     }
     
     if (filteredClients.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="11" class="no-events">No events found for this filter.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="no-events">No events found for this filter.</td></tr>';
         return;
     }
     
@@ -311,8 +311,6 @@ function createEventRow(client) {
     // Pipeline stages
     const eventStage = getEventStage(client);
     const stageDisplay = formatStageDisplay(eventStage);
-    const signatureStage = getSignatureStage(client);
-    const depositStage = getDepositStage(client);
     const planningStage = getPlanningStage(client.planningProgress || 0);
     
     // Actions (link to planning page)
@@ -337,8 +335,6 @@ function createEventRow(client) {
         <td>${eventDate}</td>
         <td>${escapeHtml(eventType)}</td>
         <td class="stage">${escapeHtml(stageDisplay)}</td>
-        <td>${signatureStage}</td>
-        <td>${depositStage}</td>
         <td>${planningStage}</td>
         <td class="full-balance">${escapeHtml(formattedTotalBalance)}</td>
         <td class="deposit-amount">${escapeHtml(formattedDepositAmount)}</td>
@@ -502,6 +498,11 @@ async function openEditEventModal(clientId) {
         document.getElementById('editDepositAmount').value = client.deposit_amount || '';
         document.getElementById('editTotalBalance').value = client.total_balance || '';
         
+        // Populate signature and deposit checkboxes
+        const hasSignature = client.signature && client.signature.trim() !== '';
+        document.getElementById('editSignature').checked = hasSignature;
+        document.getElementById('editDepositPaid').checked = client.deposit_paid === true;
+        
         // Open modal
         modal.classList.add('active');
     } catch (error) {
@@ -592,6 +593,10 @@ async function updateEvent(event) {
         console.log('Starting event update...');
         console.log('Form values:', { clientId, eventType, clientName, fianceName, clientPhone, clientAddress, eventDate, venueName, venueAddress, services, depositAmount, totalBalance });
         
+        // Get signature and deposit status
+        const signatureChecked = document.getElementById('editSignature').checked;
+        const depositPaidChecked = document.getElementById('editDepositPaid').checked;
+        
         // Update client data object
         const clientData = {
             event_type: eventType,
@@ -604,7 +609,9 @@ async function updateEvent(event) {
             venue_address: venueAddress || null,
             services: services,
             deposit_amount: depositAmount,
-            total_balance: totalBalance
+            total_balance: totalBalance,
+            signature: signatureChecked ? 'completed' : '',
+            deposit_paid: depositPaidChecked
         };
         
         console.log('Client data to be updated:', clientData);

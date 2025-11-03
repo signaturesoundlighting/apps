@@ -261,32 +261,24 @@ body {
 }
 
 .events-table th:nth-child(5),
-.events-table td:nth-child(5),
-.events-table th:nth-child(6),
-.events-table td:nth-child(6) {
-    width: 7%;
-    min-width: 90px;
-}
-
-.events-table th:nth-child(7),
-.events-table td:nth-child(7) {
+.events-table td:nth-child(5) {
     width: 7%;
     min-width: 80px;
 }
 
+.events-table th:nth-child(6),
+.events-table td:nth-child(6),
+.events-table th:nth-child(7),
+.events-table td:nth-child(7),
 .events-table th:nth-child(8),
-.events-table td:nth-child(8),
-.events-table th:nth-child(9),
-.events-table td:nth-child(9),
-.events-table th:nth-child(10),
-.events-table td:nth-child(10) {
+.events-table td:nth-child(8) {
     width: 11%;
     min-width: 130px;
     white-space: nowrap;
 }
 
-.events-table th:nth-child(11),
-.events-table td:nth-child(11) {
+.events-table th:nth-child(9),
+.events-table td:nth-child(9) {
     width: 14%;
     min-width: 140px;
 }
@@ -330,33 +322,25 @@ body {
     text-align: left !important;
 }
 
-/* Signature, Deposit columns - center aligned */
-.events-table td:nth-child(5),
-.events-table td:nth-child(6),
-.events-table th:nth-child(5),
-.events-table th:nth-child(6) {
-    text-align: center !important;
-}
-
 /* Planning column - left aligned (to match data) */
-.events-table td:nth-child(7),
-.events-table th:nth-child(7) {
+.events-table td:nth-child(5),
+.events-table th:nth-child(5) {
     text-align: left !important;
 }
 
 /* Full Balance, Deposit Amount, Remaining Balance columns - right aligned */
+.events-table td:nth-child(6),
+.events-table td:nth-child(7),
 .events-table td:nth-child(8),
-.events-table td:nth-child(9),
-.events-table td:nth-child(10),
-.events-table th:nth-child(8),
-.events-table th:nth-child(9),
-.events-table th:nth-child(10) {
+.events-table th:nth-child(6),
+.events-table th:nth-child(7),
+.events-table th:nth-child(8) {
     text-align: right !important;
 }
 
 /* Actions column - center aligned */
-.events-table td:nth-child(11),
-.events-table th:nth-child(11) {
+.events-table td:nth-child(9),
+.events-table th:nth-child(9) {
     text-align: center !important;
 }
 
@@ -734,6 +718,31 @@ body {
 
 .form-actions button[type="submit"] {
     min-width: 120px;
+}
+
+/* Checkbox styling for signature and deposit status */
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #1a9e8e;
+}
+
+.checkbox-label span {
+    user-select: none;
+}
+
+.signature-status,
+.deposit-status {
+    margin-top: 8px;
 }
 
 /* Responsive Design */

@@ -44,8 +44,6 @@
                         <th>Date</th>
                         <th>Type</th>
                         <th>Stage</th>
-                        <th>Signature</th>
-                        <th>Deposit</th>
                         <th>Planning</th>
                         <th>Full Balance</th>
                         <th>Deposit Amount</th>
@@ -55,7 +53,7 @@
                 </thead>
                 <tbody id="eventsTableBody">
                     <tr>
-                        <td colspan="11" class="loading">Loading events...</td>
+                        <td colspan="9" class="loading">Loading events...</td>
                     </tr>
                 </tbody>
             </table>
@@ -179,6 +177,26 @@
                     <div class="form-group">
                         <label for="editTotalBalance">Total Balance *</label>
                         <input type="number" id="editTotalBalance" required step="0.01" min="0" placeholder="5000.00">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editSignature">Signature Status</label>
+                        <div class="signature-status">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="editSignature">
+                                <span>Signature Completed</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="editDepositPaid">Deposit Status</label>
+                        <div class="deposit-status">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="editDepositPaid">
+                                <span>Deposit Paid</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
                 <div class="form-actions">
