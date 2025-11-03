@@ -338,6 +338,17 @@ body {
     text-align: right !important;
 }
 
+/* Deposit amount color coding */
+.events-table td.deposit-amount.deposit-paid {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.events-table td.deposit-amount.deposit-unpaid {
+    color: #dc3545;
+    font-weight: 600;
+}
+
 /* Actions column - center aligned */
 .events-table td:nth-child(9),
 .events-table th:nth-child(9) {

@@ -226,12 +226,12 @@ function filterEventsByStage() {
         tbody.innerHTML = '<tr><td colspan="9" class="no-events">No events found for this filter.</td></tr>';
         return;
     }
-    
-    tbody.innerHTML = '';
+        
+        tbody.innerHTML = '';
     filteredClients.forEach(client => {
-        const row = createEventRow(client);
-        tbody.appendChild(row);
-    });
+            const row = createEventRow(client);
+            tbody.appendChild(row);
+        });
 }
 
 // Calculate planning progress percentage based on events and general info completion
@@ -309,6 +309,10 @@ function createEventRow(client) {
     const formattedDepositAmount = formatCurrency(depositAmount);
     const formattedRemainingBalance = formatCurrency(remainingBalance);
     
+    // Determine deposit status for styling
+    const depositPaid = client.deposit_paid === true;
+    const depositClass = depositPaid ? 'deposit-paid' : 'deposit-unpaid';
+    
     // Pipeline stages
     const eventStage = getEventStage(client);
     const stageDisplay = formatStageDisplay(eventStage);
@@ -338,7 +342,7 @@ function createEventRow(client) {
         <td class="stage">${escapeHtml(stageDisplay)}</td>
         <td>${planningStage}</td>
         <td class="full-balance">${escapeHtml(formattedTotalBalance)}</td>
-        <td class="deposit-amount">${escapeHtml(formattedDepositAmount)}</td>
+        <td class="deposit-amount ${depositClass}">${escapeHtml(formattedDepositAmount)}</td>
         <td class="remaining-balance">${escapeHtml(formattedRemainingBalance)}</td>
         <td class="actions">
             <a href="${planningLink}" target="_blank" class="btn-link" title="View Planning">
