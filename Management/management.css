@@ -328,11 +328,14 @@ body {
     text-align: left !important;
 }
 
-/* Full Balance, Deposit Amount, Remaining Balance columns - right aligned */
+/* Full column - center aligned header, right aligned data */
+.events-table th:nth-child(6) {
+    text-align: center !important;
+}
+
 .events-table td:nth-child(6),
 .events-table td:nth-child(7),
 .events-table td:nth-child(8),
-.events-table th:nth-child(6),
 .events-table th:nth-child(7),
 .events-table th:nth-child(8) {
     text-align: right !important;
@@ -349,10 +352,13 @@ body {
     font-weight: 600;
 }
 
-/* Actions column - center aligned */
-.events-table td:nth-child(9),
+/* Actions column - center aligned header, right aligned buttons */
 .events-table th:nth-child(9) {
     text-align: center !important;
+}
+
+.events-table td:nth-child(9) {
+    text-align: right !important;
 }
 
 .events-table td {
@@ -551,9 +557,9 @@ body {
 }
 
 .actions {
-    text-align: center;
+    text-align: right;
     display: flex;
-    justify-content: center;
+    justify-content: flex-end;
     align-items: center;
     gap: 8px;
     flex-wrap: nowrap;
