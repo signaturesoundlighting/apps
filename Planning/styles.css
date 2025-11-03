@@ -965,6 +965,34 @@ input[type="checkbox"], input[type="radio"] {
     .event-card {
         padding: 16px;
     }
+    
+    /* Adjust floating buttons for mobile */
+    .add-event-btn {
+        bottom: 20px;
+        right: 20px;
+        width: 56px;
+        height: 56px;
+        font-size: 28px;
+        position: fixed;
+    }
+    
+    .payment-btn {
+        bottom: 20px;
+        right: 86px;
+        width: 56px;
+        height: 56px;
+        position: fixed;
+    }
+    
+    .payment-btn svg {
+        width: 24px;
+        height: 24px;
+    }
+    
+    /* Ensure buttons don't interfere with content on mobile */
+    .event-list {
+        padding-bottom: 100px;
+    }
 
     .event-name {
         font-size: 16px;
@@ -974,12 +1002,6 @@ input[type="checkbox"], input[type="radio"] {
         grid-template-columns: 1fr;
     }
 
-    .add-event-btn {
-        width: 56px;
-        height: 56px;
-        bottom: 20px;
-        right: 20px;
-    }
     /* Footer actions responsive: equal widths and compact spacing */
     .modal-footer {
         gap: 8px;
