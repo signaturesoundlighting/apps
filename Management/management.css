@@ -283,6 +283,16 @@ body {
     min-width: 140px;
 }
 
+/* Actions column header - center aligned */
+.events-table th:nth-child(9) {
+    text-align: center !important;
+}
+
+/* Actions column data - right aligned */
+.events-table td:nth-child(9) {
+    text-align: right !important;
+}
+
 .events-table thead {
     background: #1a9e8e;
     color: white;
@@ -333,11 +343,28 @@ body {
     text-align: center !important;
 }
 
-.events-table td:nth-child(6),
+.events-table td:nth-child(6) {
+    text-align: right !important;
+}
+
+/* Deposit column - right aligned */
 .events-table td:nth-child(7),
+.events-table th:nth-child(7) {
+    text-align: right !important;
+}
+
+/* Remaining column - right aligned */
 .events-table td:nth-child(8),
-.events-table th:nth-child(7),
 .events-table th:nth-child(8) {
+    text-align: right !important;
+}
+
+/* Actions column - center aligned header, right aligned buttons */
+.events-table th:nth-child(9) {
+    text-align: center !important;
+}
+
+.events-table td:nth-child(9) {
     text-align: right !important;
 }
 
@@ -350,15 +377,6 @@ body {
 .events-table td.deposit-amount.deposit-unpaid {
     color: #dc3545;
     font-weight: 600;
-}
-
-/* Actions column - center aligned header, right aligned buttons */
-.events-table th:nth-child(9) {
-    text-align: center !important;
-}
-
-.events-table td:nth-child(9) {
-    text-align: right !important;
 }
 
 .events-table td {
@@ -423,35 +441,7 @@ body {
     color: white;
 }
 
-/* Signature, Deposit columns - center aligned */
-.events-table td:nth-child(4),
-.events-table td:nth-child(5),
-.events-table th:nth-child(4),
-.events-table th:nth-child(5) {
-    text-align: center !important;
-}
 
-/* Planning column - left aligned (to match data) */
-.events-table td:nth-child(6),
-.events-table th:nth-child(6) {
-    text-align: left !important;
-}
-
-/* Full Balance, Deposit Amount, Remaining Balance columns - right aligned */
-.events-table td:nth-child(7),
-.events-table td:nth-child(8),
-.events-table td:nth-child(9),
-.events-table th:nth-child(7),
-.events-table th:nth-child(8),
-.events-table th:nth-child(9) {
-    text-align: right !important;
-}
-
-/* Actions column - center aligned */
-.events-table td:nth-child(10),
-.events-table th:nth-child(10) {
-    text-align: center !important;
-}
 
 /* Ensure currency classes are also right-aligned (backup) */
 .events-table td.full-balance,
@@ -557,9 +547,9 @@ body {
 }
 
 .actions {
-    text-align: right;
+    text-align: right !important;
     display: flex;
-    justify-content: flex-end;
+    justify-content: flex-end !important;
     align-items: center;
     gap: 8px;
     flex-wrap: nowrap;
