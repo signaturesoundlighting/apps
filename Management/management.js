@@ -773,6 +773,15 @@ async function generateTimelinePDF(clientData, events, generalInfo) {
         yPosition += 10;
     }
     
+    // Services (below Event Date)
+    if (clientData.services) {
+        doc.setFontSize(10);
+        doc.setTextColor(...darkGray);
+        doc.setFont('helvetica', 'normal'); // Not bold
+        yPosition += addText(`Services: ${clientData.services}`, margin, yPosition, { fontSize: 10 });
+        yPosition += 5;
+    }
+    
     // Venue Information Section
     if (generalInfo) {
         checkPageBreak(30);
@@ -830,16 +839,6 @@ async function generateTimelinePDF(clientData, events, generalInfo) {
             yPosition += 2;
         }
         yPosition += 3;
-    }
-    
-    // Services
-    if (clientData.services) {
-        checkPageBreak(15);
-        doc.setFontSize(10);
-        doc.setTextColor(...darkGray);
-        doc.setFont('helvetica', 'bold');
-        yPosition += addText(`Services: ${clientData.services}`, margin, yPosition, { fontSize: 10 });
-        yPosition += 5;
     }
     
     // Timeline Section
@@ -929,15 +928,7 @@ async function generateTimelinePDF(clientData, events, generalInfo) {
         );
     }
     
-    // Generate filename (use first names for display name)
-    function getFirstName(fullName) {
-        if (!fullName || typeof fullName !== 'string') return '';
-        const parts = fullName.trim().split(/\s+/);
-        return parts[0] || '';
-    }
-    const clientFirstName = getFirstName(clientData.client_name || '');
-    const fianceFirstName = getFirstName(clientData.fiance_name || '');
-    const displayName = fianceFirstName ? `${clientFirstName} & ${fianceFirstName}` : clientFirstName;
+    // Generate filename (use displayName already defined above)
     const filename = `Timeline_${displayName.replace(/[^a-zA-Z0-9]/g, '_')}_${clientData.event_date || 'Event'}.pdf`;
     
     // Save PDF
