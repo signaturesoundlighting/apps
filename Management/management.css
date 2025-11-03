@@ -248,6 +248,7 @@ body {
     color: white;
 }
 
+/* Signature, Deposit, Planning columns - center aligned */
 .events-table td:nth-child(4),
 .events-table td:nth-child(5),
 .events-table td:nth-child(6),
@@ -257,18 +258,27 @@ body {
     text-align: center;
 }
 
-.events-table td.full-balance,
-.events-table td.deposit-amount,
-.events-table td.remaining-balance,
+/* Full Balance, Deposit Amount, Remaining Balance columns - right aligned */
+.events-table td:nth-child(7),
+.events-table td:nth-child(8),
+.events-table td:nth-child(9),
 .events-table th:nth-child(7),
 .events-table th:nth-child(8),
 .events-table th:nth-child(9) {
     text-align: right;
 }
 
+/* Actions column - center aligned */
 .events-table td:nth-child(10),
 .events-table th:nth-child(10) {
     text-align: center;
+}
+
+/* Ensure currency classes are also right-aligned (backup) */
+.events-table td.full-balance,
+.events-table td.deposit-amount,
+.events-table td.remaining-balance {
+    text-align: right !important;
 }
 
 .events-table td button.stage-toggle {
@@ -374,6 +384,7 @@ body {
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
+    min-height: 40px;
 }
 
 /* Modal Styles */
