@@ -718,9 +718,6 @@ async function updateEvent(event) {
         closeEditEventModal();
         await loadAllEvents();
         
-        // Show success message (optional - could add a toast notification)
-        alert('Event updated successfully!');
-        
     } catch (error) {
         console.error('Error updating event:', error);
         showEditErrorMessage(error.message || 'Failed to update event. Please try again.');
