@@ -371,6 +371,18 @@ function getClientIdFromUrl() {
 async function checkPreOnboardingRequirements() {
     const clientId = getClientIdFromUrl();
     
+    // Check if this is an invoice/payment link - if so, skip directly to payment screen
+    const urlParams = new URLSearchParams(window.location.search);
+    const isInvoice = urlParams.get('invoice') === 'true' || urlParams.get('payment') === 'true';
+    
+    if (isInvoice) {
+        console.log('Invoice/payment link detected - showing payment screen directly');
+        if (typeof showRemainingBalancePayment === 'function') {
+            await showRemainingBalancePayment();
+        }
+        return;
+    }
+    
     // If no client ID in URL, show error or redirect
     if (!clientId) {
         console.error('No client_id parameter found in URL. Please provide a valid client ID.');
