@@ -182,7 +182,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="editDepositAmount">Deposit Amount *</label>
-                        <input type="number" id="editDepositAmount" required step="0.01" min="0" placeholder="500.00" oninput="updateRemainingBalance()">
+                        <input type="number" id="editDepositAmount" required step="0.01" min="0" placeholder="500.00" oninput="updateRemainingBalance(); updateDepositStatusColor()">
                     </div>
                     <div class="form-group">
                         <label for="editTotalBalance">Total Balance *</label>

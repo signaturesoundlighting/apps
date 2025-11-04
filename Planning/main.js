@@ -421,11 +421,14 @@ async function checkPreOnboardingRequirements() {
         return;
     }
     
-    // Check deposit payment status (must be explicitly true)
-    const hasPaidDeposit = clientData?.deposit_paid === true;
+    // Check deposit payment status
+    // If deposit amount is $0, skip the deposit screen (treat as paid)
+    const depositAmount = parseFloat(clientData?.deposit_amount) || 0;
+    const hasPaidDeposit = clientData?.deposit_paid === true || depositAmount === 0;
     
     console.log('Deposit Payment Status:', {
         deposit_paid: clientData?.deposit_paid,
+        deposit_amount: depositAmount,
         hasPaidDeposit
     });
     

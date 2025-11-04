@@ -181,7 +181,9 @@ function getEventStage(client) {
     
     // Check signature status
     const hasSignature = client.signature && client.signature.trim() !== '';
-    const hasDeposit = client.deposit_paid === true;
+    const depositAmount = parseFloat(client.deposit_amount) || 0;
+    // If deposit is $0, treat it as paid
+    const hasDeposit = client.deposit_paid === true || depositAmount === 0;
     
     if (hasSignature && hasDeposit) {
         return 'booked';
@@ -310,7 +312,8 @@ function createEventRow(client) {
     const formattedRemainingBalance = formatCurrency(remainingBalance);
     
     // Determine deposit status for styling
-    const depositPaid = client.deposit_paid === true;
+    // If deposit is $0, treat it as paid (green)
+    const depositPaid = client.deposit_paid === true || depositAmount === 0;
     const depositClass = depositPaid ? 'deposit-paid' : 'deposit-unpaid';
     
     // Pipeline stages
@@ -539,7 +542,11 @@ async function openEditEventModal(clientId) {
         // Populate signature and deposit checkboxes
         const hasSignature = client.signature && client.signature.trim() !== '';
         document.getElementById('editSignature').checked = hasSignature;
-        document.getElementById('editDepositPaid').checked = client.deposit_paid === true;
+        
+        // If deposit is $0, automatically mark as paid
+        const depositAmount = parseFloat(client.deposit_amount) || 0;
+        const depositPaid = client.deposit_paid === true || depositAmount === 0;
+        document.getElementById('editDepositPaid').checked = depositPaid;
         
         // Update deposit status color and remaining balance
         updateDepositStatusColor();
@@ -701,13 +708,22 @@ function updateRemainingBalance() {
     const depositAmount = parseFloat(document.getElementById('editDepositAmount').value) || 0;
     const depositPaid = document.getElementById('editDepositPaid').checked;
     
+    // If deposit is $0, treat it as paid automatically
+    const isDepositPaid = depositPaid || depositAmount === 0;
+    
     // Only subtract deposit if it's been paid
-    const remainingBalance = depositPaid ? totalBalance - depositAmount : totalBalance;
+    const remainingBalance = isDepositPaid ? totalBalance - depositAmount : totalBalance;
     const formatted = formatCurrency(remainingBalance);
     
     const display = document.getElementById('remainingBalanceDisplay');
     if (display) {
         display.textContent = formatted;
+    }
+    
+    // Auto-check deposit paid if deposit amount becomes $0
+    if (depositAmount === 0 && !depositPaid) {
+        document.getElementById('editDepositPaid').checked = true;
+        updateDepositStatusColor();
     }
 }
 
@@ -715,9 +731,12 @@ function updateRemainingBalance() {
 function updateDepositStatusColor() {
     const checkbox = document.getElementById('editDepositPaid');
     const label = document.getElementById('depositCheckboxLabel');
+    const depositAmount = parseFloat(document.getElementById('editDepositAmount')?.value) || 0;
     
     if (checkbox && label) {
-        if (checkbox.checked) {
+        // If deposit is $0 or checkbox is checked, show green
+        const isPaid = checkbox.checked || depositAmount === 0;
+        if (isPaid) {
             label.style.color = '#28a745'; // Green
             label.style.fontWeight = '600';
         } else {
