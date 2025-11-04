@@ -437,6 +437,25 @@ async function checkPreOnboardingRequirements() {
         return;
     }
     
+    // Check event type - if not Wedding, show completion screen instead of planning
+    const eventType = clientData?.event_type || '';
+    const isWedding = eventType.toLowerCase() === 'wedding';
+    
+    console.log('Event Type:', {
+        eventType: eventType,
+        isWedding: isWedding
+    });
+    
+    if (!isWedding) {
+        // For non-wedding events, show completion screen instead of planning
+        console.log('Non-wedding event - showing completion screen');
+        if (typeof showCompletionScreen === 'function') {
+            await showCompletionScreen();
+        }
+        return;
+    }
+    
+    // For wedding events, continue with onboarding and planning
     // Check onboarding status (must be explicitly true)
     const hasCompletedOnboarding = clientData?.onboarding_completed === true;
     
