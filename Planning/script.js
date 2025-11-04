@@ -1135,6 +1135,12 @@ function saveEventDetails(eventId) {
                 if (input.name.startsWith('lineDance_')) {
                     const danceName = input.name.replace('lineDance_', '');
                     lineDances[danceName] = input.value;
+                } else if (input.name === `danceType_${eventId}`) {
+                    // Save danceType without the event ID suffix
+                    event.details.danceType = input.value;
+                } else if (input.name === `danceDuration_${eventId}`) {
+                    // Save danceDuration with the event ID suffix (to match how it's read)
+                    event.details[input.name] = input.value;
                 } else {
                     event.details[input.name] = input.value;
                 }
