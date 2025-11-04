@@ -291,8 +291,8 @@ async function calculatePlanningProgress(clientId) {
 function createEventRow(client) {
     const row = document.createElement('tr');
     
-    // Event name (client name & fiance name)
-    const eventName = formatEventName(client.client_name, client.fiance_name);
+    // Event name (custom event_name or generated from client names)
+    const eventName = formatEventName(client.client_name, client.fiance_name, client.event_name);
     
     // Format event date
     const eventDate = client.event_date ? formatDate(client.event_date) : 'N/A';
@@ -366,8 +366,13 @@ function createEventRow(client) {
     return row;
 }
 
-// Format event name from client_name and fiance_name
-function formatEventName(clientName, fianceName) {
+// Format event name from event_name, client_name and fiance_name
+function formatEventName(clientName, fianceName, eventName = null) {
+    // If custom event name is provided, use it
+    if (eventName && eventName.trim()) {
+        return eventName.trim();
+    }
+    // Otherwise, generate from client names
     if (clientName && fianceName) {
         return `${clientName} & ${fianceName}`;
     } else if (clientName) {
@@ -492,6 +497,7 @@ async function openEditEventModal(clientId) {
         // Populate form with client data
         document.getElementById('editClientId').value = client.id;
         document.getElementById('editEventType').value = client.event_type || '';
+        document.getElementById('editEventName').value = client.event_name || '';
         document.getElementById('editClientName').value = client.client_name || '';
         document.getElementById('editFianceName').value = client.fiance_name || '';
         document.getElementById('editClientPhone').value = client.client_phone || '';
@@ -567,6 +573,7 @@ async function updateEvent(event) {
     // Get form values
     const clientId = document.getElementById('editClientId').value;
     const eventType = document.getElementById('editEventType').value.trim();
+    const eventName = document.getElementById('editEventName').value.trim();
     const clientName = document.getElementById('editClientName').value.trim();
     const fianceName = document.getElementById('editFianceName').value.trim();
     const clientPhone = document.getElementById('editClientPhone').value.trim();
@@ -609,6 +616,7 @@ async function updateEvent(event) {
         // Update client data object
         const clientData = {
             event_type: eventType,
+            event_name: eventName || null, // Custom event name (optional)
             client_name: clientName,
             fiance_name: fianceName || null,
             client_phone: clientPhone || null,
@@ -743,6 +751,7 @@ async function createEvent(event) {
     
     // Get form values
     const eventType = document.getElementById('eventType').value.trim();
+    const eventName = document.getElementById('eventName').value.trim();
     const clientName = document.getElementById('eventClientName').value.trim();
     const fianceName = document.getElementById('eventFianceName').value.trim();
     const eventDate = document.getElementById('eventDate').value;
@@ -777,6 +786,7 @@ async function createEvent(event) {
         // Create client data object
         const clientData = {
             event_type: eventType,
+            event_name: eventName || null, // Custom event name (optional)
             client_name: clientName,
             fiance_name: fianceName || null,
             event_date: eventDate,
