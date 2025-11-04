@@ -510,6 +510,15 @@ function saveEventName() {
             renderEvents();
             setupDragAndDrop();
             showSaveIndicator();
+            
+            // Save to Supabase
+            const clientId = window.supabaseHelpers?.getCurrentClientId();
+            if (clientId && window.supabaseHelpers && window.supabaseHelpers.saveEvent) {
+                const eventIndex = events.findIndex(e => e.id === currentEventId);
+                window.supabaseHelpers.saveEvent(clientId, event, eventIndex).catch(err => {
+                    console.error('Error saving event name to Supabase:', err);
+                });
+            }
         }
     } else {
         const event = events.find(e => e.id === currentEventId);

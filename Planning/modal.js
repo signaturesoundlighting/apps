@@ -268,6 +268,9 @@ function saveEventName() {
             renderEvents();
             setupDragAndDrop();
             showSaveIndicator();
+            
+            // Save to Supabase
+            saveEventToSupabase(currentEventId);
         }
     } else {
         const event = events.find(e => e.id === currentEventId);
