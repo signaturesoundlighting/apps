@@ -366,16 +366,29 @@ function createEventRow(client) {
     return row;
 }
 
+// Helper function to extract first name from full name
+function getFirstName(fullName) {
+    if (!fullName || typeof fullName !== 'string') {
+        return '';
+    }
+    // Split by space and take the first part
+    const parts = fullName.trim().split(/\s+/);
+    return parts[0] || '';
+}
+
 // Format event name based on event type
 function formatEventName(clientName, fianceName, eventName = null, eventType = null) {
-    // For Wedding events, always show "Client & Fiance" format
+    // For Wedding events, always show "First Name & First Name" format (first names only)
     if (eventType && eventType.toLowerCase() === 'wedding') {
-        if (clientName && fianceName) {
-            return `${clientName} & ${fianceName}`;
-        } else if (clientName) {
-            return clientName;
-        } else if (fianceName) {
-            return fianceName;
+        const clientFirstName = getFirstName(clientName);
+        const fianceFirstName = getFirstName(fianceName);
+        
+        if (clientFirstName && fianceFirstName) {
+            return `${clientFirstName} & ${fianceFirstName}`;
+        } else if (clientFirstName) {
+            return clientFirstName;
+        } else if (fianceFirstName) {
+            return fianceFirstName;
         } else {
             return 'Unnamed Event';
         }
