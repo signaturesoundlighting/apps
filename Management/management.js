@@ -675,6 +675,9 @@ async function updateEvent(event) {
         const depositPaidChecked = document.getElementById('editDepositPaid').checked;
         const remainingBalancePaidChecked = document.getElementById('editRemainingBalancePaid').checked;
         
+        // If deposit is $0, automatically mark as paid (override checkbox)
+        const finalDepositPaid = depositAmount === 0 ? true : depositPaidChecked;
+        
         // Update client data object
         const clientData = {
             event_type: eventType,
@@ -690,7 +693,7 @@ async function updateEvent(event) {
             deposit_amount: depositAmount,
             total_balance: totalBalance,
             signature: signatureChecked ? 'completed' : '',
-            deposit_paid: depositPaidChecked,
+            deposit_paid: finalDepositPaid,
             remaining_balance_paid: remainingBalancePaidChecked
         };
         
@@ -889,6 +892,9 @@ async function createEvent(event) {
         console.log('Form values:', { eventType, clientName, fianceName, eventDate, services, depositAmount, totalBalance });
         
         // Create client data object
+        // If deposit is $0, automatically mark as paid
+        const depositPaid = depositAmount === 0;
+        
         const clientData = {
             event_type: eventType,
             event_name: eventName || null, // Custom event name (optional)
@@ -900,7 +906,7 @@ async function createEvent(event) {
             total_balance: totalBalance,
             signature: null,
             signature_date: null,
-            deposit_paid: false,
+            deposit_paid: depositPaid,
             payment_intent_id: null,
             onboarding_completed: false,
             archived: false
