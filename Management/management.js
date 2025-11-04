@@ -771,6 +771,29 @@ function updateDepositStatusColor() {
     }
 }
 
+// Update remaining balance status color based on checkbox state
+function updateRemainingBalanceStatusColor() {
+    const checkbox = document.getElementById('editRemainingBalancePaid');
+    const label = document.getElementById('remainingBalanceCheckboxLabel');
+    const remainingBalanceDisplay = document.getElementById('remainingBalanceDisplay');
+    
+    if (checkbox && label) {
+        // Get remaining balance value from display
+        const remainingBalanceText = remainingBalanceDisplay?.textContent || '$0.00';
+        const remainingBalance = parseFloat(remainingBalanceText.replace(/[^0-9.-]/g, '')) || 0;
+        
+        // If remaining balance is $0 or checkbox is checked, show green
+        const isPaid = checkbox.checked || remainingBalance === 0;
+        if (isPaid) {
+            label.style.color = '#28a745'; // Green
+            label.style.fontWeight = '600';
+        } else {
+            label.style.color = '#dc3545'; // Red
+            label.style.fontWeight = '500';
+        }
+    }
+}
+
 // Close modal when clicking outside
 document.addEventListener('click', (e) => {
     const createModal = document.getElementById('createEventModal');
