@@ -1494,6 +1494,10 @@ function computeEventCompletion(event) {
                 if (questions[questionIndex] && questions[questionIndex].trim()) {
                     hasValue = true;
                 }
+            } else if (fieldId === `danceType_${event.id}`) {
+                // danceType is saved without the event ID suffix
+                value = event.details.danceType;
+                hasValue = !!value && value.trim() !== '';
             } else if (value != null) {
                 if (typeof value === 'string') {
                     const v = value.trim();
