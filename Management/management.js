@@ -291,8 +291,8 @@ async function calculatePlanningProgress(clientId) {
 function createEventRow(client) {
     const row = document.createElement('tr');
     
-    // Event name (custom event_name or generated from client names)
-    const eventName = formatEventName(client.client_name, client.fiance_name, client.event_name);
+    // Event name (format based on event type)
+    const eventName = formatEventName(client.client_name, client.fiance_name, client.event_name, client.event_type);
     
     // Format event date
     const eventDate = client.event_date ? formatDate(client.event_date) : 'N/A';
@@ -366,13 +366,27 @@ function createEventRow(client) {
     return row;
 }
 
-// Format event name from event_name, client_name and fiance_name
-function formatEventName(clientName, fianceName, eventName = null) {
-    // If custom event name is provided, use it
+// Format event name based on event type
+function formatEventName(clientName, fianceName, eventName = null, eventType = null) {
+    // For Wedding events, always show "Client & Fiance" format
+    if (eventType && eventType.toLowerCase() === 'wedding') {
+        if (clientName && fianceName) {
+            return `${clientName} & ${fianceName}`;
+        } else if (clientName) {
+            return clientName;
+        } else if (fianceName) {
+            return fianceName;
+        } else {
+            return 'Unnamed Event';
+        }
+    }
+    
+    // For non-wedding events, use custom event_name if provided
     if (eventName && eventName.trim()) {
         return eventName.trim();
     }
-    // Otherwise, generate from client names
+    
+    // Fallback: generate from client names if no event_name
     if (clientName && fianceName) {
         return `${clientName} & ${fianceName}`;
     } else if (clientName) {
