@@ -555,6 +555,7 @@ async function openEditEventModal(clientId) {
         
         // Populate remaining balance paid checkbox
         // If remaining balance is $0, automatically mark as paid
+        const totalBalance = parseFloat(client.total_balance) || 0;
         const calculatedRemainingBalance = depositPaid ? totalBalance - depositAmount : totalBalance;
         const remainingBalancePaid = client.remaining_balance_paid === true || calculatedRemainingBalance === 0;
         document.getElementById('editRemainingBalancePaid').checked = remainingBalancePaid;
