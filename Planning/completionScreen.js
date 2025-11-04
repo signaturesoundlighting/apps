@@ -1,6 +1,22 @@
 // Completion screen for non-wedding events
 
 async function showCompletionScreen() {
+    // Get client ID from URL to check event date
+    const urlParams = new URLSearchParams(window.location.search);
+    const clientId = urlParams.get('client_id');
+    
+    // Determine if event date has passed
+    let eventDatePassed = false;
+    if (clientId && window.supabaseHelpers && window.supabaseHelpers.getClientData) {
+        const clientData = await window.supabaseHelpers.getClientData(clientId);
+        if (clientData && clientData.event_date) {
+            const eventDate = new Date(clientData.event_date + 'T00:00:00');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            eventDatePassed = eventDate < today;
+        }
+    }
+    
     // Create completion screen overlay
     const overlay = document.createElement('div');
     overlay.id = 'completionScreenOverlay';
@@ -29,10 +45,14 @@ async function showCompletionScreen() {
     title.style.cssText = 'margin-top: 30px; margin-bottom: 20px; color: #1a9e8e;';
     content.appendChild(title);
     
-    // Message
+    // Message - different text based on whether event date has passed
     const message = document.createElement('p');
     message.className = 'completion-message';
-    message.textContent = "We're super excited to be a part of your event. Let us know if there are any songs, events, or special requests we should prepare";
+    if (eventDatePassed) {
+        message.textContent = "It was a pleasure being a part of your event! Let us know if there's anything we can help you with in the future";
+    } else {
+        message.textContent = "We're super excited to be a part of your event. Let us know if there are any songs, events, or special requests we should prepare";
+    }
     message.style.cssText = 'font-size: 18px; color: #666; line-height: 1.6; margin-bottom: 40px; padding: 0 20px;';
     content.appendChild(message);
     
