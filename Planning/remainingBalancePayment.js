@@ -42,7 +42,9 @@ async function loadRemainingBalancePaymentData() {
         // Get amounts
         const totalBalance = clientData.total_balance ? parseFloat(clientData.total_balance) : 0;
         const depositAmount = clientData.deposit_amount ? parseFloat(clientData.deposit_amount) : 0;
-        const remainingBalance = totalBalance - depositAmount;
+        // Only subtract deposit if it's been paid (or if deposit is $0, treat as paid)
+        const depositPaid = clientData.deposit_paid === true || depositAmount === 0;
+        const remainingBalance = depositPaid ? totalBalance - depositAmount : totalBalance;
         
         remainingBalancePaymentData.totalBalance = totalBalance;
         remainingBalancePaymentData.depositAmount = depositAmount;

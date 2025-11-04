@@ -450,8 +450,38 @@ async function checkPreOnboardingRequirements() {
     });
     
     if (!isWedding) {
-        // For non-wedding events, show completion screen instead of planning
-        console.log('Non-wedding event - showing completion screen');
+        // For non-wedding events, check remaining balance payment before showing completion screen
+        console.log('Non-wedding event - checking remaining balance payment');
+        
+        // Calculate remaining balance
+        const totalBalance = parseFloat(clientData?.total_balance) || 0;
+        const depositAmount = parseFloat(clientData?.deposit_amount) || 0;
+        // Only subtract deposit if it's been paid
+        const remainingBalance = hasPaidDeposit ? totalBalance - depositAmount : totalBalance;
+        
+        // Check if remaining balance is paid
+        // If remaining balance is $0, treat it as paid
+        const remainingBalancePaid = clientData?.remaining_balance_paid === true || remainingBalance === 0;
+        
+        console.log('Remaining Balance Status:', {
+            total_balance: totalBalance,
+            deposit_amount: depositAmount,
+            remaining_balance: remainingBalance,
+            remaining_balance_paid: clientData?.remaining_balance_paid,
+            hasPaidRemainingBalance: remainingBalancePaid
+        });
+        
+        if (!remainingBalancePaid && remainingBalance > 0) {
+            // Show remaining balance payment screen
+            console.log('Showing Remaining Balance Payment form');
+            if (typeof showRemainingBalancePayment === 'function') {
+                await showRemainingBalancePayment();
+            }
+            return;
+        }
+        
+        // Remaining balance is paid or $0 - show completion screen
+        console.log('Remaining balance paid - showing completion screen');
         if (typeof showCompletionScreen === 'function') {
             await showCompletionScreen();
         }
