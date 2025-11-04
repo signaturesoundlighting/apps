@@ -439,8 +439,8 @@ function formatStageDisplay(stage) {
     if (!stage) return 'N/A';
     const stageMap = {
         'booked': 'Booked',
-        'awaiting-deposit': 'Awaiting Deposit',
-        'awaiting-signature': 'Awaiting Signature',
+        'awaiting-deposit': 'Deposit',
+        'awaiting-signature': 'Signature',
         'completed': 'Completed',
         'archive': 'Archive'
     };
