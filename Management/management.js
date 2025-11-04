@@ -541,8 +541,12 @@ async function openEditEventModal(clientId) {
         document.getElementById('editVenueName').value = client.venue_name || '';
         document.getElementById('editVenueAddress').value = client.venue_address || '';
         document.getElementById('editServices').value = client.services || '';
-        document.getElementById('editDepositAmount').value = client.deposit_amount || '';
-        document.getElementById('editTotalBalance').value = client.total_balance || '';
+        // Ensure deposit amount is properly formatted (handle 0, null, undefined)
+        const depositAmountValue = client.deposit_amount != null ? client.deposit_amount : '';
+        document.getElementById('editDepositAmount').value = depositAmountValue;
+        // Ensure total balance is properly formatted (handle 0, null, undefined)
+        const totalBalanceValue = client.total_balance != null ? client.total_balance : '';
+        document.getElementById('editTotalBalance').value = totalBalanceValue;
         
         // Populate signature and deposit checkboxes
         const hasSignature = client.signature && client.signature.trim() !== '';
@@ -629,17 +633,27 @@ async function updateEvent(event) {
     const venueName = document.getElementById('editVenueName').value.trim();
     const venueAddress = document.getElementById('editVenueAddress').value.trim();
     const services = document.getElementById('editServices').value.trim();
-    const depositAmount = parseFloat(document.getElementById('editDepositAmount').value);
-    const totalBalance = parseFloat(document.getElementById('editTotalBalance').value);
+    // Get and validate deposit amount - ensure we handle empty strings properly
+    const depositAmountInput = document.getElementById('editDepositAmount').value.trim();
+    const depositAmount = depositAmountInput !== '' ? parseFloat(depositAmountInput) : 0;
+    // Get and validate total balance - ensure we handle empty strings properly
+    const totalBalanceInput = document.getElementById('editTotalBalance').value.trim();
+    const totalBalance = totalBalanceInput !== '' ? parseFloat(totalBalanceInput) : 0;
     
     // Validate
-    if (!clientId || !eventType || !clientName || !eventDate || !services || isNaN(depositAmount) || isNaN(totalBalance)) {
-        showEditErrorMessage('Please fill in all required fields with valid values.');
+    if (!clientId || !eventType || !clientName || !eventDate || !services) {
+        showEditErrorMessage('Please fill in all required fields.');
         return;
     }
     
-    if (depositAmount < 0 || totalBalance < 0) {
-        showEditErrorMessage('Amounts cannot be negative.');
+    // Validate numeric fields
+    if (isNaN(depositAmount) || depositAmount < 0) {
+        showEditErrorMessage('Please enter a valid deposit amount (0 or greater).');
+        return;
+    }
+    
+    if (isNaN(totalBalance) || totalBalance < 0) {
+        showEditErrorMessage('Please enter a valid total balance (0 or greater).');
         return;
     }
     
