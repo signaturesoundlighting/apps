@@ -316,6 +316,11 @@ function createEventRow(client) {
     const depositPaid = client.deposit_paid === true || depositAmount === 0;
     const depositClass = depositPaid ? 'deposit-paid' : 'deposit-unpaid';
     
+    // Determine remaining balance status for styling
+    // If remaining balance is $0 or has been paid, show green
+    const remainingBalancePaid = client.remaining_balance_paid === true || remainingBalance === 0;
+    const remainingBalanceClass = remainingBalancePaid ? 'remaining-balance-paid' : 'remaining-balance-unpaid';
+    
     // Pipeline stages
     const eventStage = getEventStage(client);
     const stageDisplay = formatStageDisplay(eventStage);
@@ -346,7 +351,7 @@ function createEventRow(client) {
         <td>${planningStage}</td>
         <td class="full-balance">${escapeHtml(formattedTotalBalance)}</td>
         <td class="deposit-amount ${depositClass}">${escapeHtml(formattedDepositAmount)}</td>
-        <td class="remaining-balance">${escapeHtml(formattedRemainingBalance)}</td>
+        <td class="remaining-balance ${remainingBalanceClass}">${escapeHtml(formattedRemainingBalance)}</td>
         <td class="actions">
             <a href="${planningLink}" target="_blank" class="btn-link" title="View Planning">
                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor">
@@ -548,9 +553,16 @@ async function openEditEventModal(clientId) {
         const depositPaid = client.deposit_paid === true || depositAmount === 0;
         document.getElementById('editDepositPaid').checked = depositPaid;
         
+        // Populate remaining balance paid checkbox
+        // If remaining balance is $0, automatically mark as paid
+        const calculatedRemainingBalance = depositPaid ? totalBalance - depositAmount : totalBalance;
+        const remainingBalancePaid = client.remaining_balance_paid === true || calculatedRemainingBalance === 0;
+        document.getElementById('editRemainingBalancePaid').checked = remainingBalancePaid;
+        
         // Update deposit status color and remaining balance
         updateDepositStatusColor();
         updateRemainingBalance();
+        updateRemainingBalanceStatusColor();
         
         // Open modal
         modal.classList.add('active');
@@ -643,9 +655,10 @@ async function updateEvent(event) {
         console.log('Starting event update...');
         console.log('Form values:', { clientId, eventType, clientName, fianceName, clientPhone, clientAddress, eventDate, venueName, venueAddress, services, depositAmount, totalBalance });
         
-        // Get signature and deposit status
+        // Get signature, deposit, and remaining balance status
         const signatureChecked = document.getElementById('editSignature').checked;
         const depositPaidChecked = document.getElementById('editDepositPaid').checked;
+        const remainingBalancePaidChecked = document.getElementById('editRemainingBalancePaid').checked;
         
         // Update client data object
         const clientData = {
@@ -662,7 +675,8 @@ async function updateEvent(event) {
             deposit_amount: depositAmount,
             total_balance: totalBalance,
             signature: signatureChecked ? 'completed' : '',
-            deposit_paid: depositPaidChecked
+            deposit_paid: depositPaidChecked,
+            remaining_balance_paid: remainingBalancePaidChecked
         };
         
         console.log('Client data to be updated:', clientData);
@@ -724,6 +738,16 @@ function updateRemainingBalance() {
     if (depositAmount === 0 && !depositPaid) {
         document.getElementById('editDepositPaid').checked = true;
         updateDepositStatusColor();
+    }
+    
+    // Auto-check remaining balance paid if remaining balance becomes $0
+    const calculatedRemainingBalance = isDepositPaid ? totalBalance - depositAmount : totalBalance;
+    if (calculatedRemainingBalance === 0) {
+        const remainingBalanceCheckbox = document.getElementById('editRemainingBalancePaid');
+        if (remainingBalanceCheckbox && !remainingBalanceCheckbox.checked) {
+            remainingBalanceCheckbox.checked = true;
+            updateRemainingBalanceStatusColor();
+        }
     }
 }
 

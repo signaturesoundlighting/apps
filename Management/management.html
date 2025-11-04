@@ -182,11 +182,11 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="editDepositAmount">Deposit Amount *</label>
-                        <input type="number" id="editDepositAmount" required step="0.01" min="0" placeholder="500.00" oninput="updateRemainingBalance(); updateDepositStatusColor()">
+                        <input type="number" id="editDepositAmount" required step="0.01" min="0" placeholder="500.00" oninput="updateRemainingBalance(); updateDepositStatusColor(); updateRemainingBalanceStatusColor()">
                     </div>
                     <div class="form-group">
                         <label for="editTotalBalance">Total Balance *</label>
-                        <input type="number" id="editTotalBalance" required step="0.01" min="0" placeholder="5000.00" oninput="updateRemainingBalance()">
+                        <input type="number" id="editTotalBalance" required step="0.01" min="0" placeholder="5000.00" oninput="updateRemainingBalance(); updateRemainingBalanceStatusColor()">
                     </div>
                 </div>
                 <div class="form-row">
@@ -212,6 +212,15 @@
                 <div class="form-group">
                     <label>Remaining Balance</label>
                     <div id="remainingBalanceDisplay" class="remaining-balance-display">$0.00</div>
+                </div>
+                <div class="form-group">
+                    <label for="editRemainingBalancePaid">Remaining Balance Status</label>
+                    <div class="remaining-balance-status">
+                        <label class="checkbox-label remaining-balance-checkbox-label" id="remainingBalanceCheckboxLabel">
+                            <input type="checkbox" id="editRemainingBalancePaid" onchange="updateRemainingBalanceStatusColor()">
+                            <span>Remaining Balance Paid</span>
+                        </label>
+                    </div>
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn-secondary" onclick="closeEditEventModal()">Cancel</button>

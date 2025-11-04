@@ -369,12 +369,10 @@ async function handleRemainingBalancePayment() {
         if (paymentIntent && paymentIntent.status === 'succeeded') {
             // Payment succeeded - update Supabase
             if (remainingBalancePaymentData.clientId && window.supabaseHelpers && window.supabaseHelpers.updateClient) {
-                // Update total_balance to reflect full payment (or mark as fully paid)
-                // We could add a field like "remaining_balance_paid" or just update total_balance
-                // For now, we'll update a note or add metadata
+                // Mark remaining balance as paid
                 const updateSuccess = await window.supabaseHelpers.updateClient(remainingBalancePaymentData.clientId, {
+                    remaining_balance_paid: true,
                     payment_intent_id: paymentIntent.id
-                    // Note: We could add a field to track remaining balance payment
                 });
                 
                 if (!updateSuccess) {

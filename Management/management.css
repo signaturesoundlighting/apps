@@ -379,6 +379,17 @@ body {
     font-weight: 600;
 }
 
+/* Remaining balance color coding */
+.events-table td.remaining-balance.remaining-balance-paid {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.events-table td.remaining-balance.remaining-balance-unpaid {
+    color: #dc3545;
+    font-weight: 600;
+}
+
 .events-table td {
     padding: 15px;
     vertical-align: middle;
@@ -761,6 +772,22 @@ body {
 }
 
 .deposit-checkbox-label input[type="checkbox"]:not(:checked) {
+    accent-color: #dc3545; /* Red when unchecked */
+}
+
+.remaining-balance-status {
+    margin-top: 8px;
+}
+
+.remaining-balance-checkbox-label {
+    transition: color 0.2s ease, font-weight 0.2s ease;
+}
+
+.remaining-balance-checkbox-label input[type="checkbox"]:checked {
+    accent-color: #28a745; /* Green when checked */
+}
+
+.remaining-balance-checkbox-label input[type="checkbox"]:not(:checked) {
     accent-color: #dc3545; /* Red when unchecked */
 }
 
