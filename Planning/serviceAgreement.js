@@ -11,7 +11,8 @@ let eventData = {
     venueAddress: "",
     services: "",
     totalBalance: "",
-    signature: ""
+    signature: "",
+    eventType: ""
 };
 // Store the original total_balance and services from database to preserve them (they're read-only)
 let originalTotalBalance = null;
@@ -59,6 +60,7 @@ async function loadClientData() {
         eventData.clientAddress = clientData.client_address || "";
         eventData.venueName = clientData.venue_name || "";
         eventData.venueAddress = clientData.venue_address || "";
+        eventData.eventType = clientData.event_type || "";
         // Store original services value (preserve it from database - it's read-only)
         originalServices = clientData.services || null;
         eventData.services = originalServices || "";
@@ -157,8 +159,11 @@ async function showServiceAgreement() {
     // Client Name (editable)
     eventDetailsSection.appendChild(createFormField('Client Name:', 'eventClientName', eventData.clientName, 'Enter client name'));
     
-    // Fiance Name (editable)
-    eventDetailsSection.appendChild(createFormField('Fiance Name:', 'eventFianceName', eventData.fianceName, 'Enter fiance name'));
+    // Fiance Name (editable) - only show for wedding events
+    const isWedding = eventData.eventType && eventData.eventType.toLowerCase() === 'wedding';
+    if (isWedding) {
+        eventDetailsSection.appendChild(createFormField('Fiance Name:', 'eventFianceName', eventData.fianceName, 'Enter fiance name'));
+    }
     
     // Client Phone (editable)
     eventDetailsSection.appendChild(createFormField('Client Phone:', 'eventClientPhone', eventData.clientPhone, 'Enter client phone'));
@@ -311,6 +316,9 @@ async function handleServiceAgreementSign() {
     // Validate all fields
     let hasErrors = false;
     
+    // Check if this is a wedding event (fiance name is only required for weddings)
+    const isWedding = eventData.eventType && eventData.eventType.toLowerCase() === 'wedding';
+    
     if (!clientName) {
         if (clientNameInput) {
             clientNameInput.style.borderColor = '#dc3545';
@@ -319,7 +327,8 @@ async function handleServiceAgreementSign() {
         hasErrors = true;
     }
     
-    if (!fianceName) {
+    // Only require fiance name for wedding events
+    if (isWedding && !fianceName) {
         if (fianceNameInput) {
             fianceNameInput.style.borderColor = '#dc3545';
             fianceNameInput.classList.add('field-error');
