@@ -365,29 +365,69 @@ async function searchSongsWithPreview() {
     const errorMessage = error.message || 'Unknown error';
     console.log('Error message details:', { errorMessage, fullError: error });
     
+    // Detect device type for error message
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile/i.test(navigator.userAgent) ||
+                    (window.innerWidth && window.innerWidth < 768);
+    
+    // Build detailed error message for debugging
+    let debugInfo = [];
+    debugInfo.push(`Device: ${isMobile ? 'Mobile' : 'Desktop'}`);
+    debugInfo.push(`Method: ${errorMessage.includes('JSONP') ? 'JSONP' : errorMessage.includes('Proxy') ? 'Proxy' : 'Direct Fetch'}`);
+    debugInfo.push(`Error: ${errorMessage}`);
+    
     // Provide more helpful error message based on error type
     // Check for JSONP errors first (mobile), then proxy errors (desktop)
     let userMessage = 'Error searching. Please try again, or use "Link" to paste a song URL.';
+    let errorDetails = '';
     
     if (errorMessage.includes('JSONP')) {
       // JSONP-specific errors (mobile)
       if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
-        userMessage = 'Search timed out. Please check your connection and try again, or use "Link" to paste a song URL.';
-      } else if (errorMessage.includes('script error')) {
-        userMessage = 'Unable to search at this time. Please check your internet connection and try again, or use "Link" to paste a song URL.';
+        userMessage = 'Search timed out (20 seconds).';
+        errorDetails = 'The search request took too long. This might be due to a slow connection or the iTunes API being slow.';
+      } else if (errorMessage.includes('script error') || errorMessage.includes('JSONP script error')) {
+        userMessage = 'JSONP script error occurred.';
+        errorDetails = 'The search script failed to load. This could be due to network issues, ad blockers, or content security policies.';
       } else {
-        userMessage = 'Unable to search at this time. Please check your internet connection and try again, or use "Link" to paste a song URL.';
+        userMessage = 'JSONP search failed.';
+        errorDetails = `JSONP error: ${errorMessage}`;
       }
     } else if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
-      userMessage = 'Search timed out. Please check your connection and try again, or use "Link" to paste a song URL.';
+      userMessage = 'Search timed out.';
+      errorDetails = 'The search request took too long.';
     } else if (errorMessage.includes('Network error') || errorMessage.includes('Could not reach')) {
-      userMessage = 'Network error. Please check your internet connection and try again, or use "Link" to paste a song URL.';
+      userMessage = 'Network error.';
+      errorDetails = 'Could not reach the search service. Please check your internet connection.';
     } else if (errorMessage.includes('Proxy') && !errorMessage.includes('JSONP')) {
       // Only show proxy error if it's NOT a JSONP error (shouldn't happen on mobile)
-      userMessage = 'Search service temporarily unavailable. Please try again in a moment, or use "Link" to paste a song URL.';
+      userMessage = 'Proxy service error.';
+      errorDetails = `Proxy error: ${errorMessage}`;
+    } else {
+      userMessage = 'Search failed.';
+      errorDetails = `Error: ${errorMessage}`;
     }
     
-    resultsContainer.innerHTML = `<div class="search-no-results">${userMessage}</div>`;
+    // Display detailed error information
+    const errorHtml = `
+      <div class="search-no-results" style="padding: 20px;">
+        <div style="font-weight: 600; margin-bottom: 12px; color: #d32f2f;">${userMessage}</div>
+        <div style="font-size: 13px; color: #666; margin-bottom: 12px; line-height: 1.5;">
+          ${errorDetails}
+        </div>
+        <div style="font-size: 12px; color: #999; margin-bottom: 16px; padding: 12px; background: #f5f5f5; border-radius: 4px; font-family: monospace; word-break: break-all;">
+          <strong>Debug Info:</strong><br>
+          ${debugInfo.join('<br>')}
+        </div>
+        <div style="font-size: 13px; color: #666;">
+          <strong>Options:</strong><br>
+          • Try searching again<br>
+          • Use the "Link" button to paste a song URL directly<br>
+          • Check your internet connection
+        </div>
+      </div>
+    `;
+    
+    resultsContainer.innerHTML = errorHtml;
   }
 }
 
