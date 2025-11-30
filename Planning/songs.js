@@ -296,59 +296,51 @@ async function searchSongsWithPreview() {
       width: window.innerWidth 
     });
 
-    // On mobile, try proxy first (it exists and should work), then JSONP as fallback
+    // On mobile, skip proxy if it's known to return 403 (Cloudflare WAF blocking)
+    // Go straight to JSONP which should work on mobile
     // On desktop, try proxy/direct fetch first, then JSONP as fallback.
     if (isMobile) {
-      console.log('MOBILE MODE: Trying proxy first, then JSONP fallback');
+      console.log('MOBILE MODE: Skipping proxy (known 403 issue), using JSONP only');
       
-      // Mobile: Try proxy first (should work and avoid CORS issues)
-      // But if it returns 403, skip it and go straight to JSONP
-      if ((typeof window !== 'undefined') && window.ITUNES_PROXY_URL) {
+      // Mobile: Skip proxy entirely and use JSONP (proxy is blocked by Cloudflare WAF)
+      // Try JSONP with different parameter combinations
+      const jsonpAttempts = [
+        mkParams({ entity: 'song' }),
+        mkParams({}) // Fallback without entity filter
+      ];
+      
+      for (let i = 0; i < jsonpAttempts.length; i++) {
+        const jsonpParams = jsonpAttempts[i];
         try {
-          console.log('Mobile: Attempting proxy search...');
+          console.log(`Mobile: JSONP attempt ${i + 1}/${jsonpAttempts.length}...`);
+          const urlBase = `https://itunes.apple.com/search?${jsonpParams}`;
+          console.log('JSONP URL (first 150 chars):', urlBase.substring(0, 150));
+          data = await jsonpRequest(urlBase);
+          console.log('Mobile: JSONP search successful!');
+          break; // Success, exit loop
+        } catch (e2) {
+          console.error(`Mobile: JSONP attempt ${i + 1} failed:`, e2);
+          // Make sure JSONP error message is separate and clear
+          const jsonpErrorMsg = e2.message || 'Unknown JSONP error';
+          errors.push(`JSONP attempt ${i + 1}: ${jsonpErrorMsg}`);
+          lastError = e2;
+        }
+      }
+      
+      // If JSONP fails, we could try proxy as absolute last resort, but it's likely to fail
+      if (!data && (typeof window !== 'undefined') && window.ITUNES_PROXY_URL) {
+        try {
+          console.log('Mobile: JSONP failed, trying proxy as last resort (likely to fail with 403)...');
           const proxyParams = mkParams({ entity: 'song' });
-          console.log('Proxy params:', proxyParams);
           data = await fetchViaProxy(proxyParams);
           console.log('Mobile: Proxy search successful!');
         } catch (e) {
-          console.error('Mobile: Proxy search failed:', e);
-          const is403 = e.message && (e.message.includes('403') || e.message.includes('Forbidden'));
-          
-          if (is403) {
-            // 403 means worker is blocking - skip proxy and go straight to JSONP
-            console.log('Mobile: Proxy returned 403 (blocked), skipping proxy and using JSONP only');
-            errors.push(`Proxy: Blocked by worker (403)`);
-            // Don't set lastError to proxy error, let JSONP try
-          } else {
-            errors.push(`Proxy: ${e.message}`);
-            lastError = e;
-          }
-          
-          // If proxy fails, try JSONP as fallback
-          console.log('Mobile: Proxy failed, trying JSONP fallback...');
-          const jsonpAttempts = [
-            mkParams({ entity: 'song' }),
-            mkParams({}) // Fallback without entity filter
-          ];
-          
-          for (let i = 0; i < jsonpAttempts.length; i++) {
-            const jsonpParams = jsonpAttempts[i];
-            try {
-              console.log(`Mobile: JSONP attempt ${i + 1}/${jsonpAttempts.length}...`);
-              const urlBase = `https://itunes.apple.com/search?${jsonpParams}`;
-              data = await jsonpRequest(urlBase);
-              console.log('Mobile: JSONP search successful!');
-              break; // Success, exit loop
-            } catch (e2) {
-              console.error(`Mobile: JSONP attempt ${i + 1} failed:`, e2);
-              // Make sure JSONP error message is separate and clear
-              const jsonpErrorMsg = e2.message || 'Unknown JSONP error';
-              errors.push(`JSONP attempt ${i + 1}: ${jsonpErrorMsg}`);
-              lastError = e2;
-            }
-          }
+          console.error('Mobile: Proxy also failed:', e);
+          errors.push(`Proxy (last resort): ${e.message}`);
+          lastError = e;
         }
-      } else {
+      }
+    } else {
         // No proxy configured, go straight to JSONP
         console.log('Mobile: No proxy configured, using JSONP only');
         const jsonpAttempts = [
