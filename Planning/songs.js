@@ -92,7 +92,7 @@ function jsonpRequest(urlBase) {
     const timeout = setTimeout(() => {
       cleanup();
       reject(new Error('JSONP timeout'));
-    }, 10000);
+    }, 20000); // Increased to 20 seconds for mobile connections
 
     function cleanup() {
       clearTimeout(timeout);
@@ -120,9 +120,44 @@ async function fetchViaProxy(paramsQueryString) {
   const base = (typeof window !== 'undefined' && window.ITUNES_PROXY_URL) ? window.ITUNES_PROXY_URL : null;
   if (!base) throw new Error('No proxy configured');
   const url = `${base}?${paramsQueryString}`;
-  const res = await fetch(url, { mode: 'cors', headers: { 'Accept': 'application/json' } });
-  if (!res.ok) throw new Error(`Proxy HTTP ${res.status}`);
-  return await res.json();
+  
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+    
+    const res = await fetch(url, { 
+      mode: 'cors', 
+      headers: { 'Accept': 'application/json' },
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (!res.ok) {
+      const errorText = await res.text().catch(() => '');
+      throw new Error(`Proxy HTTP ${res.status}: ${errorText.substring(0, 100)}`);
+    }
+    
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      return await res.json();
+    } else {
+      // Try parsing as JSON anyway
+      const text = await res.text();
+      if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+        return JSON.parse(text);
+      }
+      throw new Error(`Proxy returned non-JSON: ${contentType}`);
+    }
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new Error('Proxy request timed out');
+    }
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error('Network error: Could not reach proxy server');
+    }
+    throw error;
+  }
 }
 
 // Main search with preview rendering. Exported as searchSongsWithPreview and aliased from searchSongs.
@@ -152,61 +187,114 @@ async function searchSongsWithPreview() {
 
     let data = null;
     let lastError = null;
+    const errors = [];
 
     // If a proxy is configured, try it FIRST (mobile-friendly)
+    // On mobile, direct fetch will fail due to CORS, so prioritize proxy
     if ((typeof window !== 'undefined') && window.ITUNES_PROXY_URL) {
       try {
         const proxyParams = mkParams({ entity: 'song' });
+        console.log('Attempting proxy search...');
         data = await fetchViaProxy(proxyParams);
+        console.log('Proxy search successful');
       } catch (e) {
+        console.error('Proxy search failed:', e);
+        errors.push(`Proxy: ${e.message}`);
         lastError = e;
-      }
-    }
-
-    for (const url of attempts) {
-      try {
-        const response = await fetch(url, {
-          mode: 'cors',
-          headers: { 'Accept': 'application/json' }
-        });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const contentType = response.headers.get('content-type') || '';
-        // iTunes API sometimes returns text/javascript even though it's valid JSON
-        // Accept both application/json and text/javascript
-        const isJsonLike = contentType.includes('application/json') || 
-                          contentType.includes('text/javascript') ||
-                          contentType.includes('application/javascript');
-        
-        if (isJsonLike) {
-          data = await response.json();
-          break;
+        // On mobile, if proxy fails, don't try direct fetch (will fail due to CORS)
+        // Go straight to JSONP fallback
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobile) {
+          // Skip direct fetch attempts on mobile, go to JSONP
         } else {
-          // If not JSON-like content type, try parsing anyway (some APIs misreport)
-          const text = await response.text();
-          if (text.trim().startsWith('{')) {
-            data = JSON.parse(text);
-            break;
-          } else {
-            throw new Error(`Expected JSON, got ${contentType}. Body starts: ${text.slice(0, 80)}`);
+          // On desktop, try direct fetch as fallback
+          for (const url of attempts) {
+            try {
+              const response = await fetch(url, {
+                mode: 'cors',
+                headers: { 'Accept': 'application/json' }
+              });
+              if (!response.ok) throw new Error(`HTTP ${response.status}`);
+              const contentType = response.headers.get('content-type') || '';
+              // iTunes API sometimes returns text/javascript even though it's valid JSON
+              // Accept both application/json and text/javascript
+              const isJsonLike = contentType.includes('application/json') || 
+                                contentType.includes('text/javascript') ||
+                                contentType.includes('application/javascript');
+              
+              if (isJsonLike) {
+                data = await response.json();
+                break;
+              } else {
+                // If not JSON-like content type, try parsing anyway (some APIs misreport)
+                const text = await response.text();
+                if (text.trim().startsWith('{')) {
+                  data = JSON.parse(text);
+                  break;
+                } else {
+                  throw new Error(`Expected JSON, got ${contentType}. Body starts: ${text.slice(0, 80)}`);
+                }
+              }
+            } catch (e) {
+              errors.push(`Direct fetch: ${e.message}`);
+              lastError = e;
+            }
           }
         }
-      } catch (e) {
-        lastError = e;
+      }
+    } else {
+      // No proxy configured, try direct fetch (will fail on mobile due to CORS)
+      for (const url of attempts) {
+        try {
+          const response = await fetch(url, {
+            mode: 'cors',
+            headers: { 'Accept': 'application/json' }
+          });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const contentType = response.headers.get('content-type') || '';
+          const isJsonLike = contentType.includes('application/json') || 
+                            contentType.includes('text/javascript') ||
+                            contentType.includes('application/javascript');
+          
+          if (isJsonLike) {
+            data = await response.json();
+            break;
+          } else {
+            const text = await response.text();
+            if (text.trim().startsWith('{')) {
+              data = JSON.parse(text);
+              break;
+            } else {
+              throw new Error(`Expected JSON, got ${contentType}. Body starts: ${text.slice(0, 80)}`);
+            }
+          }
+        } catch (e) {
+          errors.push(`Direct fetch: ${e.message}`);
+          lastError = e;
+        }
       }
     }
 
     if (!data) {
       // Fallback for some mobile browsers with strict CORS: use JSONP
       try {
+        console.log('Attempting JSONP fallback...');
         const jsonpParams = mkParams({ entity: 'song', callback: '' });
         const urlBase = `https://itunes.apple.com/search?${jsonpParams}`;
         data = await jsonpRequest(urlBase);
+        console.log('JSONP search successful');
       } catch (e) {
+        console.error('JSONP search failed:', e);
+        errors.push(`JSONP: ${e.message}`);
         lastError = e;
       }
     }
 
-    if (!data) throw lastError || new Error('Unknown search error');
+    if (!data) {
+      const errorMsg = errors.length > 0 ? errors.join('; ') : 'Unknown search error';
+      console.error('All search methods failed:', errorMsg);
+      throw new Error(errorMsg);
+    }
 
     if (data.results && data.results.length > 0) {
       resultsContainer.innerHTML = '';
@@ -246,8 +334,17 @@ async function searchSongsWithPreview() {
     }
   } catch (error) {
     console.error('Search error:', error);
-    resultsContainer.innerHTML =
-      '<div class="search-no-results">Error searching. Please try again, or use “Link” to paste a song URL.</div>';
+    const errorMessage = error.message || 'Unknown error';
+    // Provide more helpful error message based on error type
+    let userMessage = 'Error searching. Please try again, or use "Link" to paste a song URL.';
+    if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
+      userMessage = 'Search timed out. Please check your connection and try again, or use "Link" to paste a song URL.';
+    } else if (errorMessage.includes('Network error') || errorMessage.includes('Could not reach')) {
+      userMessage = 'Network error. Please check your internet connection and try again, or use "Link" to paste a song URL.';
+    } else if (errorMessage.includes('Proxy')) {
+      userMessage = 'Search service temporarily unavailable. Please try again in a moment, or use "Link" to paste a song URL.';
+    }
+    resultsContainer.innerHTML = `<div class="search-no-results">${userMessage}</div>`;
   }
 }
 
