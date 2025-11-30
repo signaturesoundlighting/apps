@@ -210,38 +210,51 @@ async function searchSongsWithPreview() {
     let data = null;
     let lastError = null;
     const errors = [];
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    // More comprehensive mobile detection
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile/i.test(navigator.userAgent) ||
+                    (window.innerWidth && window.innerWidth < 768);
+    
+    console.log('Device detection:', { 
+      userAgent: navigator.userAgent, 
+      isMobile, 
+      width: window.innerWidth 
+    });
 
-    // On mobile, JSONP is most reliable (no CORS issues). Try it first.
+    // On mobile, JSONP is most reliable (no CORS issues). Use ONLY JSONP on mobile.
     // On desktop, try proxy/direct fetch first, then JSONP as fallback.
     if (isMobile) {
-      // Mobile: Try JSONP first (most reliable), then proxy, then direct fetch
-      try {
-        console.log('Mobile detected: Attempting JSONP search...');
-        const jsonpParams = mkParams({ entity: 'song' });
-        const urlBase = `https://itunes.apple.com/search?${jsonpParams}`;
-        data = await jsonpRequest(urlBase);
-        console.log('JSONP search successful');
-      } catch (e) {
-        console.error('JSONP search failed:', e);
-        errors.push(`JSONP: ${e.message}`);
-        lastError = e;
-        
-        // If JSONP fails, try proxy as fallback
-        if ((typeof window !== 'undefined') && window.ITUNES_PROXY_URL) {
-          try {
-            console.log('Attempting proxy fallback...');
-            const proxyParams = mkParams({ entity: 'song' });
-            data = await fetchViaProxy(proxyParams);
-            console.log('Proxy search successful');
-          } catch (e2) {
-            console.error('Proxy search failed:', e2);
-            errors.push(`Proxy: ${e2.message}`);
-            lastError = e2;
-          }
+      console.log('MOBILE MODE: Using JSONP only (proxy disabled on mobile)');
+      // Mobile: Use JSONP only (most reliable, no CORS issues)
+      // Try with entity=song first, then without entity filter if that fails
+      const jsonpAttempts = [
+        mkParams({ entity: 'song' }),
+        mkParams({}) // Fallback without entity filter
+      ];
+      
+      for (let i = 0; i < jsonpAttempts.length; i++) {
+        const jsonpParams = jsonpAttempts[i];
+        try {
+          console.log(`Mobile: JSONP attempt ${i + 1}/${jsonpAttempts.length}...`);
+          const urlBase = `https://itunes.apple.com/search?${jsonpParams}`;
+          console.log('JSONP URL:', urlBase.substring(0, 100) + '...');
+          data = await jsonpRequest(urlBase);
+          console.log('Mobile: JSONP search successful!');
+          break; // Success, exit loop
+        } catch (e) {
+          console.error(`Mobile: JSONP attempt ${i + 1} failed:`, e);
+          errors.push(`JSONP attempt ${i + 1}: ${e.message}`);
+          lastError = e;
+          // Continue to next attempt
         }
       }
+      
+      // On mobile, NEVER try proxy - it's unreliable and causes the error
+      // If JSONP fails, that's it - show error
+      if (!data) {
+        console.error('Mobile: All JSONP attempts failed. Not trying proxy.');
+      }
     } else {
+      console.log('DESKTOP MODE: Trying proxy/direct fetch first');
       // Desktop: Try proxy first, then direct fetch, then JSONP
       if ((typeof window !== 'undefined') && window.ITUNES_PROXY_URL) {
         try {
@@ -350,15 +363,30 @@ async function searchSongsWithPreview() {
   } catch (error) {
     console.error('Search error:', error);
     const errorMessage = error.message || 'Unknown error';
+    console.log('Error message details:', { errorMessage, fullError: error });
+    
     // Provide more helpful error message based on error type
+    // Check for JSONP errors first (mobile), then proxy errors (desktop)
     let userMessage = 'Error searching. Please try again, or use "Link" to paste a song URL.';
-    if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
+    
+    if (errorMessage.includes('JSONP')) {
+      // JSONP-specific errors (mobile)
+      if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
+        userMessage = 'Search timed out. Please check your connection and try again, or use "Link" to paste a song URL.';
+      } else if (errorMessage.includes('script error')) {
+        userMessage = 'Unable to search at this time. Please check your internet connection and try again, or use "Link" to paste a song URL.';
+      } else {
+        userMessage = 'Unable to search at this time. Please check your internet connection and try again, or use "Link" to paste a song URL.';
+      }
+    } else if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
       userMessage = 'Search timed out. Please check your connection and try again, or use "Link" to paste a song URL.';
     } else if (errorMessage.includes('Network error') || errorMessage.includes('Could not reach')) {
       userMessage = 'Network error. Please check your internet connection and try again, or use "Link" to paste a song URL.';
-    } else if (errorMessage.includes('Proxy')) {
+    } else if (errorMessage.includes('Proxy') && !errorMessage.includes('JSONP')) {
+      // Only show proxy error if it's NOT a JSONP error (shouldn't happen on mobile)
       userMessage = 'Search service temporarily unavailable. Please try again in a moment, or use "Link" to paste a song URL.';
     }
+    
     resultsContainer.innerHTML = `<div class="search-no-results">${userMessage}</div>`;
   }
 }
