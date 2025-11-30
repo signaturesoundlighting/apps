@@ -1571,7 +1571,16 @@ function updateOverallProgress() {
             ? '<svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: #2b8a3e; vertical-align: middle;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>'
             : '<svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: #1a9e8e; vertical-align: middle;"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm2-7.5c0 1.54-1 2.14-1.8 2.6-.72.41-1.2.69-1.2 1.4V14h-2v-.7c0-1.5 1-2.1 1.8-2.6.72-.41 1.2-.69 1.2-1.4 0-.83-.67-1.5-1.5-1.5S9 7.47 9 8.3H7c0-2 1.8-3.3 4-3.3s4 1.35 4 3.5z"/></svg>';
         
-        txt.innerHTML = `${done}/${total} ${iconSVG} — ${pct}%`;
+        // Calculate days until 2 weeks before wedding (10/18/26 -> 10/4/26)
+        const weddingDate = new Date('2026-10-18');
+        const twoWeeksBefore = new Date(weddingDate);
+        twoWeeksBefore.setDate(twoWeeksBefore.getDate() - 14);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        twoWeeksBefore.setHours(0, 0, 0, 0);
+        const daysUntil = Math.ceil((twoWeeksBefore - today) / (1000 * 60 * 60 * 24));
+        
+        txt.innerHTML = `${done}/${total} ${iconSVG} — ${pct}%<br><span style="font-weight: normal;">Finalization required in ${daysUntil} ${daysUntil === 1 ? 'day' : 'days'}</span>`;
     }
 }
 
@@ -1722,15 +1731,7 @@ function closeSongSearch() {
     currentSongInputId = null;
 }
 
-// This function is now handled by searchSongsWithPreview in songs.js
-// Keeping this as a fallback that uses the proxy
 async function searchSongs() {
-    // Delegate to the main search function in songs.js which handles proxy
-    if (typeof searchSongsWithPreview === 'function') {
-        return searchSongsWithPreview();
-    }
-    
-    // Fallback if songs.js isn't loaded
     const searchInput = document.getElementById('songSearchInput');
     const query = searchInput.value.trim();
     
@@ -1740,34 +1741,8 @@ async function searchSongs() {
     resultsContainer.innerHTML = '<div class="search-loading">Searching...</div>';
     
     try {
-        // Use proxy if available, otherwise direct API
-        let url;
-        if (window.ITUNES_PROXY_URL) {
-            const params = new URLSearchParams({
-                term: query,
-                country: 'US',
-                media: 'music',
-                entity: 'song',
-                limit: '25'
-            }).toString();
-            url = `${window.ITUNES_PROXY_URL}?${params}`;
-        } else {
-            url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&entity=song&limit=25`;
-        }
-        
-        const response = await fetch(url, {
-            mode: 'cors',
-            headers: { 'Accept': 'application/json' }
-        });
-        
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        
+        const response = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&entity=song&limit=25`);
         const data = await response.json();
-        
-        // Check for proxy error
-        if (data.error) {
-            throw new Error(data.message || data.error);
-        }
         
         if (data.results && data.results.length > 0) {
             resultsContainer.innerHTML = '';
@@ -1792,7 +1767,7 @@ async function searchSongs() {
         }
     } catch (error) {
         console.error('Search error:', error);
-        resultsContainer.innerHTML = '<div class="search-no-results">Error searching. Please try again, or use "Link" to paste a song URL.</div>';
+        resultsContainer.innerHTML = '<div class="search-no-results">Error searching. Please try again.</div>';
     }
 }
 

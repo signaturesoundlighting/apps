@@ -115,54 +115,14 @@ function jsonpRequest(urlBase) {
   });
 }
 
-// Simple proxy fetch function - routes through Cloudflare Worker
-// Uses POST to bypass WAF restrictions on GET query parameters
+// Optional proxy fetch: if window.ITUNES_PROXY_URL is defined, route request through it
 async function fetchViaProxy(paramsQueryString) {
-  const base = window.ITUNES_PROXY_URL;
-  if (!base) {
-    throw new Error('No proxy configured');
-  }
-  
-  const url = base; // Don't include query params in URL for POST
-  console.log('Fetching from proxy (POST):', url, 'with params:', paramsQueryString);
-  
-  try {
-    // Use POST to bypass WAF restrictions on GET query parameters
-    const response = await fetch(url, {
-      method: 'POST',
-      mode: 'cors',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: paramsQueryString, // Send query string as POST body
-    });
-    
-    console.log('Proxy response status:', response.status, response.statusText);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Proxy error response:', errorText);
-      throw new Error(`Proxy error: ${response.status} ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    
-    // Check if worker returned an error
-    if (data.error) {
-      throw new Error(data.message || data.error);
-    }
-    
-    // Validate it's an iTunes response
-    if (!data.results && typeof data.resultCount === 'undefined') {
-      console.warn('Unexpected response format:', data);
-    }
-    
-    return data;
-  } catch (error) {
-    console.error('Proxy fetch failed:', error);
-    throw error;
-  }
+  const base = (typeof window !== 'undefined' && window.ITUNES_PROXY_URL) ? window.ITUNES_PROXY_URL : null;
+  if (!base) throw new Error('No proxy configured');
+  const url = `${base}?${paramsQueryString}`;
+  const res = await fetch(url, { mode: 'cors', headers: { 'Accept': 'application/json' } });
+  if (!res.ok) throw new Error(`Proxy HTTP ${res.status}`);
+  return await res.json();
 }
 
 // Main search with preview rendering. Exported as searchSongsWithPreview and aliased from searchSongs.
@@ -194,24 +154,12 @@ async function searchSongsWithPreview() {
     let lastError = null;
 
     // If a proxy is configured, try it FIRST (mobile-friendly)
-    if (window.ITUNES_PROXY_URL) {
+    if ((typeof window !== 'undefined') && window.ITUNES_PROXY_URL) {
       try {
-        console.log('Attempting proxy search...');
         const proxyParams = mkParams({ entity: 'song' });
         data = await fetchViaProxy(proxyParams);
-        console.log('Proxy search successful, results:', data?.results?.length || 0);
-        
-        // Validate we got valid data
-        if (data && (data.results || typeof data.resultCount !== 'undefined')) {
-          // Success! Use this data
-        } else {
-          console.warn('Proxy returned invalid data, will try direct API');
-          data = null;
-        }
       } catch (e) {
-        console.error('Proxy request failed:', e.message);
         lastError = e;
-        // Continue to try direct API calls as fallback
       }
     }
 
@@ -297,23 +245,9 @@ async function searchSongsWithPreview() {
       resultsContainer.innerHTML = '<div class="search-no-results">No results found. Try a different search.</div>';
     }
   } catch (error) {
-    console.error('Search error:', {
-      message: error.message,
-      stack: error.stack,
-      proxyUrl: window.ITUNES_PROXY_URL || 'not configured',
-    });
-    
-    // Provide helpful error messages
-    let errorMessage = 'Error searching. Please try again, or use "Link" to paste a song URL.';
-    if (error.message && error.message.includes('timeout')) {
-      errorMessage = 'Request timed out. Please check your connection and try again.';
-    } else if (error.message && error.message.includes('Proxy')) {
-      errorMessage = 'Search service temporarily unavailable. Please try again in a moment, or use "Link" to paste a song URL.';
-    } else if (error.message && error.message.includes('CORS')) {
-      errorMessage = 'Connection blocked. Please try again or use "Link" to paste a song URL.';
-    }
-    
-    resultsContainer.innerHTML = `<div class="search-no-results">${errorMessage}</div>`;
+    console.error('Search error:', error);
+    resultsContainer.innerHTML =
+      '<div class="search-no-results">Error searching. Please try again, or use “Link” to paste a song URL.</div>';
   }
 }
 
