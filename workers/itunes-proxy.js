@@ -1,4 +1,4 @@
-// iTunes API Proxy Worker - Step by step build
+// iTunes API Proxy Worker - Supports GET and POST to bypass WAF
 export default {
   async fetch(request) {
     // CORS headers
@@ -15,13 +15,19 @@ export default {
     }
 
     try {
-      // Get query parameters
-      const url = new URL(request.url);
-      let queryString = url.search;
+      let queryString = '';
       
-      // Remove leading ?
-      if (queryString.startsWith('?')) {
-        queryString = queryString.substring(1);
+      // Support both GET and POST (POST bypasses WAF restrictions)
+      if (request.method === 'GET') {
+        const url = new URL(request.url);
+        queryString = url.search;
+        if (queryString.startsWith('?')) {
+          queryString = queryString.substring(1);
+        }
+      } else if (request.method === 'POST') {
+        // Get query string from POST body
+        const body = await request.text();
+        queryString = body || '';
       }
       
       // If no query params, return error
