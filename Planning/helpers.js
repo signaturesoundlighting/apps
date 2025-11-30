@@ -273,15 +273,6 @@ function updateOverallProgress() {
             ? '<svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: #2b8a3e; vertical-align: middle;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>'
             : '<svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: #1a9e8e; vertical-align: middle;"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm2-7.5c0 1.54-1 2.14-1.8 2.6-.72.41-1.2.69-1.2 1.4V14h-2v-.7c0-1.5 1-2.1 1.8-2.6.72-.41 1.2-.69 1.2-1.4 0-.83-.67-1.5-1.5-1.5S9 7.47 9 8.3H7c0-2 1.8-3.3 4-3.3s4 1.35 4 3.5z"/></svg>';
         
-        // Calculate days until 2 weeks before wedding (10/18/26 -> 10/4/26)
-        const weddingDate = new Date('2026-10-18');
-        const twoWeeksBefore = new Date(weddingDate);
-        twoWeeksBefore.setDate(twoWeeksBefore.getDate() - 14);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        twoWeeksBefore.setHours(0, 0, 0, 0);
-        const daysUntil = Math.ceil((twoWeeksBefore - today) / (1000 * 60 * 60 * 24));
-        
-        txt.innerHTML = `${done}/${total} ${iconSVG} — ${pct}%<br><span style="font-weight: normal;">Finalization required in ${daysUntil} ${daysUntil === 1 ? 'day' : 'days'}</span>`;
+        txt.innerHTML = `${done}/${total} ${iconSVG} — ${pct}%`;
     }
 }
