@@ -170,42 +170,71 @@ async function fetchViaProxy(paramsQueryString) {
   if (!base) throw new Error('No proxy configured');
   const url = `${base}?${paramsQueryString}`;
   
+  console.log('Proxy request URL:', url);
+  
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
     
     const res = await fetch(url, { 
+      method: 'GET',
       mode: 'cors', 
-      headers: { 'Accept': 'application/json' },
+      headers: { 
+        'Accept': 'application/json'
+        // Don't add User-Agent - it triggers preflight and worker might not handle OPTIONS
+      },
       signal: controller.signal
     });
     
     clearTimeout(timeoutId);
     
+    console.log('Proxy response status:', res.status, res.statusText);
+    console.log('Proxy response headers:', Object.fromEntries(res.headers.entries()));
+    
     if (!res.ok) {
-      const errorText = await res.text().catch(() => '');
-      throw new Error(`Proxy HTTP ${res.status}: ${errorText.substring(0, 100)}`);
+      let errorText = '';
+      try {
+        errorText = await res.text();
+      } catch (e) {
+        errorText = `Could not read error response: ${e.message}`;
+      }
+      
+      // Clean up error message - remove any nested error messages
+      const cleanError = errorText.trim().substring(0, 200);
+      throw new Error(`Proxy HTTP ${res.status} (${res.statusText}): ${cleanError || 'No error details'}`);
     }
     
     const contentType = res.headers.get('content-type') || '';
+    console.log('Proxy content-type:', contentType);
+    
     if (contentType.includes('application/json')) {
-      return await res.json();
+      const jsonData = await res.json();
+      console.log('Proxy returned data with', jsonData.resultCount || 0, 'results');
+      return jsonData;
     } else {
       // Try parsing as JSON anyway
       const text = await res.text();
       if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
-        return JSON.parse(text);
+        const jsonData = JSON.parse(text);
+        console.log('Proxy returned JSON (parsed):', jsonData.resultCount || 0, 'results');
+        return jsonData;
       }
-      throw new Error(`Proxy returned non-JSON: ${contentType}`);
+      throw new Error(`Proxy returned non-JSON. Content-Type: ${contentType}, Body start: ${text.substring(0, 100)}`);
     }
   } catch (error) {
+    // Don't wrap the error if it's already our formatted error
+    if (error.message && error.message.startsWith('Proxy HTTP')) {
+      throw error;
+    }
+    
     if (error.name === 'AbortError') {
-      throw new Error('Proxy request timed out');
+      throw new Error('Proxy request timed out after 15 seconds');
     }
     if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new Error('Network error: Could not reach proxy server');
+      throw new Error('Network error: Could not reach proxy server. Check your internet connection.');
     }
-    throw error;
+    // Re-throw with more context
+    throw new Error(`Proxy error: ${error.message}`);
   }
 }
 
@@ -273,6 +302,7 @@ async function searchSongsWithPreview() {
       console.log('MOBILE MODE: Trying proxy first, then JSONP fallback');
       
       // Mobile: Try proxy first (should work and avoid CORS issues)
+      // But if it returns 403, skip it and go straight to JSONP
       if ((typeof window !== 'undefined') && window.ITUNES_PROXY_URL) {
         try {
           console.log('Mobile: Attempting proxy search...');
@@ -282,8 +312,17 @@ async function searchSongsWithPreview() {
           console.log('Mobile: Proxy search successful!');
         } catch (e) {
           console.error('Mobile: Proxy search failed:', e);
-          errors.push(`Proxy: ${e.message}`);
-          lastError = e;
+          const is403 = e.message && (e.message.includes('403') || e.message.includes('Forbidden'));
+          
+          if (is403) {
+            // 403 means worker is blocking - skip proxy and go straight to JSONP
+            console.log('Mobile: Proxy returned 403 (blocked), skipping proxy and using JSONP only');
+            errors.push(`Proxy: Blocked by worker (403)`);
+            // Don't set lastError to proxy error, let JSONP try
+          } else {
+            errors.push(`Proxy: ${e.message}`);
+            lastError = e;
+          }
           
           // If proxy fails, try JSONP as fallback
           console.log('Mobile: Proxy failed, trying JSONP fallback...');
@@ -302,7 +341,9 @@ async function searchSongsWithPreview() {
               break; // Success, exit loop
             } catch (e2) {
               console.error(`Mobile: JSONP attempt ${i + 1} failed:`, e2);
-              errors.push(`JSONP attempt ${i + 1}: ${e2.message}`);
+              // Make sure JSONP error message is separate and clear
+              const jsonpErrorMsg = e2.message || 'Unknown JSONP error';
+              errors.push(`JSONP attempt ${i + 1}: ${jsonpErrorMsg}`);
               lastError = e2;
             }
           }
@@ -479,8 +520,12 @@ async function searchSongsWithPreview() {
     } else if (errorMessage.includes('Network error') || errorMessage.includes('Could not reach')) {
       userMessage = 'Network error.';
       errorDetails = 'Could not reach the search service. Please check your internet connection.';
+    } else if (errorMessage.includes('Proxy HTTP 403')) {
+      // 403 Forbidden from proxy worker
+      userMessage = 'Proxy access denied (403).';
+      errorDetails = `The proxy worker is blocking the request. This might be due to CORS restrictions or the worker configuration. Error: ${errorMessage}`;
     } else if (errorMessage.includes('Proxy') && !errorMessage.includes('JSONP')) {
-      // Only show proxy error if it's NOT a JSONP error (shouldn't happen on mobile)
+      // Other proxy errors
       userMessage = 'Proxy service error.';
       errorDetails = `Proxy error: ${errorMessage}`;
     } else {
