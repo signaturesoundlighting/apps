@@ -183,40 +183,26 @@ function openModal(eventId) {
     modalBody.querySelectorAll('.song-search-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
-            e.stopPropagation();
             const inputId = btn.getAttribute('data-input-id');
-            if (typeof openSongSearch === 'function') {
-                openSongSearch(inputId);
-            } else if (typeof window.openSongSearch === 'function') {
-                window.openSongSearch(inputId);
-            } else {
-                console.error('openSongSearch function not found');
-            }
+            openSongSearch(inputId);
         });
     });
     
     modalBody.querySelectorAll('.song-link-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
-            e.stopPropagation();
             const inputId = btn.getAttribute('data-input-id');
-            if (typeof openSongLink === 'function') {
-                openSongLink(inputId);
-            } else if (typeof window.openSongLink === 'function') {
-                window.openSongLink(inputId);
-            } else {
-                console.error('openSongLink function not found');
-            }
+            openSongLink(inputId);
         });
     });
     
-    // Initialize playlist links for all song inputs and display existing songs
+    // Initialize playlist links for all song inputs
     modalBody.querySelectorAll('[data-input-id]').forEach(box => {
         const inputId = box.getAttribute('data-input-id');
         if (inputId) {
             const input = document.getElementById(inputId);
             const playlistEl = document.getElementById(`${inputId}_playlist`);
-            if (input) {
+            if (input && playlistEl && typeof updateSongUI === 'function') {
                 const max = parseInt(input.getAttribute('data-max') || '1', 10);
                 let items = [];
                 try {
@@ -224,15 +210,7 @@ function openModal(eventId) {
                     items = JSON.parse(val);
                     if (!Array.isArray(items)) items = [];
                 } catch { items = []; }
-                
-                // Call updateSongUI if it exists (either locally or globally)
-                const updateFn = typeof updateSongUI === 'function' ? updateSongUI : 
-                                typeof window.updateSongUI === 'function' ? window.updateSongUI : null;
-                if (updateFn) {
-                    updateFn(inputId, items, max);
-                } else {
-                    console.warn('updateSongUI function not found for inputId:', inputId);
-                }
+                updateSongUI(inputId, items, max);
             }
         }
     });

@@ -86,81 +86,32 @@ function stopPreviewOnModalClose() {
 // JSONP fallback for mobile CORS issues with iTunes API
 function jsonpRequest(urlBase) {
   return new Promise((resolve, reject) => {
-    // Use a simpler callback name that Safari mobile is more likely to accept
-    const cbName = `itunesCallback${Date.now()}`;
+    const cbName = `__itunes_jsonp_cb_${Date.now()}_${Math.floor(Math.random()*10000)}`;
     const url = urlBase + `&callback=${cbName}`;
     const script = document.createElement('script');
-    let isResolved = false;
-    let errorDetails = '';
-    
     const timeout = setTimeout(() => {
-      if (!isResolved) {
-        errorDetails = 'Request timed out after 20 seconds';
-        cleanup();
-        reject(new Error('JSONP timeout'));
-      }
-    }, 20000); // Increased to 20 seconds for mobile connections
+      cleanup();
+      reject(new Error('JSONP timeout'));
+    }, 10000);
 
     function cleanup() {
-      isResolved = true;
       clearTimeout(timeout);
-      try { 
-        delete window[cbName]; 
-      } catch(_) { 
-        window[cbName] = undefined; 
-      }
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
+      try { delete window[cbName]; } catch(_) { window[cbName] = undefined; }
+      if (script.parentNode) script.parentNode.removeChild(script);
     }
 
-    // Set up callback BEFORE setting script src
-    // Use a more explicit function that Safari can handle
-    window[cbName] = function(data) {
-      if (!isResolved && data) {
-        isResolved = true;
-        cleanup();
-        resolve(data);
-      }
-    };
-
-    // Add more detailed error handling
-    script.onerror = (event) => {
-      if (!isResolved) {
-        // Show full URL in error for debugging
-        errorDetails = `Script failed to load. Full URL: ${url}`;
-        cleanup();
-        reject(new Error(`JSONP script error: ${errorDetails}`));
-      }
-    };
-
-    // Add load event to detect if script loaded but callback wasn't called
-    script.onload = () => {
-      // Give it a moment to execute
-      setTimeout(() => {
-        if (!isResolved) {
-          errorDetails = 'Script loaded but callback was not executed';
-          cleanup();
-          reject(new Error(`JSONP callback error: ${errorDetails}`));
-        }
-      }, 2000);
-    };
-
-    // Set script attributes
-    script.async = true;
-    script.charset = 'utf-8';
-    script.crossOrigin = 'anonymous';
-    
-    // Try to set src and append
-    try {
-      script.src = url;
-      // Use body instead of head for better Safari compatibility
-      (document.body || document.head).appendChild(script);
-    } catch (e) {
-      errorDetails = `Failed to create script element: ${e.message}`;
+    window[cbName] = (data) => {
       cleanup();
-      reject(new Error(`JSONP setup error: ${errorDetails}`));
-    }
+      resolve(data);
+    };
+
+    script.onerror = () => {
+      cleanup();
+      reject(new Error('JSONP script error'));
+    };
+
+    script.src = url;
+    document.head.appendChild(script);
   });
 }
 
@@ -169,73 +120,9 @@ async function fetchViaProxy(paramsQueryString) {
   const base = (typeof window !== 'undefined' && window.ITUNES_PROXY_URL) ? window.ITUNES_PROXY_URL : null;
   if (!base) throw new Error('No proxy configured');
   const url = `${base}?${paramsQueryString}`;
-  
-  console.log('Proxy request URL:', url);
-  
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
-    
-    const res = await fetch(url, { 
-      method: 'GET',
-      mode: 'cors', 
-      headers: { 
-        'Accept': 'application/json'
-        // Don't add User-Agent - it triggers preflight and worker might not handle OPTIONS
-      },
-      signal: controller.signal
-    });
-    
-    clearTimeout(timeoutId);
-    
-    console.log('Proxy response status:', res.status, res.statusText);
-    console.log('Proxy response headers:', Object.fromEntries(res.headers.entries()));
-    
-    if (!res.ok) {
-      let errorText = '';
-      try {
-        errorText = await res.text();
-      } catch (e) {
-        errorText = `Could not read error response: ${e.message}`;
-      }
-      
-      // Clean up error message - remove any nested error messages
-      const cleanError = errorText.trim().substring(0, 200);
-      throw new Error(`Proxy HTTP ${res.status} (${res.statusText}): ${cleanError || 'No error details'}`);
-    }
-    
-    const contentType = res.headers.get('content-type') || '';
-    console.log('Proxy content-type:', contentType);
-    
-    if (contentType.includes('application/json')) {
-      const jsonData = await res.json();
-      console.log('Proxy returned data with', jsonData.resultCount || 0, 'results');
-      return jsonData;
-    } else {
-      // Try parsing as JSON anyway
-      const text = await res.text();
-      if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
-        const jsonData = JSON.parse(text);
-        console.log('Proxy returned JSON (parsed):', jsonData.resultCount || 0, 'results');
-        return jsonData;
-      }
-      throw new Error(`Proxy returned non-JSON. Content-Type: ${contentType}, Body start: ${text.substring(0, 100)}`);
-    }
-  } catch (error) {
-    // Don't wrap the error if it's already our formatted error
-    if (error.message && error.message.startsWith('Proxy HTTP')) {
-      throw error;
-    }
-    
-    if (error.name === 'AbortError') {
-      throw new Error('Proxy request timed out after 15 seconds');
-    }
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new Error('Network error: Could not reach proxy server. Check your internet connection.');
-    }
-    // Re-throw with more context
-    throw new Error(`Proxy error: ${error.message}`);
-  }
+  const res = await fetch(url, { mode: 'cors', headers: { 'Accept': 'application/json' } });
+  if (!res.ok) throw new Error(`Proxy HTTP ${res.status}`);
+  return await res.json();
 }
 
 // Main search with preview rendering. Exported as searchSongsWithPreview and aliased from searchSongs.
@@ -249,33 +136,13 @@ async function searchSongsWithPreview() {
 
   try {
     // Attempt 1: use country + entity=song (most accurate)
-    const mkParams = (opts) => {
-      // Build params object
-      const paramsObj = {
-        term: query,
-        country: 'US',
-        media: 'music',
-        limit: '25'
-      };
-      // Add any additional options
-      if (opts && opts.entity) {
-        paramsObj.entity = opts.entity;
-      }
-      // Use URLSearchParams to properly format and encode
-      const params = new URLSearchParams(paramsObj);
-      const result = params.toString();
-      // Verify the format is correct (should contain & separators)
-      if (result.split('&').length < 2) {
-        console.error('ERROR: URLSearchParams format issue. Result:', result);
-        // Fallback: manually construct if URLSearchParams fails
-        const parts = [];
-        for (const [key, value] of Object.entries(paramsObj)) {
-          parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`);
-        }
-        return parts.join('&');
-      }
-      return result;
-    };
+    const mkParams = (opts) => new URLSearchParams({
+      term: query,
+      country: 'US',
+      media: 'music',
+      limit: '25',
+      ...opts
+    }).toString();
 
     const attempts = [
       `https://itunes.apple.com/search?${mkParams({ entity: 'song' })}`,
@@ -285,158 +152,61 @@ async function searchSongsWithPreview() {
 
     let data = null;
     let lastError = null;
-    const errors = [];
-    // More comprehensive mobile detection
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile/i.test(navigator.userAgent) ||
-                    (window.innerWidth && window.innerWidth < 768);
-    
-    console.log('Device detection:', { 
-      userAgent: navigator.userAgent, 
-      isMobile, 
-      width: window.innerWidth 
-    });
 
-    // On mobile, skip proxy if it's known to return 403 (Cloudflare WAF blocking)
-    // Go straight to JSONP which should work on mobile
-    // On desktop, try proxy/direct fetch first, then JSONP as fallback.
-    if (isMobile) {
-      console.log('MOBILE MODE: Skipping proxy (known 403 issue), using JSONP only');
-      
-      // Mobile: Skip proxy entirely and use JSONP (proxy is blocked by Cloudflare WAF)
-      // Try JSONP with different parameter combinations
-      const jsonpAttempts = [
-        mkParams({ entity: 'song' }),
-        mkParams({}) // Fallback without entity filter
-      ];
-      
-      for (let i = 0; i < jsonpAttempts.length; i++) {
-        const jsonpParams = jsonpAttempts[i];
-        try {
-          console.log(`Mobile: JSONP attempt ${i + 1}/${jsonpAttempts.length}...`);
-          const urlBase = `https://itunes.apple.com/search?${jsonpParams}`;
-          console.log('JSONP URL (first 150 chars):', urlBase.substring(0, 150));
-          data = await jsonpRequest(urlBase);
-          console.log('Mobile: JSONP search successful!');
-          break; // Success, exit loop
-        } catch (e2) {
-          console.error(`Mobile: JSONP attempt ${i + 1} failed:`, e2);
-          // Make sure JSONP error message is separate and clear
-          const jsonpErrorMsg = e2.message || 'Unknown JSONP error';
-          errors.push(`JSONP attempt ${i + 1}: ${jsonpErrorMsg}`);
-          lastError = e2;
-        }
+    // If a proxy is configured, try it FIRST (mobile-friendly)
+    if ((typeof window !== 'undefined') && window.ITUNES_PROXY_URL) {
+      try {
+        const proxyParams = mkParams({ entity: 'song' });
+        data = await fetchViaProxy(proxyParams);
+      } catch (e) {
+        lastError = e;
       }
-      
-      // If JSONP fails, we could try proxy as absolute last resort, but it's likely to fail
-      if (!data && (typeof window !== 'undefined') && window.ITUNES_PROXY_URL) {
-        try {
-          console.log('Mobile: JSONP failed, trying proxy as last resort (likely to fail with 403)...');
-          const proxyParams = mkParams({ entity: 'song' });
-          data = await fetchViaProxy(proxyParams);
-          console.log('Mobile: Proxy search successful!');
-        } catch (e) {
-          console.error('Mobile: Proxy also failed:', e);
-          errors.push(`Proxy (last resort): ${e.message}`);
-          lastError = e;
-        }
-      }
-    } else {
-        // No proxy configured, go straight to JSONP
-        console.log('Mobile: No proxy configured, using JSONP only');
-        const jsonpAttempts = [
-          mkParams({ entity: 'song' }),
-          mkParams({})
-        ];
+    }
+
+    for (const url of attempts) {
+      try {
+        const response = await fetch(url, {
+          mode: 'cors',
+          headers: { 'Accept': 'application/json' }
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const contentType = response.headers.get('content-type') || '';
+        // iTunes API sometimes returns text/javascript even though it's valid JSON
+        // Accept both application/json and text/javascript
+        const isJsonLike = contentType.includes('application/json') || 
+                          contentType.includes('text/javascript') ||
+                          contentType.includes('application/javascript');
         
-        for (let i = 0; i < jsonpAttempts.length; i++) {
-          const jsonpParams = jsonpAttempts[i];
-          try {
-            console.log(`Mobile: JSONP attempt ${i + 1}/${jsonpAttempts.length}...`);
-            const urlBase = `https://itunes.apple.com/search?${jsonpParams}`;
-            data = await jsonpRequest(urlBase);
-            console.log('Mobile: JSONP search successful!');
+        if (isJsonLike) {
+          data = await response.json();
+          break;
+        } else {
+          // If not JSON-like content type, try parsing anyway (some APIs misreport)
+          const text = await response.text();
+          if (text.trim().startsWith('{')) {
+            data = JSON.parse(text);
             break;
-          } catch (e) {
-            console.error(`Mobile: JSONP attempt ${i + 1} failed:`, e);
-            errors.push(`JSONP attempt ${i + 1}: ${e.message}`);
-            lastError = e;
+          } else {
+            throw new Error(`Expected JSON, got ${contentType}. Body starts: ${text.slice(0, 80)}`);
           }
         }
-      }
-      
-      if (!data) {
-        console.error('Mobile: All search methods failed.');
-      }
-    } else {
-      console.log('DESKTOP MODE: Trying proxy/direct fetch first');
-      // Desktop: Try proxy first, then direct fetch, then JSONP
-      if ((typeof window !== 'undefined') && window.ITUNES_PROXY_URL) {
-        try {
-          console.log('Attempting proxy search...');
-          const proxyParams = mkParams({ entity: 'song' });
-          data = await fetchViaProxy(proxyParams);
-          console.log('Proxy search successful');
-        } catch (e) {
-          console.error('Proxy search failed:', e);
-          errors.push(`Proxy: ${e.message}`);
-          lastError = e;
-        }
-      }
-      
-      // If proxy failed or not configured, try direct fetch
-      if (!data) {
-        for (const url of attempts) {
-          try {
-            const response = await fetch(url, {
-              mode: 'cors',
-              headers: { 'Accept': 'application/json' }
-            });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const contentType = response.headers.get('content-type') || '';
-            const isJsonLike = contentType.includes('application/json') || 
-                              contentType.includes('text/javascript') ||
-                              contentType.includes('application/javascript');
-            
-            if (isJsonLike) {
-              data = await response.json();
-              break;
-            } else {
-              const text = await response.text();
-              if (text.trim().startsWith('{')) {
-                data = JSON.parse(text);
-                break;
-              } else {
-                throw new Error(`Expected JSON, got ${contentType}. Body starts: ${text.slice(0, 80)}`);
-              }
-            }
-          } catch (e) {
-            errors.push(`Direct fetch: ${e.message}`);
-            lastError = e;
-          }
-        }
-      }
-      
-      // If all else fails, try JSONP as last resort
-      if (!data) {
-        try {
-          console.log('Attempting JSONP fallback...');
-          const jsonpParams = mkParams({ entity: 'song' });
-          const urlBase = `https://itunes.apple.com/search?${jsonpParams}`;
-          data = await jsonpRequest(urlBase);
-          console.log('JSONP search successful');
-        } catch (e) {
-          console.error('JSONP search failed:', e);
-          errors.push(`JSONP: ${e.message}`);
-          lastError = e;
-        }
+      } catch (e) {
+        lastError = e;
       }
     }
 
     if (!data) {
-      const errorMsg = errors.length > 0 ? errors.join('; ') : 'Unknown search error';
-      console.error('All search methods failed:', errorMsg);
-      throw new Error(errorMsg);
+      // Fallback for some mobile browsers with strict CORS: use JSONP
+      try {
+        const jsonpParams = mkParams({ entity: 'song', callback: '' });
+        const urlBase = `https://itunes.apple.com/search?${jsonpParams}`;
+        data = await jsonpRequest(urlBase);
+      } catch (e) {
+        lastError = e;
+      }
     }
+
+    if (!data) throw lastError || new Error('Unknown search error');
 
     if (data.results && data.results.length > 0) {
       resultsContainer.innerHTML = '';
@@ -476,76 +246,8 @@ async function searchSongsWithPreview() {
     }
   } catch (error) {
     console.error('Search error:', error);
-    const errorMessage = error.message || 'Unknown error';
-    console.log('Error message details:', { errorMessage, fullError: error });
-    
-    // Detect device type for error message
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile/i.test(navigator.userAgent) ||
-                    (window.innerWidth && window.innerWidth < 768);
-    
-    // Build detailed error message for debugging
-    let debugInfo = [];
-    debugInfo.push(`Device: ${isMobile ? 'Mobile' : 'Desktop'}`);
-    debugInfo.push(`Method: ${errorMessage.includes('JSONP') ? 'JSONP' : errorMessage.includes('Proxy') ? 'Proxy' : 'Direct Fetch'}`);
-    debugInfo.push(`Error: ${errorMessage}`);
-    
-    // Provide more helpful error message based on error type
-    // Check for JSONP errors first (mobile), then proxy errors (desktop)
-    let userMessage = 'Error searching. Please try again, or use "Link" to paste a song URL.';
-    let errorDetails = '';
-    
-    if (errorMessage.includes('JSONP')) {
-      // JSONP-specific errors (mobile)
-      if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
-        userMessage = 'Search timed out (20 seconds).';
-        errorDetails = 'The search request took too long. This might be due to a slow connection or the iTunes API being slow.';
-      } else if (errorMessage.includes('script error') || errorMessage.includes('JSONP script error')) {
-        userMessage = 'JSONP script error occurred.';
-        errorDetails = 'The search script failed to load. This could be due to network issues, ad blockers, or content security policies.';
-      } else {
-        userMessage = 'JSONP search failed.';
-        errorDetails = `JSONP error: ${errorMessage}`;
-      }
-    } else if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
-      userMessage = 'Search timed out.';
-      errorDetails = 'The search request took too long.';
-    } else if (errorMessage.includes('Network error') || errorMessage.includes('Could not reach')) {
-      userMessage = 'Network error.';
-      errorDetails = 'Could not reach the search service. Please check your internet connection.';
-    } else if (errorMessage.includes('Proxy HTTP 403')) {
-      // 403 Forbidden from proxy worker
-      userMessage = 'Proxy access denied (403).';
-      errorDetails = `The proxy worker is blocking the request. This might be due to CORS restrictions or the worker configuration. Error: ${errorMessage}`;
-    } else if (errorMessage.includes('Proxy') && !errorMessage.includes('JSONP')) {
-      // Other proxy errors
-      userMessage = 'Proxy service error.';
-      errorDetails = `Proxy error: ${errorMessage}`;
-    } else {
-      userMessage = 'Search failed.';
-      errorDetails = `Error: ${errorMessage}`;
-    }
-    
-    // Display detailed error information
-    const errorHtml = `
-      <div class="search-no-results" style="padding: 20px;">
-        <div style="font-weight: 600; margin-bottom: 12px; color: #d32f2f;">${userMessage}</div>
-        <div style="font-size: 13px; color: #666; margin-bottom: 12px; line-height: 1.5;">
-          ${errorDetails}
-        </div>
-        <div style="font-size: 12px; color: #999; margin-bottom: 16px; padding: 12px; background: #f5f5f5; border-radius: 4px; font-family: monospace; word-break: break-all;">
-          <strong>Debug Info:</strong><br>
-          ${debugInfo.join('<br>')}
-        </div>
-        <div style="font-size: 13px; color: #666;">
-          <strong>Options:</strong><br>
-          • Try searching again<br>
-          • Use the "Link" button to paste a song URL directly<br>
-          • Check your internet connection
-        </div>
-      </div>
-    `;
-    
-    resultsContainer.innerHTML = errorHtml;
+    resultsContainer.innerHTML =
+      '<div class="search-no-results">Error searching. Please try again, or use “Link” to paste a song URL.</div>';
   }
 }
 
@@ -890,9 +592,4 @@ document.addEventListener('click', (e) => {
   window.searchSongs = searchSongsWithPreview; // fallback for legacy markup
   window.closeSongSearch = closeSongSearch; // Make sure close function is global
   window.stopPreview = stopPreview; // Make stopPreview global too
-  window.openSongSearch = openSongSearch; // Expose openSongSearch globally
-  window.openSongLink = openSongLink; // Expose openSongLink globally
-  window.updateSongUI = updateSongUI; // Expose updateSongUI globally
-  window.selectSong = selectSong; // Expose selectSong globally
-  window.previewSong = previewSong; // Expose previewSong globally
 })();
