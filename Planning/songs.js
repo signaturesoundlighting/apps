@@ -127,7 +127,8 @@ function jsonpRequest(urlBase) {
     // Add more detailed error handling
     script.onerror = (event) => {
       if (!isResolved) {
-        errorDetails = `Script failed to load. URL: ${url.substring(0, 100)}...`;
+        // Show full URL in error for debugging
+        errorDetails = `Script failed to load. Full URL: ${url}`;
         cleanup();
         reject(new Error(`JSONP script error: ${errorDetails}`));
       }
@@ -219,13 +220,33 @@ async function searchSongsWithPreview() {
 
   try {
     // Attempt 1: use country + entity=song (most accurate)
-    const mkParams = (opts) => new URLSearchParams({
-      term: query,
-      country: 'US',
-      media: 'music',
-      limit: '25',
-      ...opts
-    }).toString();
+    const mkParams = (opts) => {
+      // Build params object
+      const paramsObj = {
+        term: query,
+        country: 'US',
+        media: 'music',
+        limit: '25'
+      };
+      // Add any additional options
+      if (opts && opts.entity) {
+        paramsObj.entity = opts.entity;
+      }
+      // Use URLSearchParams to properly format and encode
+      const params = new URLSearchParams(paramsObj);
+      const result = params.toString();
+      // Verify the format is correct (should contain & separators)
+      if (result.split('&').length < 2) {
+        console.error('ERROR: URLSearchParams format issue. Result:', result);
+        // Fallback: manually construct if URLSearchParams fails
+        const parts = [];
+        for (const [key, value] of Object.entries(paramsObj)) {
+          parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`);
+        }
+        return parts.join('&');
+      }
+      return result;
+    };
 
     const attempts = [
       `https://itunes.apple.com/search?${mkParams({ entity: 'song' })}`,
@@ -246,52 +267,72 @@ async function searchSongsWithPreview() {
       width: window.innerWidth 
     });
 
-    // On mobile, JSONP is most reliable (no CORS issues). Use ONLY JSONP on mobile.
+    // On mobile, try proxy first (it exists and should work), then JSONP as fallback
     // On desktop, try proxy/direct fetch first, then JSONP as fallback.
     if (isMobile) {
-      console.log('MOBILE MODE: Using JSONP only (proxy disabled on mobile)');
-      // Mobile: Use JSONP only (most reliable, no CORS issues)
-      // Try with entity=song first, then without entity filter if that fails
-      const jsonpAttempts = [
-        mkParams({ entity: 'song' }),
-        mkParams({}) // Fallback without entity filter
-      ];
+      console.log('MOBILE MODE: Trying proxy first, then JSONP fallback');
       
-      for (let i = 0; i < jsonpAttempts.length; i++) {
-        const jsonpParams = jsonpAttempts[i];
+      // Mobile: Try proxy first (should work and avoid CORS issues)
+      if ((typeof window !== 'undefined') && window.ITUNES_PROXY_URL) {
         try {
-          console.log(`Mobile: JSONP attempt ${i + 1}/${jsonpAttempts.length}...`);
-          const urlBase = `https://itunes.apple.com/search?${jsonpParams}`;
-          console.log('JSONP URL:', urlBase.substring(0, 100) + '...');
-          data = await jsonpRequest(urlBase);
-          console.log('Mobile: JSONP search successful!');
-          break; // Success, exit loop
-        } catch (e) {
-          console.error(`Mobile: JSONP attempt ${i + 1} failed:`, e);
-          errors.push(`JSONP attempt ${i + 1}: ${e.message}`);
-          lastError = e;
-          // Continue to next attempt
-        }
-      }
-      
-      // On mobile, NEVER try proxy - it's unreliable and causes the error
-      // On mobile, if JSONP fails completely, try proxy as last resort
-      // (even though it was failing before, it might work in some cases)
-      if (!data && (typeof window !== 'undefined') && window.ITUNES_PROXY_URL) {
-        try {
-          console.log('Mobile: JSONP failed, trying proxy as last resort...');
+          console.log('Mobile: Attempting proxy search...');
           const proxyParams = mkParams({ entity: 'song' });
+          console.log('Proxy params:', proxyParams);
           data = await fetchViaProxy(proxyParams);
-          console.log('Mobile: Proxy fallback successful!');
-        } catch (e2) {
-          console.error('Mobile: Proxy fallback also failed:', e2);
-          errors.push(`Proxy fallback: ${e2.message}`);
-          lastError = e2;
+          console.log('Mobile: Proxy search successful!');
+        } catch (e) {
+          console.error('Mobile: Proxy search failed:', e);
+          errors.push(`Proxy: ${e.message}`);
+          lastError = e;
+          
+          // If proxy fails, try JSONP as fallback
+          console.log('Mobile: Proxy failed, trying JSONP fallback...');
+          const jsonpAttempts = [
+            mkParams({ entity: 'song' }),
+            mkParams({}) // Fallback without entity filter
+          ];
+          
+          for (let i = 0; i < jsonpAttempts.length; i++) {
+            const jsonpParams = jsonpAttempts[i];
+            try {
+              console.log(`Mobile: JSONP attempt ${i + 1}/${jsonpAttempts.length}...`);
+              const urlBase = `https://itunes.apple.com/search?${jsonpParams}`;
+              data = await jsonpRequest(urlBase);
+              console.log('Mobile: JSONP search successful!');
+              break; // Success, exit loop
+            } catch (e2) {
+              console.error(`Mobile: JSONP attempt ${i + 1} failed:`, e2);
+              errors.push(`JSONP attempt ${i + 1}: ${e2.message}`);
+              lastError = e2;
+            }
+          }
+        }
+      } else {
+        // No proxy configured, go straight to JSONP
+        console.log('Mobile: No proxy configured, using JSONP only');
+        const jsonpAttempts = [
+          mkParams({ entity: 'song' }),
+          mkParams({})
+        ];
+        
+        for (let i = 0; i < jsonpAttempts.length; i++) {
+          const jsonpParams = jsonpAttempts[i];
+          try {
+            console.log(`Mobile: JSONP attempt ${i + 1}/${jsonpAttempts.length}...`);
+            const urlBase = `https://itunes.apple.com/search?${jsonpParams}`;
+            data = await jsonpRequest(urlBase);
+            console.log('Mobile: JSONP search successful!');
+            break;
+          } catch (e) {
+            console.error(`Mobile: JSONP attempt ${i + 1} failed:`, e);
+            errors.push(`JSONP attempt ${i + 1}: ${e.message}`);
+            lastError = e;
+          }
         }
       }
       
       if (!data) {
-        console.error('Mobile: All search methods failed (JSONP and proxy).');
+        console.error('Mobile: All search methods failed.');
       }
     } else {
       console.log('DESKTOP MODE: Trying proxy/direct fetch first');
