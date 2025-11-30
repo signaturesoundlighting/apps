@@ -89,28 +89,50 @@ function jsonpRequest(urlBase) {
     const cbName = `__itunes_jsonp_cb_${Date.now()}_${Math.floor(Math.random()*10000)}`;
     const url = urlBase + `&callback=${cbName}`;
     const script = document.createElement('script');
+    let isResolved = false;
+    
     const timeout = setTimeout(() => {
-      cleanup();
-      reject(new Error('JSONP timeout'));
+      if (!isResolved) {
+        cleanup();
+        reject(new Error('JSONP timeout'));
+      }
     }, 20000); // Increased to 20 seconds for mobile connections
 
     function cleanup() {
+      isResolved = true;
       clearTimeout(timeout);
-      try { delete window[cbName]; } catch(_) { window[cbName] = undefined; }
-      if (script.parentNode) script.parentNode.removeChild(script);
+      try { 
+        delete window[cbName]; 
+      } catch(_) { 
+        window[cbName] = undefined; 
+      }
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
     }
 
+    // Set up callback BEFORE setting script src
     window[cbName] = (data) => {
-      cleanup();
-      resolve(data);
+      if (!isResolved) {
+        isResolved = true;
+        cleanup();
+        resolve(data);
+      }
     };
 
     script.onerror = () => {
-      cleanup();
-      reject(new Error('JSONP script error'));
+      if (!isResolved) {
+        cleanup();
+        reject(new Error('JSONP script error'));
+      }
     };
 
+    // Set script attributes
+    script.async = true;
+    script.charset = 'utf-8';
     script.src = url;
+    
+    // Append to head
     document.head.appendChild(script);
   });
 }
@@ -188,98 +210,15 @@ async function searchSongsWithPreview() {
     let data = null;
     let lastError = null;
     const errors = [];
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-    // If a proxy is configured, try it FIRST (mobile-friendly)
-    // On mobile, direct fetch will fail due to CORS, so prioritize proxy
-    if ((typeof window !== 'undefined') && window.ITUNES_PROXY_URL) {
+    // On mobile, JSONP is most reliable (no CORS issues). Try it first.
+    // On desktop, try proxy/direct fetch first, then JSONP as fallback.
+    if (isMobile) {
+      // Mobile: Try JSONP first (most reliable), then proxy, then direct fetch
       try {
-        const proxyParams = mkParams({ entity: 'song' });
-        console.log('Attempting proxy search...');
-        data = await fetchViaProxy(proxyParams);
-        console.log('Proxy search successful');
-      } catch (e) {
-        console.error('Proxy search failed:', e);
-        errors.push(`Proxy: ${e.message}`);
-        lastError = e;
-        // On mobile, if proxy fails, don't try direct fetch (will fail due to CORS)
-        // Go straight to JSONP fallback
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        if (isMobile) {
-          // Skip direct fetch attempts on mobile, go to JSONP
-        } else {
-          // On desktop, try direct fetch as fallback
-          for (const url of attempts) {
-            try {
-              const response = await fetch(url, {
-                mode: 'cors',
-                headers: { 'Accept': 'application/json' }
-              });
-              if (!response.ok) throw new Error(`HTTP ${response.status}`);
-              const contentType = response.headers.get('content-type') || '';
-              // iTunes API sometimes returns text/javascript even though it's valid JSON
-              // Accept both application/json and text/javascript
-              const isJsonLike = contentType.includes('application/json') || 
-                                contentType.includes('text/javascript') ||
-                                contentType.includes('application/javascript');
-              
-              if (isJsonLike) {
-                data = await response.json();
-                break;
-              } else {
-                // If not JSON-like content type, try parsing anyway (some APIs misreport)
-                const text = await response.text();
-                if (text.trim().startsWith('{')) {
-                  data = JSON.parse(text);
-                  break;
-                } else {
-                  throw new Error(`Expected JSON, got ${contentType}. Body starts: ${text.slice(0, 80)}`);
-                }
-              }
-            } catch (e) {
-              errors.push(`Direct fetch: ${e.message}`);
-              lastError = e;
-            }
-          }
-        }
-      }
-    } else {
-      // No proxy configured, try direct fetch (will fail on mobile due to CORS)
-      for (const url of attempts) {
-        try {
-          const response = await fetch(url, {
-            mode: 'cors',
-            headers: { 'Accept': 'application/json' }
-          });
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          const contentType = response.headers.get('content-type') || '';
-          const isJsonLike = contentType.includes('application/json') || 
-                            contentType.includes('text/javascript') ||
-                            contentType.includes('application/javascript');
-          
-          if (isJsonLike) {
-            data = await response.json();
-            break;
-          } else {
-            const text = await response.text();
-            if (text.trim().startsWith('{')) {
-              data = JSON.parse(text);
-              break;
-            } else {
-              throw new Error(`Expected JSON, got ${contentType}. Body starts: ${text.slice(0, 80)}`);
-            }
-          }
-        } catch (e) {
-          errors.push(`Direct fetch: ${e.message}`);
-          lastError = e;
-        }
-      }
-    }
-
-    if (!data) {
-      // Fallback for some mobile browsers with strict CORS: use JSONP
-      try {
-        console.log('Attempting JSONP fallback...');
-        const jsonpParams = mkParams({ entity: 'song', callback: '' });
+        console.log('Mobile detected: Attempting JSONP search...');
+        const jsonpParams = mkParams({ entity: 'song' });
         const urlBase = `https://itunes.apple.com/search?${jsonpParams}`;
         data = await jsonpRequest(urlBase);
         console.log('JSONP search successful');
@@ -287,6 +226,82 @@ async function searchSongsWithPreview() {
         console.error('JSONP search failed:', e);
         errors.push(`JSONP: ${e.message}`);
         lastError = e;
+        
+        // If JSONP fails, try proxy as fallback
+        if ((typeof window !== 'undefined') && window.ITUNES_PROXY_URL) {
+          try {
+            console.log('Attempting proxy fallback...');
+            const proxyParams = mkParams({ entity: 'song' });
+            data = await fetchViaProxy(proxyParams);
+            console.log('Proxy search successful');
+          } catch (e2) {
+            console.error('Proxy search failed:', e2);
+            errors.push(`Proxy: ${e2.message}`);
+            lastError = e2;
+          }
+        }
+      }
+    } else {
+      // Desktop: Try proxy first, then direct fetch, then JSONP
+      if ((typeof window !== 'undefined') && window.ITUNES_PROXY_URL) {
+        try {
+          console.log('Attempting proxy search...');
+          const proxyParams = mkParams({ entity: 'song' });
+          data = await fetchViaProxy(proxyParams);
+          console.log('Proxy search successful');
+        } catch (e) {
+          console.error('Proxy search failed:', e);
+          errors.push(`Proxy: ${e.message}`);
+          lastError = e;
+        }
+      }
+      
+      // If proxy failed or not configured, try direct fetch
+      if (!data) {
+        for (const url of attempts) {
+          try {
+            const response = await fetch(url, {
+              mode: 'cors',
+              headers: { 'Accept': 'application/json' }
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const contentType = response.headers.get('content-type') || '';
+            const isJsonLike = contentType.includes('application/json') || 
+                              contentType.includes('text/javascript') ||
+                              contentType.includes('application/javascript');
+            
+            if (isJsonLike) {
+              data = await response.json();
+              break;
+            } else {
+              const text = await response.text();
+              if (text.trim().startsWith('{')) {
+                data = JSON.parse(text);
+                break;
+              } else {
+                throw new Error(`Expected JSON, got ${contentType}. Body starts: ${text.slice(0, 80)}`);
+              }
+            }
+          } catch (e) {
+            errors.push(`Direct fetch: ${e.message}`);
+            lastError = e;
+          }
+        }
+      }
+      
+      // If all else fails, try JSONP as last resort
+      if (!data) {
+        try {
+          console.log('Attempting JSONP fallback...');
+          const jsonpParams = mkParams({ entity: 'song' });
+          const urlBase = `https://itunes.apple.com/search?${jsonpParams}`;
+          data = await jsonpRequest(urlBase);
+          console.log('JSONP search successful');
+        } catch (e) {
+          console.error('JSONP search failed:', e);
+          errors.push(`JSONP: ${e.message}`);
+          lastError = e;
+        }
       }
     }
 
