@@ -116,22 +116,26 @@ function jsonpRequest(urlBase) {
 }
 
 // Simple proxy fetch function - routes through Cloudflare Worker
+// Uses POST to bypass WAF restrictions on GET query parameters
 async function fetchViaProxy(paramsQueryString) {
   const base = window.ITUNES_PROXY_URL;
   if (!base) {
     throw new Error('No proxy configured');
   }
   
-  const url = `${base}?${paramsQueryString}`;
-  console.log('Fetching from proxy:', url);
+  const url = base; // Don't include query params in URL for POST
+  console.log('Fetching from proxy (POST):', url, 'with params:', paramsQueryString);
   
   try {
+    // Use POST to bypass WAF restrictions on GET query parameters
     const response = await fetch(url, {
-      method: 'GET',
+      method: 'POST',
       mode: 'cors',
       headers: {
         'Accept': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
+      body: paramsQueryString, // Send query string as POST body
     });
     
     console.log('Proxy response status:', response.status, response.statusText);
