@@ -115,88 +115,48 @@ function jsonpRequest(urlBase) {
   });
 }
 
-// Optional proxy fetch: if window.ITUNES_PROXY_URL is defined, route request through it
+// Simple proxy fetch function - routes through Cloudflare Worker
 async function fetchViaProxy(paramsQueryString) {
-  const base = (typeof window !== 'undefined' && window.ITUNES_PROXY_URL) ? window.ITUNES_PROXY_URL : null;
-  if (!base) throw new Error('No proxy configured');
-  const url = `${base}?${paramsQueryString}`;
+  const base = window.ITUNES_PROXY_URL;
+  if (!base) {
+    throw new Error('No proxy configured');
+  }
   
-  // Create AbortController for timeout (more compatible than AbortSignal.timeout)
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+  const url = `${base}?${paramsQueryString}`;
+  console.log('Fetching from proxy:', url);
   
   try {
-    const res = await fetch(url, { 
-      mode: 'cors', 
-      headers: { 'Accept': 'application/json' },
-      signal: controller.signal,
+    const response = await fetch(url, {
+      method: 'GET',
+      mode: 'cors',
+      headers: {
+        'Accept': 'application/json',
+      },
     });
     
-    // Check HTTP status
-    if (!res.ok) {
-      // Try to get error details from response
-      let errorDetails = `Proxy HTTP ${res.status}`;
-      try {
-        const errorBody = await res.text();
-        if (errorBody) {
-          try {
-            const errorJson = JSON.parse(errorBody);
-            errorDetails = errorJson.message || errorJson.error || errorDetails;
-          } catch {
-            // If not JSON, use first 200 chars of text
-            errorDetails = errorBody.substring(0, 200);
-          }
-        }
-      } catch (e) {
-        console.error('Error reading error response:', e);
-      }
-      throw new Error(errorDetails);
+    console.log('Proxy response status:', response.status, response.statusText);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Proxy error response:', errorText);
+      throw new Error(`Proxy error: ${response.status} ${response.statusText}`);
     }
     
-    // Get response as text first to validate
-    const text = await res.text();
-    if (!text || !text.trim()) {
-      throw new Error('Empty response from proxy');
-    }
+    const data = await response.json();
     
-    // Try to parse JSON
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch (parseError) {
-      console.error('Proxy returned invalid JSON:', {
-        status: res.status,
-        contentType: res.headers.get('content-type'),
-        bodyPreview: text.substring(0, 200),
-      });
-      throw new Error(`Invalid JSON response from proxy: ${parseError.message}`);
-    }
-    
-    // Check if the response contains an error property (from worker error handling)
+    // Check if worker returned an error
     if (data.error) {
-      throw new Error(data.message || data.error || 'Proxy returned an error');
+      throw new Error(data.message || data.error);
     }
     
-    // Validate that it looks like an iTunes API response
+    // Validate it's an iTunes response
     if (!data.results && typeof data.resultCount === 'undefined') {
-      console.warn('Unexpected response format from proxy:', data);
-      // Still return it, but log a warning
+      console.warn('Unexpected response format:', data);
     }
     
-    clearTimeout(timeoutId);
     return data;
   } catch (error) {
-    clearTimeout(timeoutId);
-    // Handle AbortError (timeout)
-    if (error.name === 'AbortError' || error.name === 'TimeoutError') {
-      throw new Error('Request timeout - please try again');
-    }
-    // Re-throw other errors with context
-    console.error('Proxy fetch error:', {
-      url: url,
-      error: error.message,
-      stack: error.stack,
-    });
+    console.error('Proxy fetch failed:', error);
     throw error;
   }
 }
@@ -230,19 +190,22 @@ async function searchSongsWithPreview() {
     let lastError = null;
 
     // If a proxy is configured, try it FIRST (mobile-friendly)
-    if ((typeof window !== 'undefined') && window.ITUNES_PROXY_URL) {
+    if (window.ITUNES_PROXY_URL) {
       try {
+        console.log('Attempting proxy search...');
         const proxyParams = mkParams({ entity: 'song' });
         data = await fetchViaProxy(proxyParams);
-        // If we got data from proxy, skip direct API calls
+        console.log('Proxy search successful, results:', data?.results?.length || 0);
+        
+        // Validate we got valid data
         if (data && (data.results || typeof data.resultCount !== 'undefined')) {
-          // Successfully got data from proxy
+          // Success! Use this data
         } else {
-          // Proxy returned but data looks invalid, try direct API
+          console.warn('Proxy returned invalid data, will try direct API');
           data = null;
         }
       } catch (e) {
-        console.error('Proxy request failed, will try direct API:', e.message);
+        console.error('Proxy request failed:', e.message);
         lastError = e;
         // Continue to try direct API calls as fallback
       }
@@ -333,15 +296,17 @@ async function searchSongsWithPreview() {
     console.error('Search error:', {
       message: error.message,
       stack: error.stack,
-      proxyUrl: typeof window !== 'undefined' ? window.ITUNES_PROXY_URL : null,
+      proxyUrl: window.ITUNES_PROXY_URL || 'not configured',
     });
     
-    // Provide more helpful error messages
+    // Provide helpful error messages
     let errorMessage = 'Error searching. Please try again, or use "Link" to paste a song URL.';
     if (error.message && error.message.includes('timeout')) {
       errorMessage = 'Request timed out. Please check your connection and try again.';
     } else if (error.message && error.message.includes('Proxy')) {
       errorMessage = 'Search service temporarily unavailable. Please try again in a moment, or use "Link" to paste a song URL.';
+    } else if (error.message && error.message.includes('CORS')) {
+      errorMessage = 'Connection blocked. Please try again or use "Link" to paste a song URL.';
     }
     
     resultsContainer.innerHTML = `<div class="search-no-results">${errorMessage}</div>`;

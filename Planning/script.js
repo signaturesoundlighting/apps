@@ -1722,7 +1722,15 @@ function closeSongSearch() {
     currentSongInputId = null;
 }
 
+// This function is now handled by searchSongsWithPreview in songs.js
+// Keeping this as a fallback that uses the proxy
 async function searchSongs() {
+    // Delegate to the main search function in songs.js which handles proxy
+    if (typeof searchSongsWithPreview === 'function') {
+        return searchSongsWithPreview();
+    }
+    
+    // Fallback if songs.js isn't loaded
     const searchInput = document.getElementById('songSearchInput');
     const query = searchInput.value.trim();
     
@@ -1732,8 +1740,34 @@ async function searchSongs() {
     resultsContainer.innerHTML = '<div class="search-loading">Searching...</div>';
     
     try {
-        const response = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&entity=song&limit=25`);
+        // Use proxy if available, otherwise direct API
+        let url;
+        if (window.ITUNES_PROXY_URL) {
+            const params = new URLSearchParams({
+                term: query,
+                country: 'US',
+                media: 'music',
+                entity: 'song',
+                limit: '25'
+            }).toString();
+            url = `${window.ITUNES_PROXY_URL}?${params}`;
+        } else {
+            url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&entity=song&limit=25`;
+        }
+        
+        const response = await fetch(url, {
+            mode: 'cors',
+            headers: { 'Accept': 'application/json' }
+        });
+        
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
         const data = await response.json();
+        
+        // Check for proxy error
+        if (data.error) {
+            throw new Error(data.message || data.error);
+        }
         
         if (data.results && data.results.length > 0) {
             resultsContainer.innerHTML = '';
@@ -1758,7 +1792,7 @@ async function searchSongs() {
         }
     } catch (error) {
         console.error('Search error:', error);
-        resultsContainer.innerHTML = '<div class="search-no-results">Error searching. Please try again.</div>';
+        resultsContainer.innerHTML = '<div class="search-no-results">Error searching. Please try again, or use "Link" to paste a song URL.</div>';
     }
 }
 
