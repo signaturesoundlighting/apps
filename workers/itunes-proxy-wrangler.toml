@@ -1,0 +1,13 @@
+# Cloudflare Worker configuration for iTunes API proxy
+# This worker proxies iTunes API requests to handle CORS issues on mobile browsers
+name = "itunes-proxy"
+main = "itunes-proxy.js"
+compatibility_date = "2024-01-01"
+
+# No secrets needed - this is a simple proxy
+[env.production]
+vars = { }
+
+[env.development]
+vars = { }
+
