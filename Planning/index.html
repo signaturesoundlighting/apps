@@ -8,8 +8,6 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="onboarding.css">
     <script>
-        // Route iTunes API calls through Cloudflare Worker (mobile-safe)
-        window.ITUNES_PROXY_URL = 'https://raspy-bush-7067.peakleadsgroup.workers.dev';
         
         // Configure Payment Intent API endpoint
         // Cloudflare Worker URL for creating Stripe PaymentIntents
@@ -80,15 +78,21 @@
     <div class="song-search-modal" id="songSearchModal">
         <div class="song-search-content">
             <div class="song-search-header">
-                <h3>Search for a Song</h3>
+                <h3>Add a Song</h3>
                 <button class="close-btn" onclick="closeSongSearch()">&times;</button>
             </div>
             <div class="song-search-body">
-                <div class="search-input-wrapper">
-                    <input type="text" id="songSearchInput" placeholder="Search by song title or artist..." />
-                    <button onclick="searchSongsWithPreview()">Search</button>
+                <div class="search-input-wrapper" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <label for="songNameInput" style="font-weight: 600; color: #333;">Song Name</label>
+                        <input type="text" id="songNameInput" placeholder="Enter song name..." style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px;" />
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <label for="songArtistInput" style="font-weight: 600; color: #333;">Artist</label>
+                        <input type="text" id="songArtistInput" placeholder="Enter artist name..." style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px;" />
+                    </div>
+                    <button onclick="addManualSong()" style="padding: 12px; background: #1a9e8e; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 8px;">Add Song</button>
                 </div>
-                <div id="songSearchResults"></div>
             </div>
         </div>
     </div>
