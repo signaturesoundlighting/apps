@@ -890,4 +890,6 @@ document.addEventListener('click', (e) => {
   window.searchSongs = searchSongsWithPreview; // fallback for legacy markup
   window.closeSongSearch = closeSongSearch; // Make sure close function is global
   window.stopPreview = stopPreview; // Make stopPreview global too
+  window.openSongSearch = openSongSearch; // Expose openSongSearch globally
+  window.openSongLink = openSongLink; // Expose openSongLink globally
 })();
