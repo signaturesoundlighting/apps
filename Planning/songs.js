@@ -892,4 +892,7 @@ document.addEventListener('click', (e) => {
   window.stopPreview = stopPreview; // Make stopPreview global too
   window.openSongSearch = openSongSearch; // Expose openSongSearch globally
   window.openSongLink = openSongLink; // Expose openSongLink globally
+  window.updateSongUI = updateSongUI; // Expose updateSongUI globally
+  window.selectSong = selectSong; // Expose selectSong globally
+  window.previewSong = previewSong; // Expose previewSong globally
 })();
