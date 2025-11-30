@@ -86,13 +86,16 @@ function stopPreviewOnModalClose() {
 // JSONP fallback for mobile CORS issues with iTunes API
 function jsonpRequest(urlBase) {
   return new Promise((resolve, reject) => {
-    const cbName = `__itunes_jsonp_cb_${Date.now()}_${Math.floor(Math.random()*10000)}`;
+    // Use a simpler callback name that Safari mobile is more likely to accept
+    const cbName = `itunesCallback${Date.now()}`;
     const url = urlBase + `&callback=${cbName}`;
     const script = document.createElement('script');
     let isResolved = false;
+    let errorDetails = '';
     
     const timeout = setTimeout(() => {
       if (!isResolved) {
+        errorDetails = 'Request timed out after 20 seconds';
         cleanup();
         reject(new Error('JSONP timeout'));
       }
@@ -112,28 +115,51 @@ function jsonpRequest(urlBase) {
     }
 
     // Set up callback BEFORE setting script src
-    window[cbName] = (data) => {
-      if (!isResolved) {
+    // Use a more explicit function that Safari can handle
+    window[cbName] = function(data) {
+      if (!isResolved && data) {
         isResolved = true;
         cleanup();
         resolve(data);
       }
     };
 
-    script.onerror = () => {
+    // Add more detailed error handling
+    script.onerror = (event) => {
       if (!isResolved) {
+        errorDetails = `Script failed to load. URL: ${url.substring(0, 100)}...`;
         cleanup();
-        reject(new Error('JSONP script error'));
+        reject(new Error(`JSONP script error: ${errorDetails}`));
       }
+    };
+
+    // Add load event to detect if script loaded but callback wasn't called
+    script.onload = () => {
+      // Give it a moment to execute
+      setTimeout(() => {
+        if (!isResolved) {
+          errorDetails = 'Script loaded but callback was not executed';
+          cleanup();
+          reject(new Error(`JSONP callback error: ${errorDetails}`));
+        }
+      }, 2000);
     };
 
     // Set script attributes
     script.async = true;
     script.charset = 'utf-8';
-    script.src = url;
+    script.crossOrigin = 'anonymous';
     
-    // Append to head
-    document.head.appendChild(script);
+    // Try to set src and append
+    try {
+      script.src = url;
+      // Use body instead of head for better Safari compatibility
+      (document.body || document.head).appendChild(script);
+    } catch (e) {
+      errorDetails = `Failed to create script element: ${e.message}`;
+      cleanup();
+      reject(new Error(`JSONP setup error: ${errorDetails}`));
+    }
   });
 }
 
@@ -249,9 +275,23 @@ async function searchSongsWithPreview() {
       }
       
       // On mobile, NEVER try proxy - it's unreliable and causes the error
-      // If JSONP fails, that's it - show error
+      // On mobile, if JSONP fails completely, try proxy as last resort
+      // (even though it was failing before, it might work in some cases)
+      if (!data && (typeof window !== 'undefined') && window.ITUNES_PROXY_URL) {
+        try {
+          console.log('Mobile: JSONP failed, trying proxy as last resort...');
+          const proxyParams = mkParams({ entity: 'song' });
+          data = await fetchViaProxy(proxyParams);
+          console.log('Mobile: Proxy fallback successful!');
+        } catch (e2) {
+          console.error('Mobile: Proxy fallback also failed:', e2);
+          errors.push(`Proxy fallback: ${e2.message}`);
+          lastError = e2;
+        }
+      }
+      
       if (!data) {
-        console.error('Mobile: All JSONP attempts failed. Not trying proxy.');
+        console.error('Mobile: All search methods failed (JSONP and proxy).');
       }
     } else {
       console.log('DESKTOP MODE: Trying proxy/direct fetch first');
