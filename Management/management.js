@@ -329,10 +329,43 @@ function createEventRow(client) {
     // Actions (link to planning page)
     const planningLink = `https://apps.signature-sl.com/Planning/?client_id=${client.id}`;
     
+    // Check if contract is signed (has signature)
+    const hasSignature = client.signature && client.signature.trim() !== '';
+    
     // Escape event name for JavaScript string (handle quotes and special chars)
     const escapedEventName = eventName.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, '\\n');
     
     const escapedClientId = escapeHtml(client.id);
+    
+    // Build actions HTML
+    let actionsHTML = `
+        <a href="${planningLink}" target="_blank" class="btn-link" title="View Planning">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor">
+                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+            </svg>
+        </a>
+        <button class="btn-export" onclick="exportTimeline('${escapedClientId}', '${escapedEventName}')" title="Export timeline PDF">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor">
+                <path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/>
+            </svg>
+        </button>`;
+    
+    // Add contract button if signature exists
+    if (hasSignature) {
+        actionsHTML += `
+            <button class="btn-contract" onclick="viewContract('${escapedClientId}')" title="View Contract">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor">
+                    <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                </svg>
+            </button>`;
+    }
+    
+    actionsHTML += `
+        <button class="btn-delete" onclick="deleteClient('${escapedClientId}', '${escapedEventName}')" title="Delete event">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor">
+                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+            </svg>
+        </button>`;
     
     row.innerHTML = `
         <td class="event-name">
@@ -353,21 +386,7 @@ function createEventRow(client) {
         <td class="deposit-amount ${depositClass}">${escapeHtml(formattedDepositAmount)}</td>
         <td class="remaining-balance ${remainingBalanceClass}">${escapeHtml(formattedRemainingBalance)}</td>
         <td class="actions">
-            <a href="${planningLink}" target="_blank" class="btn-link" title="View Planning">
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor">
-                    <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
-                </svg>
-            </a>
-            <button class="btn-export" onclick="exportTimeline('${escapedClientId}', '${escapedEventName}')" title="Export timeline PDF">
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor">
-                    <path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/>
-                </svg>
-            </button>
-            <button class="btn-delete" onclick="deleteClient('${escapedClientId}', '${escapedEventName}')" title="Delete event">
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor">
-                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                </svg>
-            </button>
+            ${actionsHTML}
         </td>
     `;
     
@@ -1755,10 +1774,555 @@ function formatEventDetails(eventType, details, event = null) {
     return lines.length > 0 ? lines : ['(No additional details)'];
 }
 
+// View contract modal
+async function viewContract(clientId) {
+    try {
+        // Fetch client data
+        const clientData = await window.supabaseHelpers.getClientData(clientId);
+        
+        if (!clientData) {
+            alert('Could not load contract data.');
+            return;
+        }
+        
+        // Check if contract is signed
+        if (!clientData.signature || clientData.signature.trim() === '') {
+            alert('This contract has not been signed yet.');
+            return;
+        }
+        
+        // Create modal
+        const modal = document.createElement('div');
+        modal.id = 'contractModal';
+        modal.className = 'modal active';
+        
+        const modalContent = document.createElement('div');
+        modalContent.className = 'modal-content contract-modal-content';
+        
+        // Modal header
+        const modalHeader = document.createElement('div');
+        modalHeader.className = 'modal-header';
+        modalHeader.innerHTML = `
+            <h2>Service Agreement Contract</h2>
+            <button class="close-btn" onclick="closeContractModal()">&times;</button>
+        `;
+        modalContent.appendChild(modalHeader);
+        
+        // Contract body
+        const contractBody = document.createElement('div');
+        contractBody.className = 'contract-body';
+        contractBody.id = 'contractBody';
+        
+        // Format event date
+        const eventDateFormatted = clientData.event_date ? formatDate(clientData.event_date) : 'N/A';
+        
+        // Format signature date
+        let signatureDateFormatted = 'N/A';
+        if (clientData.signature_date) {
+            const sigDate = new Date(clientData.signature_date);
+            signatureDateFormatted = sigDate.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        // Build contract HTML
+        contractBody.innerHTML = `
+            <div class="contract-logo">
+                <img src="https://images.squarespace-cdn.com/content/v1/64909a307fc0025a2064d878/9b8fde02-b8f9-402b-be4c-366cb48134eb/Transparent+PNG+File.png" alt="Signature Sound & Lighting" onerror="this.style.display='none'">
+            </div>
+            
+            <div class="contract-section">
+                <h3>Event Details</h3>
+                <div class="contract-details-grid">
+                    <div class="contract-detail-item">
+                        <label>Event Date:</label>
+                        <span>${escapeHtml(eventDateFormatted)}</span>
+                    </div>
+                    <div class="contract-detail-item">
+                        <label>Client Name:</label>
+                        <span>${escapeHtml(clientData.client_name || 'N/A')}</span>
+                    </div>
+                    ${clientData.fiance_name ? `
+                    <div class="contract-detail-item">
+                        <label>Fiance Name:</label>
+                        <span>${escapeHtml(clientData.fiance_name)}</span>
+                    </div>
+                    ` : ''}
+                    <div class="contract-detail-item">
+                        <label>Client Phone:</label>
+                        <span>${escapeHtml(clientData.client_phone || 'N/A')}</span>
+                    </div>
+                    <div class="contract-detail-item">
+                        <label>Client Address:</label>
+                        <span>${escapeHtml(clientData.client_address || 'N/A')}</span>
+                    </div>
+                    <div class="contract-detail-item">
+                        <label>Venue Name:</label>
+                        <span>${escapeHtml(clientData.venue_name || 'N/A')}</span>
+                    </div>
+                    <div class="contract-detail-item">
+                        <label>Venue Address:</label>
+                        <span>${escapeHtml(clientData.venue_address || 'N/A')}</span>
+                    </div>
+                    <div class="contract-detail-item">
+                        <label>Services:</label>
+                        <span>${escapeHtml(clientData.services || 'N/A')}</span>
+                    </div>
+                    <div class="contract-detail-item">
+                        <label>Total Balance:</label>
+                        <span>${formatCurrency(parseFloat(clientData.total_balance) || 0)}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="contract-section">
+                <h3>Terms & Conditions</h3>
+                <div class="contract-terms">
+                    <p><strong>Venue Requirements:</strong> The Client shall ensure that the venue can supply: 1) an area within 50 feet of a 110-volt 3 prong outlet; 2) facility is open within one hour prior to scheduled start time and will remain open at least 30 minutes after the event ends; 3) facility meets all government safety regulations and has appropriate music licenses/permits.</p>
+                    
+                    <p><strong>1. Payment:</strong> Payment in full shall take place on or before the event date, unless otherwise agreed upon by both parties in writing. Any additional performance time requested by Client not specified within this Agreement will be at the discretion of the DJ. All fees paid for additional performance time shall be paid to the DJ at that time in cash or check and any gratuity given to DJ at the event are at the sole discretion of the Client.</p>
+                    
+                    <p><strong>2. Contract Modifications:</strong> This contract reflects any prior verbal Agreement, and includes all terms and conditions agreed prior to its execution. Client acknowledges that it has had the opportunity to review this contract in full prior to its execution. Neither Client nor DJ may make any alterations to this contract, without prior written approval by the other party.</p>
+                    
+                    <p><strong>3. Cancellation by Client:</strong> In the event of the Client wishes to cancel this contract for any reason, any advance payment made will be forfeited unless otherwise agreed by DJ. If Client decided to cancel the event more than 14 days from the day of the event then Client does not owe DJ the balance due pursuant to the contract. If Client decides to cancel the event less than 14 days from the date of event, the Client is responsible to pay the total fee set forth above.</p>
+                    
+                    <p><strong>4. Cancellation by DJ:</strong> In the unlikely event of the DJ having to cancel the contract due to injury or illness, accident or other legitimate condition outside the DJ's control, the DJ will make every reasonable effort to find a qualified replacement at the agreed upon fee. If the DJ is unable to find a replacement, Client will receive a full refund including the first installment.</p>
+                    
+                    <p><strong>5. Force Majeure:</strong> In the event that the event is cancelled due to act of God or other action constituting force majeure, DJ shall retain the deposit paid.</p>
+                    
+                    <p><strong>6. Liability:</strong> The DJ shall be in no way liable for breach of any contract executed between Client and the venue. DJ shall not be held liable for any loss, damages, injuries, or illness sustained during his performance. Client explicitly agrees to indemnify DJ for any loss or injury occurring to any guest or attendee of the event.</p>
+                    
+                    <p><strong>7. Security & Equipment:</strong> Client will provide adequate security and supervision of its guests, customers and staff at the venue and will be liable for any loss or damage to the DJ's equipment, vehicles or personal belongings caused by guests, customers and/or staff. Any mistreatment or abuse of the DJ will result in the immediate discontinuation of services and the full balance shall be due and payable to DJ.</p>
+                    
+                    <p><strong>8. Safety:</strong> The DJ reserves the right to discontinue performance if there exists a risk of injury or if the working environment constitutes a health and safety risk. If applicable, Client agrees to furnish a facility that completely covers the DJ's equipment from direct sunlight, rain and wind.</p>
+                    
+                    <p><strong>9. Governing Law:</strong> This Agreement shall be governed by the laws of the State of North Carolina. Client is responsible for repayment of any fees plus interest incurred by DJ in an attempt to collect payment. Client agrees that images, reviews and communications acquired during the course of this Agreement are usable for marketing.</p>
+                    
+                    <p><strong>By signing this agreement, you agree to the terms and conditions outlined above.</strong></p>
+                </div>
+            </div>
+            
+            <div class="contract-section">
+                <h3>Signature</h3>
+                <div class="contract-signature">
+                    <div class="signature-field">
+                        <label>Signed By:</label>
+                        <span class="signature-value">${escapeHtml(clientData.signature)}</span>
+                    </div>
+                    <div class="signature-field">
+                        <label>Date Signed:</label>
+                        <span class="signature-value">${escapeHtml(signatureDateFormatted)}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        modalContent.appendChild(contractBody);
+        
+        // Modal footer with buttons
+        const escapedClientId = escapeHtml(clientId);
+        const modalFooter = document.createElement('div');
+        modalFooter.className = 'contract-footer';
+        modalFooter.innerHTML = `
+            <button class="btn-secondary" onclick="closeContractModal()">Close</button>
+            <button class="btn-primary" onclick="downloadContractPDF('${escapedClientId}')">Download PDF</button>
+            <button class="btn-primary" onclick="printContract()">Print</button>
+        `;
+        modalContent.appendChild(modalFooter);
+        
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+        
+        // Close on outside click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeContractModal();
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error loading contract:', error);
+        alert('Failed to load contract. Please try again.');
+    }
+}
+
+// Close contract modal
+function closeContractModal() {
+    const modal = document.getElementById('contractModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Print contract
+function printContract() {
+    const contractBody = document.getElementById('contractBody');
+    if (!contractBody) return;
+    
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Service Agreement Contract</title>
+            <style>
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    padding: 40px;
+                    color: #333;
+                    max-width: 800px;
+                    margin: 0 auto;
+                }
+                .contract-logo img {
+                    max-width: 200px;
+                    margin-bottom: 30px;
+                }
+                .contract-section {
+                    margin-bottom: 30px;
+                }
+                .contract-section h3 {
+                    color: #1a9e8e;
+                    border-bottom: 2px solid #1a9e8e;
+                    padding-bottom: 10px;
+                    margin-bottom: 20px;
+                }
+                .contract-details-grid {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 15px;
+                    margin-bottom: 20px;
+                }
+                .contract-detail-item {
+                    display: flex;
+                    flex-direction: column;
+                }
+                .contract-detail-item label {
+                    font-weight: 600;
+                    color: #666;
+                    margin-bottom: 5px;
+                }
+                .contract-detail-item span {
+                    color: #333;
+                }
+                .contract-terms {
+                    line-height: 1.6;
+                }
+                .contract-terms p {
+                    margin-bottom: 15px;
+                }
+                .contract-signature {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 20px;
+                    margin-top: 20px;
+                }
+                .signature-field {
+                    display: flex;
+                    flex-direction: column;
+                }
+                .signature-field label {
+                    font-weight: 600;
+                    color: #666;
+                    margin-bottom: 5px;
+                }
+                .signature-value {
+                    font-size: 18px;
+                    color: #1a9e8e;
+                    font-weight: 600;
+                    padding: 10px;
+                    border-bottom: 2px solid #1a9e8e;
+                }
+                @media print {
+                    body { padding: 20px; }
+                }
+            </style>
+        </head>
+        <body>
+            ${contractBody.innerHTML}
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+        printWindow.print();
+    }, 250);
+}
+
+// Download contract as PDF
+async function downloadContractPDF(clientId) {
+    try {
+        // Check if jsPDF is loaded
+        if (!window.jspdf || !window.jspdf.jsPDF) {
+            throw new Error('PDF library not loaded. Please refresh the page and try again.');
+        }
+        
+        // Fetch client data
+        const clientData = await window.supabaseHelpers.getClientData(clientId);
+        
+        if (!clientData) {
+            throw new Error('Could not load contract data.');
+        }
+        
+        // Generate PDF
+        await generateContractPDF(clientData);
+    } catch (error) {
+        console.error('Error generating contract PDF:', error);
+        alert('Error generating PDF: ' + (error.message || 'Please try again.'));
+    }
+}
+
+// Generate contract PDF
+async function generateContractPDF(clientData) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'letter'
+    });
+    
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 15;
+    let yPosition = margin;
+    const contentWidth = pageWidth - (margin * 2);
+    
+    // Color scheme
+    const primaryColor = [26, 158, 142]; // #1a9e8e
+    const darkColor = [20, 128, 115];
+    const darkGray = [51, 51, 51];
+    
+    // Add logo
+    const logoUrl = 'https://images.squarespace-cdn.com/content/v1/64909a307fc0025a2064d878/9b8fde02-b8f9-402b-be4c-366cb48134eb/Transparent+PNG+File.png';
+    let logoHeight = 0;
+    
+    try {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        
+        await new Promise((resolve) => {
+            const timeout = setTimeout(() => {
+                logoHeight = 0;
+                resolve();
+            }, 5000);
+            
+            img.onload = () => {
+                clearTimeout(timeout);
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    
+                    const base64data = canvas.toDataURL('image/png');
+                    const logoWidth = 50;
+                    logoHeight = (img.height / img.width) * logoWidth;
+                    const logoX = (pageWidth - logoWidth) / 2;
+                    
+                    doc.addImage(base64data, 'PNG', logoX, margin, logoWidth, logoHeight);
+                    resolve();
+                } catch (e) {
+                    logoHeight = 0;
+                    resolve();
+                }
+            };
+            
+            img.onerror = () => {
+                clearTimeout(timeout);
+                logoHeight = 0;
+                resolve();
+            };
+            
+            img.src = logoUrl;
+        });
+    } catch (e) {
+        logoHeight = 0;
+    }
+    
+    yPosition = margin + logoHeight + 10;
+    
+    // Helper function to add a new page if needed
+    function checkPageBreak(requiredSpace = 20) {
+        if (yPosition + requiredSpace > pageHeight - margin) {
+            doc.addPage();
+            yPosition = margin;
+            return true;
+        }
+        return false;
+    }
+    
+    // Helper to add text with wrapping
+    function addText(text, x, y, options = {}) {
+        const maxWidth = options.maxWidth || contentWidth;
+        const fontSize = options.fontSize || 12;
+        const align = options.align || 'left';
+        doc.setFontSize(fontSize);
+        doc.setTextColor(...(options.color || darkColor));
+        const lines = doc.splitTextToSize(text, maxWidth);
+        doc.text(lines, x, y, { align });
+        return lines.length * (fontSize * 0.35);
+    }
+    
+    // Title
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...primaryColor);
+    doc.text('SERVICE AGREEMENT CONTRACT', pageWidth / 2, yPosition, { align: 'center' });
+    yPosition += 10;
+    
+    // Event Details Section
+    checkPageBreak(30);
+    doc.setFillColor(...primaryColor);
+    doc.rect(margin, yPosition, contentWidth, 8, 'F');
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(255, 255, 255);
+    doc.text('EVENT DETAILS', margin + 2, yPosition + 6);
+    yPosition += 12;
+    
+    // Event details
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...darkGray);
+    
+    const details = [
+        ['Event Date:', clientData.event_date ? formatDateForPDF(clientData.event_date) : 'N/A'],
+        ['Client Name:', clientData.client_name || 'N/A'],
+        ['Fiance Name:', clientData.fiance_name || 'N/A'],
+        ['Client Phone:', clientData.client_phone || 'N/A'],
+        ['Client Address:', clientData.client_address || 'N/A'],
+        ['Venue Name:', clientData.venue_name || 'N/A'],
+        ['Venue Address:', clientData.venue_address || 'N/A'],
+        ['Services:', clientData.services || 'N/A'],
+        ['Total Balance:', formatCurrency(parseFloat(clientData.total_balance) || 0)]
+    ];
+    
+    details.forEach(([label, value]) => {
+        if (!value || value === 'N/A') return;
+        checkPageBreak(6);
+        doc.setFont('helvetica', 'bold');
+        doc.text(label, margin, yPosition);
+        doc.setFont('helvetica', 'normal');
+        yPosition += addText(value, margin + 50, yPosition, { fontSize: 10, maxWidth: contentWidth - 50 });
+        yPosition += 2;
+    });
+    
+    yPosition += 5;
+    
+    // Terms & Conditions Section
+    checkPageBreak(30);
+    doc.setFillColor(...primaryColor);
+    doc.rect(margin, yPosition, contentWidth, 8, 'F');
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(255, 255, 255);
+    doc.text('TERMS & CONDITIONS', margin + 2, yPosition + 6);
+    yPosition += 12;
+    
+    // Terms text
+    const terms = [
+        'Venue Requirements: The Client shall ensure that the venue can supply: 1) an area within 50 feet of a 110-volt 3 prong outlet; 2) facility is open within one hour prior to scheduled start time and will remain open at least 30 minutes after the event ends; 3) facility meets all government safety regulations and has appropriate music licenses/permits.',
+        '1. Payment: Payment in full shall take place on or before the event date, unless otherwise agreed upon by both parties in writing. Any additional performance time requested by Client not specified within this Agreement will be at the discretion of the DJ. All fees paid for additional performance time shall be paid to the DJ at that time in cash or check and any gratuity given to DJ at the event are at the sole discretion of the Client.',
+        '2. Contract Modifications: This contract reflects any prior verbal Agreement, and includes all terms and conditions agreed prior to its execution. Client acknowledges that it has had the opportunity to review this contract in full prior to its execution. Neither Client nor DJ may make any alterations to this contract, without prior written approval by the other party.',
+        '3. Cancellation by Client: In the event of the Client wishes to cancel this contract for any reason, any advance payment made will be forfeited unless otherwise agreed by DJ. If Client decided to cancel the event more than 14 days from the day of the event then Client does not owe DJ the balance due pursuant to the contract. If Client decides to cancel the event less than 14 days from the date of event, the Client is responsible to pay the total fee set forth above.',
+        '4. Cancellation by DJ: In the unlikely event of the DJ having to cancel the contract due to injury or illness, accident or other legitimate condition outside the DJ\'s control, the DJ will make every reasonable effort to find a qualified replacement at the agreed upon fee. If the DJ is unable to find a replacement, Client will receive a full refund including the first installment.',
+        '5. Force Majeure: In the event that the event is cancelled due to act of God or other action constituting force majeure, DJ shall retain the deposit paid.',
+        '6. Liability: The DJ shall be in no way liable for breach of any contract executed between Client and the venue. DJ shall not be held liable for any loss, damages, injuries, or illness sustained during his performance. Client explicitly agrees to indemnify DJ for any loss or injury occurring to any guest or attendee of the event.',
+        '7. Security & Equipment: Client will provide adequate security and supervision of its guests, customers and staff at the venue and will be liable for any loss or damage to the DJ\'s equipment, vehicles or personal belongings caused by guests, customers and/or staff. Any mistreatment or abuse of the DJ will result in the immediate discontinuation of services and the full balance shall be due and payable to DJ.',
+        '8. Safety: The DJ reserves the right to discontinue performance if there exists a risk of injury or if the working environment constitutes a health and safety risk. If applicable, Client agrees to furnish a facility that completely covers the DJ\'s equipment from direct sunlight, rain and wind.',
+        '9. Governing Law: This Agreement shall be governed by the laws of the State of North Carolina. Client is responsible for repayment of any fees plus interest incurred by DJ in an attempt to collect payment. Client agrees that images, reviews and communications acquired during the course of this Agreement are usable for marketing.',
+        'By signing this agreement, you agree to the terms and conditions outlined above.'
+    ];
+    
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...darkGray);
+    
+    terms.forEach(term => {
+        checkPageBreak(15);
+        yPosition += addText(term, margin, yPosition, { fontSize: 9 });
+        yPosition += 3;
+    });
+    
+    yPosition += 5;
+    
+    // Signature Section
+    checkPageBreak(25);
+    doc.setFillColor(...primaryColor);
+    doc.rect(margin, yPosition, contentWidth, 8, 'F');
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(255, 255, 255);
+    doc.text('SIGNATURE', margin + 2, yPosition + 6);
+    yPosition += 15;
+    
+    // Signature details
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...darkGray);
+    doc.text('Signed By:', margin, yPosition);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...primaryColor);
+    doc.setFontSize(12);
+    yPosition += addText(clientData.signature || 'N/A', margin, yPosition, { fontSize: 12 });
+    yPosition += 8;
+    
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...darkGray);
+    doc.text('Date Signed:', margin, yPosition);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...primaryColor);
+    doc.setFontSize(12);
+    if (clientData.signature_date) {
+        const sigDate = new Date(clientData.signature_date);
+        const sigDateFormatted = sigDate.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        yPosition += addText(sigDateFormatted, margin, yPosition, { fontSize: 12 });
+    } else {
+        yPosition += addText('N/A', margin, yPosition, { fontSize: 12 });
+    }
+    
+    // Footer
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+            `Signature Sound & Lighting - Page ${i} of ${totalPages}`,
+            pageWidth / 2,
+            pageHeight - 10,
+            { align: 'center' }
+        );
+    }
+    
+    // Generate filename
+    const clientName = clientData.client_name || 'Client';
+    const filename = `Contract_${clientName.replace(/[^a-zA-Z0-9]/g, '_')}_${clientData.event_date || 'Event'}.pdf`;
+    
+    // Save PDF
+    doc.save(filename);
+}
+
 // Expose functions globally for onclick handlers
 window.deleteClient = deleteClient;
 window.toggleSignature = toggleSignature;
 window.toggleDeposit = toggleDeposit;
 window.exportTimeline = exportTimeline;
 window.filterEventsByStage = filterEventsByStage;
+window.viewContract = viewContract;
+window.closeContractModal = closeContractModal;
+window.printContract = printContract;
+window.downloadContractPDF = downloadContractPDF;
 
