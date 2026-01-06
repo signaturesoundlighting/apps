@@ -2204,11 +2204,13 @@ async function generateContractPDF(clientData) {
     
     details.forEach(([label, value]) => {
         if (!value || value === 'N/A') return;
-        checkPageBreak(6);
+        checkPageBreak(8);
+        const labelWidth = 50;
         doc.setFont('helvetica', 'bold');
         doc.text(label, margin, yPosition);
         doc.setFont('helvetica', 'normal');
-        yPosition += addText(value, margin + 50, yPosition, { fontSize: 10, maxWidth: contentWidth - 50 });
+        const valueHeight = addText(value, margin + labelWidth, yPosition, { fontSize: 10, maxWidth: contentWidth - labelWidth });
+        yPosition += Math.max(valueHeight, 5);
         yPosition += 2;
     });
     
@@ -2252,7 +2254,7 @@ async function generateContractPDF(clientData) {
     yPosition += 5;
     
     // Signature Section
-    checkPageBreak(25);
+    checkPageBreak(30);
     doc.setFillColor(...primaryColor);
     doc.rect(margin, yPosition, contentWidth, 8, 'F');
     doc.setFontSize(14);
@@ -2261,7 +2263,7 @@ async function generateContractPDF(clientData) {
     doc.text('SIGNATURE', margin + 2, yPosition + 6);
     yPosition += 15;
     
-    // Signature details
+    // Signature details - Signed By
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...darkGray);
@@ -2269,9 +2271,12 @@ async function generateContractPDF(clientData) {
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...primaryColor);
     doc.setFontSize(12);
-    yPosition += addText(clientData.signature || 'N/A', margin, yPosition, { fontSize: 12 });
-    yPosition += 8;
+    const signatureText = clientData.signature || 'N/A';
+    const signatureHeight = addText(signatureText, margin + 45, yPosition, { fontSize: 12, maxWidth: contentWidth - 45 });
+    yPosition += Math.max(signatureHeight, 6);
+    yPosition += 10;
     
+    // Signature details - Date Signed
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...darkGray);
@@ -2281,16 +2286,20 @@ async function generateContractPDF(clientData) {
     doc.setFontSize(12);
     if (clientData.signature_date) {
         const sigDate = new Date(clientData.signature_date);
-        const sigDateFormatted = sigDate.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-        yPosition += addText(sigDateFormatted, margin, yPosition, { fontSize: 12 });
+        // Format date manually for better control
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        const month = months[sigDate.getMonth()];
+        const day = sigDate.getDate();
+        const year = sigDate.getFullYear();
+        let hours = sigDate.getHours();
+        const minutes = sigDate.getMinutes().toString().padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12 || 12;
+        const hoursStr = hours.toString();
+        const sigDateFormatted = `${month} ${day}, ${year} at ${hoursStr}:${minutes} ${ampm}`;
+        yPosition += addText(sigDateFormatted, margin + 45, yPosition, { fontSize: 12, maxWidth: contentWidth - 45 });
     } else {
-        yPosition += addText('N/A', margin, yPosition, { fontSize: 12 });
+        yPosition += addText('N/A', margin + 45, yPosition, { fontSize: 12 });
     }
     
     // Footer
